@@ -10,3 +10,4 @@ kube*
 .terraform.lock.hcl
 terraform.tfstate*
 *.tfvars
+node_modules/*

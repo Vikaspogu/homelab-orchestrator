@@ -91,7 +91,7 @@
         scm_delete_on_update: true
         scm_type: git
         default_environment: 'Custom EE'
-        scm_url: https://github.com/Vikaspogu/aap-playbooks.git
+        scm_url: https://github.com/Vikaspogu/homelab-orchestrator.git
 
     - name: Add inventory source to inventory
       ansible.controller.inventory_source:

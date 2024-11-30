@@ -1,6 +1,6 @@
 schemaVersion: 2.2.0
 metadata:
-  name: aap-playbooks
+  name: homelab-orchestrator
 components:
   - name: tooling-container
     container:
@@ -14,7 +14,7 @@ components:
         - name: SHELL
           value: '/bin/zsh'
         - name: VSCODE_DEFAULT_WORKSPACE
-          value: '/projects/aap-playbooks/code-workspace'
+          value: '/projects/homelab-orchestrator/code-workspace'
         - name: 'ANSIBLE_COLLECTIONS_PATH'
           value: '~/.ansible/collections:/usr/share/ansible/collections:/projects/ansible-devspaces-demo/collections'
 commands:
