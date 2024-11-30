@@ -1,7 +1,3 @@
-data "authentik_group" "admins" {
-  name = "admins"
-}
-
 resource "authentik_group" "admins" {
   name         = "admins"
   is_superuser = false
@@ -11,6 +7,6 @@ resource "authentik_policy_binding" "application_policy_binding" {
   for_each = local.applications
 
   target = authentik_application.application[each.key].uuid
-  group  = data.authentik_group.admins.id
+  group  = authentik_group.admins.id
   order  = 0
 }
