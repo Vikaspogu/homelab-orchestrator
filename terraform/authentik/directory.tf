@@ -1,22 +1,13 @@
 
-data "authentik_group" "admins" {
-  name = "authentik Admins"
-}
-
 resource "authentik_group" "admins" {
-  name         = "Admins"
+  name         = "admins"
   is_superuser = false
-}
-
-data "authentik_group" "lookup" {
-  for_each = local.applications
-  name     = each.value.group
 }
 
 resource "authentik_policy_binding" "application_policy_binding" {
   for_each = local.applications
 
   target = authentik_application.application[each.key].uuid
-  group  = data.authentik_group.lookup[each.key].id
+  group  = data.authentik_group.admins.id
   order  = 0
 }

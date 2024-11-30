@@ -22,7 +22,7 @@
 
     - name: Set the license using a file
       ansible.controller.license:
-        manifest: '{{ repository_path.stdout }}/ansible/manifest_subscription.zip'
+        manifest: '{{ repository_path.stdout }}/manifest_subscription.zip'
         validate_certs: false
 
     - name: Create an inventory
@@ -103,31 +103,31 @@
         organization: Default
         source: 'scm'
         source_project: '{{ awx_project_name }}'
-        source_path: 'ansible/inventory/hosts.yaml'
+        source_path: '../../inventory/hosts.yaml'
 
     - name: Create a Job Template with no survey
-      ansible.builtin.import_tasks: ansible/awx/job_templates/job-template-no-survey.yaml
+      ansible.builtin.import_tasks: ../../awx/job_templates/job-template-no-survey.yaml
       register: job_templates
       until: not job_templates.failed
       retries: 10
       delay: 10
 
     - name: Create a Job Template with survey
-      ansible.builtin.import_tasks: ansible/awx/job_templates/job-template-survey.yaml
+      ansible.builtin.import_tasks: ../../awx/job_templates/job-template-survey.yaml
       register: job_templates_survery
       until: not job_templates_survery.failed
       retries: 10
       delay: 10
 
     - name: Create 3 node cluster workflow
-      ansible.builtin.import_tasks: ansible/awx/workflow_templates/openshift-cluster.yaml
+      ansible.builtin.import_tasks: ../../awx/workflows/openshift-cluster.yaml
       register: acm_cluster_workflow
       until: not acm_cluster_workflow.failed
       retries: 10
       delay: 10
 
     - name: Create SNO cluster workflow
-      ansible.builtin.import_tasks: ansible/awx/workflow_templates/sno-openshift-cluster.yaml
+      ansible.builtin.import_tasks: ../../awx/workflows/sno-openshift-cluster.yaml
       register: sno_cluster_workflow
       until: not sno_cluster_workflow.failed
       retries: 10
