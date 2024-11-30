@@ -22,7 +22,7 @@ locals {
     grafana = {
       client_id     = module.onepassword_application["grafana"].fields["GRAFANA_CLIENT_ID"]
       client_secret = module.onepassword_application["grafana"].fields["GRAFANA_CLIENT_SECRET"]
-      group         = data.authentik_group.admins.id
+      group         = authentik_group.admins.id
       icon_url      = "https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/grafana.png"
       redirect_uri  = "https://grafana.${var.cluster_domain}/login/generic_oauth"
       launch_url    = "https://grafana.${var.cluster_domain}/login/generic_oauth"
@@ -30,7 +30,7 @@ locals {
     openshift = {
       client_id     = module.onepassword_application["openshift"].fields["CLIENT_ID"]
       client_secret = module.onepassword_application["openshift"].fields["CLIENT_SECRET"]
-      group         = data.authentik_group.admins.id
+      group         = authentik_group.admins.id
       icon_url      = "https://austindewey.com/wp-content/uploads/2018/10/Logotype_RH_OpenShift_StackedLogo_RGB_Black.png"
       redirect_uri  = "https://oauth-openshift.${var.openshift_cluster_domain}/oauth2callback/authentik"
       launch_url    = "https://console-openshift-console.${var.openshift_cluster_domain}/"
@@ -38,7 +38,7 @@ locals {
     freshrss = {
       client_id     = module.onepassword_application["freshrss"].fields["CLIENT_ID"]
       client_secret = module.onepassword_application["freshrss"].fields["CLIENT_SECRET"]
-      group         = data.authentik_group.admins.id
+      group         = authentik_group.admins.id
       icon_url      = "https://avatars.githubusercontent.com/u/9414285?s=280&v=4"
       redirect_uri  = "https://rss.${var.cluster_domain}:443/i/oidc/"
       launch_url    = "https://rss.${var.cluster_domain}:443/i/oidc/"
@@ -46,7 +46,7 @@ locals {
     paperless = {
       client_id     = module.onepassword_application["paperless"].fields["CLIENT_ID"]
       client_secret = module.onepassword_application["paperless"].fields["CLIENT_SECRET"]
-      group         = data.authentik_group.admins.id
+      group         = authentik_group.admins.id
       icon_url      = "https://avatars.githubusercontent.com/u/99562962?s=280&v=4"
       redirect_uri  = "https://paperless.${var.cluster_domain}/accounts/oidc/authentik/login/callback/"
       launch_url    = "https://paperless.${var.cluster_domain}/accounts/oidc/authentik/login/callback/"
@@ -54,7 +54,7 @@ locals {
     pgadmin = {
       client_id     = module.onepassword_application["pgadmin"].fields["CLIENT_ID"]
       client_secret = module.onepassword_application["pgadmin"].fields["CLIENT_SECRET"]
-      group         = data.authentik_group.admins.id
+      group         = authentik_group.admins.id
       icon_url      = "https://www.pgadmin.org/static/docs/pgadmin4-dev/docs/en_US/_build/html/_images/logo-right-128.png"
       redirect_uri  = "https://pgadmin4.${var.cluster_domain}/oauth2/authorize"
       launch_url    = "https://pgadmin4.${var.cluster_domain}/oauth2/authorize"
