@@ -1,3 +1,6 @@
+data "authentik_group" "admins" {
+  name = "admins"
+}
 
 resource "authentik_group" "admins" {
   name         = "admins"
