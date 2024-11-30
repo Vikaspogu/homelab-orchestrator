@@ -5,7 +5,6 @@ data "authentik_group" "admins" {
 resource "authentik_group" "admins" {
   name         = "admins"
   is_superuser = false
-  users        = ["Vikas"]
 }
 
 resource "authentik_policy_binding" "application_policy_binding" {
