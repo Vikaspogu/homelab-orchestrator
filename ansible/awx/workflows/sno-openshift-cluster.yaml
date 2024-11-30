@@ -1,0 +1,63 @@
+---
+- name: Create SNO OpenShift cluster Workflow Template
+  ansible.controller.workflow_job_template:
+    name: 'OpenShift - Single Node Cluster'
+    inventory: '{{ awx_inventory_name }}'
+    controller_host: '{{ controller_hostname }}'
+    controller_username: '{{ controller_username }}'
+    controller_password: '{{ controller_password }}'
+    validate_certs: false
+    workflow_nodes:
+      - identifier: Prepare ISO
+        unified_job_template:
+          organization:
+            name: Default
+          name: 'OpenShift - Prepare Cluster ISO'
+          type: job_template
+        extra_data:
+          redhat_pull_secret: '{{ redhat_pull_secret | string }}'
+          cluster_name: sno
+        related:
+          success_nodes:
+            - identifier: 'Create SNO VM'
+      - identifier: Create SNO VM
+        unified_job_template:
+          organization:
+            name: Default
+          name: 'Proxmox - Create VM'
+          type: job_template
+        extra_data:
+          vm_name: sno
+          cores: '22'
+          memory: '99392'
+          disk_size: '100'
+          mac_address: '52:50:56:11:22:44'
+          storage_type: nvme-odin
+          proxmox_node: pxm-odin
+          proxmox_node_ip: '10.30.30.41'
+        related:
+          success_nodes:
+            - identifier: 'Mount ISO on SNO VM'
+      - identifier: Mount ISO on SNO VM
+        unified_job_template:
+          organization:
+            name: Default
+          name: 'Proxmox - Mount ISO'
+          type: job_template
+        extra_data:
+          vm_name: sno
+          proxmox_node_ip: '10.30.30.41'
+        related:
+          success_nodes:
+            - identifier: 'Additional disk on SNO VM'
+      - identifier: Additional disk on SNO VM
+        unified_job_template:
+          organization:
+            name: Default
+          name: 'Proxmox - Attach additional disk to VM'
+          type: job_template
+        extra_data:
+          vm_name: sno
+          storage_type: nvme-odin
+          proxmox_node_ip: '10.30.30.41'
+          disk_size: '300'

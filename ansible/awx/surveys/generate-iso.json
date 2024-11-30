@@ -1,0 +1,22 @@
+{
+  "name": "Prepare ISO",
+  "description": "Prepare ISO",
+  "spec": [
+    {
+      "type": "text",
+      "question_name": "Red Hat Pull Secret",
+      "question_description": "Red Hat Pull Secret",
+      "variable": "redhat_pull_secret",
+      "required": true,
+      "default": ""
+    },
+    {
+      "type": "text",
+      "question_name": "Cluster Name",
+      "question_description": "Name of the cluster to deploy",
+      "variable": "cluster_name",
+      "required": true,
+      "default": ""
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+---
+- name: Create a Job Template with no survey
+  ansible.controller.job_template:
+    name: '{{ item.name }}'
+    organization: Default
+    state: present
+    inventory: '{{ awx_inventory_name }}'
+    playbook: '{{ item.file }}'
+    project: '{{ awx_project_name }}'
+    execution_environment: 'Custom EE'
+    credentials:
+      - 'Host Credentials'
+      - 'Vault Credentials'
+    controller_host: '{{ controller_hostname }}'
+    controller_username: '{{ controller_username }}'
+    controller_password: '{{ controller_password }}'
+    validate_certs: false
+  loop:
+    - {
+        name: 'OpenShift - ACM GitOps Bootstrap',
+        file: ansible/playbooks/openshift/acm-gitops-bootstrap.yaml,
+        enable_survey: true,
+        survey_file: '../surveys/acm-gitops-bootstrap.json',
+      }

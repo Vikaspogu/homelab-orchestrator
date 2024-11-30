@@ -1,0 +1,134 @@
+---
+- name: Playbook to configure ansible controller post installation
+  hosts: localhost
+  connection: local
+  environment:
+    CONTROLLER_HOST: '{{ controller_hostname }}'
+    CONTROLLER_USERNAME: '{{ controller_username }}'
+    CONTROLLER_PASSWORD: '{{ controller_password }}'
+    CONTROLLER_VERIFY_SSL: 'false'
+  vars_files:
+    - ../../vars/common.vault.yaml
+  tasks:
+    - name: Get absolute path to this Git repository
+      ansible.builtin.command: git rev-parse --show-toplevel
+      delegate_to: localhost
+      become: false
+      run_once: true
+      register: repository_path
+      changed_when: false
+      check_mode: false
+      failed_when: repository_path.rc != 0
+
+    - name: Set the license using a file
+      ansible.controller.license:
+        manifest: '{{ repository_path.stdout }}/ansible/manifest_subscription.zip'
+        validate_certs: false
+
+    - name: Create an inventory
+      ansible.controller.inventory:
+        name: '{{ awx_inventory_name }}'
+        organization: Default
+
+    - name: Automation Hub Credentials
+      ansible.controller.credential:
+        name: Automation Hub Credentials
+        credential_type: Ansible Galaxy/Automation Hub API Token
+        organization: Default
+        inputs:
+          url: https://console.redhat.com/api/automation-hub/
+          auth_url: https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token
+          token: '{{ automation_hub_token }}'
+
+    - name: Machine Credentials
+      ansible.controller.credential:
+        name: Host Credentials
+        credential_type: Machine
+        organization: Default
+        inputs:
+          username: '{{ host_user }}'
+          password: '{{ host_password }}'
+          ssh_key_data: "{{ lookup('file', '/Users/vikaspogu/.ssh/id_rsa') }}"
+
+    - name: Quay Credentials
+      ansible.controller.credential:
+        name: Quay Credentials
+        credential_type: Container Registry
+        organization: Default
+        inputs:
+          host: quay.io
+          username: '{{ quay_username }}'
+          password: '{{ quay_password }}'
+
+    - name: Ansible Vault Credentials
+      ansible.controller.credential:
+        name: Vault Credentials
+        credential_type: Vault
+        organization: Default
+        inputs:
+          vault_password: '{{ vault_password }}'
+
+    - name: Update organization that pulls content from galaxy.ansible.com
+      ansible.controller.organization:
+        name: 'Default'
+        state: present
+        galaxy_credentials:
+          - Ansible Galaxy
+          - Automation Hub Credentials
+
+    - name: Add EE to the controller instance
+      ansible.controller.execution_environment:
+        name: 'Custom EE'
+        image: quay.io/rhn_gps_vpogu/custom-aap24-ee-rhel9@sha256:70f84084287adb54638e6c487d69e0914d7a0db3e3ad7856e7e7fcff5dd859af
+        credential: 'Quay Credentials'
+
+    - name: '{{ awx_project_name }}'
+      ansible.controller.project:
+        name: '{{ awx_project_name }}'
+        organization: Default
+        state: present
+        scm_update_on_launch: true
+        scm_delete_on_update: true
+        scm_type: git
+        default_environment: 'Custom EE'
+        scm_url: https://github.com/Vikaspogu/aap-playbooks.git
+
+    - name: Add inventory source to inventory
+      ansible.controller.inventory_source:
+        name: 'scm-inventory'
+        description: Source for inventory
+        inventory: '{{ awx_inventory_name }}'
+        overwrite: true
+        update_on_launch: true
+        organization: Default
+        source: 'scm'
+        source_project: '{{ awx_project_name }}'
+        source_path: 'ansible/inventory/hosts.yaml'
+
+    - name: Create a Job Template with no survey
+      ansible.builtin.import_tasks: ansible/awx/job_templates/job-template-no-survey.yaml
+      register: job_templates
+      until: not job_templates.failed
+      retries: 10
+      delay: 10
+
+    - name: Create a Job Template with survey
+      ansible.builtin.import_tasks: ansible/awx/job_templates/job-template-survey.yaml
+      register: job_templates_survery
+      until: not job_templates_survery.failed
+      retries: 10
+      delay: 10
+
+    - name: Create 3 node cluster workflow
+      ansible.builtin.import_tasks: ansible/awx/workflow_templates/openshift-cluster.yaml
+      register: acm_cluster_workflow
+      until: not acm_cluster_workflow.failed
+      retries: 10
+      delay: 10
+
+    - name: Create SNO cluster workflow
+      ansible.builtin.import_tasks: ansible/awx/workflow_templates/sno-openshift-cluster.yaml
+      register: sno_cluster_workflow
+      until: not sno_cluster_workflow.failed
+      retries: 10
+      delay: 10

@@ -1,0 +1,95 @@
+schemaVersion: 2.2.0
+metadata:
+  name: aap-playbooks
+components:
+  - name: tooling-container
+    container:
+      image: quay.io/rhn_gps_vpogu/ansible-creator-ee@sha256:169561b14529f1d487a78935db14d7426a9fde7cac7d5fee2fa60f413f8999cf
+      memoryRequest: 256M
+      memoryLimit: 6Gi
+      cpuRequest: 250m
+      cpuLimit: 2000m
+      args: ['tail', '-f', '/dev/null']
+      env:
+        - name: SHELL
+          value: '/bin/zsh'
+        - name: VSCODE_DEFAULT_WORKSPACE
+          value: '/projects/aap-playbooks/code-workspace'
+        - name: 'ANSIBLE_COLLECTIONS_PATH'
+          value: '~/.ansible/collections:/usr/share/ansible/collections:/projects/ansible-devspaces-demo/collections'
+commands:
+  - id: molecule-create
+    exec:
+      label: '1.Molecule: start a test pod for the automation'
+      commandLine: 'source $HOME/.bashrc && molecule create'
+      workingDir: ${PROJECTS_ROOT}/ansible-devspaces-demo/collections/ansible_collections/sample_namespace/sample_collection/extensions
+      group:
+        kind: run
+        isDefault: true
+      component: tooling-container
+
+  - id: molecule-list
+    exec:
+      label: '2.Molecule: view the test instance that was created'
+      commandLine: 'source $HOME/.bashrc && molecule list'
+      workingDir: ${PROJECTS_ROOT}/ansible-devspaces-demo/collections/ansible_collections/sample_namespace/sample_collection/extensions
+      group:
+        kind: run
+        isDefault: true
+      component: tooling-container
+
+  - id: molecule-verify
+    exec:
+      label: '3.Molecule: run the verification against the test pod'
+      commandLine: 'source $HOME/.bashrc && molecule verify'
+      workingDir: ${PROJECTS_ROOT}/ansible-devspaces-demo/collections/ansible_collections/sample_namespace/sample_collection/extensions
+      group:
+        kind: run
+        isDefault: true
+      component: tooling-container
+
+  - id: molecule-converge
+    exec:
+      label: '4.Molecule: apply the role to the pod'
+      commandLine: 'source $HOME/.bashrc && molecule converge'
+      workingDir: ${PROJECTS_ROOT}/ansible-devspaces-demo/collections/ansible_collections/sample_namespace/sample_collection/extensions
+      group:
+        kind: run
+        isDefault: true
+      component: tooling-container
+
+  - id: molecule-test
+    exec:
+      label: '5.Molecule: run the full molecule test'
+      commandLine: 'source $HOME/.bashrc && molecule test'
+      workingDir: ${PROJECTS_ROOT}/ansible-devspaces-demo/collections/ansible_collections/sample_namespace/sample_collection/extensions
+      group:
+        kind: run
+        isDefault: true
+      component: tooling-container
+
+  - id: molecule-destroy
+    exec:
+      label: '6.Molecule: reset the test pod back to a fresh instance'
+      commandLine: 'source $HOME/.bashrc && molecule destroy'
+      workingDir: ${PROJECTS_ROOT}/ansible-devspaces-demo/collections/ansible_collections/sample_namespace/sample_collection/extensions
+      group:
+        kind: run
+        isDefault: true
+      component: tooling-container
+
+  - id: ansible-navigator
+    exec:
+      label: 'Ansible-Navigator: Start ansible-navigator'
+      commandLine: |
+        if [ ! -d "$HOME/.cache/ansible-navigator" ]; then
+          mkdir -p "$HOME/.cache/ansible-navigator"
+        fi
+        cp /usr/local/lib/python3.11/site-packages/ansible_navigator/data/catalog_collections.py $HOME/.cache/ansible-navigator
+        ansible-navigator --ee false
+      workingDir: ${PROJECTS_ROOT}/ansible-devspaces-demo
+      component: tooling-container
+
+events:
+  preStop:
+    - 'molecule-destroy'

@@ -1,0 +1,15 @@
+---
+- name: Playbook to start a VM
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - ../../vars/common.vault.yaml
+  tasks:
+    - name: Start a VM
+      community.general.proxmox_kvm:
+        node: '{{ proxmox_node }}'
+        api_user: '{{ datacenter.username }}@pve'
+        api_password: '{{ datacenter.password }}'
+        api_host: '{{ proxmox_node_ip }}'
+        name: '{{ vm_name }}'
+        state: started

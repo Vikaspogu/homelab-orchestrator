@@ -1,0 +1,36 @@
+{
+  "name": "Create a VM with disk",
+  "description": "Create a VM with disk",
+  "spec": [
+    {
+      "type": "text",
+      "question_name": "URL for the ISO",
+      "question_description": "URL for the ISo",
+      "variable": "iso_url",
+      "min": 1,
+      "max": 100,
+      "required": true,
+      "default": ""
+    },
+    {
+      "type": "text",
+      "question_name": "Proxmox Node",
+      "question_description": "Name of the proxmox node",
+      "variable": "proxmox_node",
+      "min": 1,
+      "max": 25,
+      "required": true,
+      "default": ""
+    },
+    {
+      "type": "text",
+      "question_name": "Proxmox Node IP",
+      "question_description": "IP of the proxmox node",
+      "variable": "proxmox_node_ip",
+      "min": 1,
+      "max": 25,
+      "required": true,
+      "default": ""
+    }
+  ]
+}

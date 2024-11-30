@@ -1,0 +1,66 @@
+{
+  "name": "Create a VM with disk",
+  "description": "Create a VM with disk",
+  "spec": [
+    {
+      "type": "text",
+      "question_name": "VM Name",
+      "question_description": "What is the name of the VM",
+      "variable": "vm_name",
+      "min": 1,
+      "max": 25,
+      "required": true,
+      "default": ""
+    },
+    {
+      "type": "integer",
+      "question_name": "Disk Number",
+      "question_description": "Disk Number",
+      "variable": "disk_number",
+      "required": false,
+      "min": 1,
+      "max": 5,
+      "default": 1
+    },
+    {
+      "type": "text",
+      "question_name": "Storage Type",
+      "question_description": "Type of the storage",
+      "variable": "storage_type",
+      "min": 1,
+      "max": 25,
+      "required": false,
+      "default": "zfs-pxm"
+    },
+    {
+      "type": "text",
+      "question_name": "Size of the Disk",
+      "question_description": "Size of the VM Disk",
+      "variable": "disk_size",
+      "min": 1,
+      "max": 9,
+      "required": false,
+      "default": "200"
+    },
+    {
+      "type": "text",
+      "question_name": "Proxmox Node",
+      "question_description": "Name of the proxmox node",
+      "variable": "proxmox_node",
+      "min": 1,
+      "max": 25,
+      "required": true,
+      "default": ""
+    },
+    {
+      "type": "text",
+      "question_name": "Proxmox Node IP",
+      "question_description": "IP of the proxmox node",
+      "variable": "proxmox_node_ip",
+      "min": 1,
+      "max": 25,
+      "required": true,
+      "default": ""
+    }
+  ]
+}

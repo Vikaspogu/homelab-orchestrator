@@ -1,0 +1,46 @@
+{
+  "name": "Mount ISO to the VM",
+  "description": "Mount ISO to the VM",
+  "spec": [
+    {
+      "type": "text",
+      "question_name": "VM Name",
+      "question_description": "What is the name of the VM",
+      "variable": "vm_name",
+      "min": 1,
+      "max": 25,
+      "required": true,
+      "default": ""
+    },
+    {
+      "type": "text",
+      "question_name": "Name of the ISO",
+      "question_description": "Name of the ISO",
+      "variable": "iso_name",
+      "min": 1,
+      "max": 25,
+      "required": false,
+      "default": "agent.x86_64.iso"
+    },
+    {
+      "type": "text",
+      "question_name": "Proxmox Node",
+      "question_description": "Name of the proxmox node",
+      "variable": "proxmox_node",
+      "min": 1,
+      "max": 25,
+      "required": true,
+      "default": ""
+    },
+    {
+      "type": "text",
+      "question_name": "Proxmox Node IP",
+      "question_description": "IP of the proxmox node",
+      "variable": "proxmox_node_ip",
+      "min": 1,
+      "max": 25,
+      "required": true,
+      "default": ""
+    }
+  ]
+}

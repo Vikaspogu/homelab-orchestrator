@@ -1,0 +1,96 @@
+---
+- name: Playbook to prepare VM for openshift installer
+  hosts: aap-controller
+  gather_facts: false
+  tasks:
+    - name: Download installer clients
+      become: true
+      ansible.builtin.unarchive:
+        src: '{{ item }}'
+        dest: /usr/local/bin
+        remote_src: true
+        mode: '0755'
+      loop:
+        - https://mirror.openshift.com/pub/openshift-v4/amd64/clients/ocp/latest/openshift-install-linux.tar.gz
+        - https://mirror.openshift.com/pub/openshift-v4/amd64/clients/ocp/latest/openshift-client-linux.tar.gz
+        - https://developers.redhat.com/content-gateway/file/pub/openshift-v4/clients/helm/3.12.1/helm-linux-amd64.tar.gz
+        - https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.3.0/kustomize_v5.3.0_linux_amd64.tar.gz
+
+    - name: Copy to user bin
+      become: true
+      ansible.builtin.copy:
+        dest: /usr/local/bin/helm
+        src: /usr/local/bin/helm-linux-amd64
+        remote_src: true
+        mode: '0755'
+
+    - name: Install Packages
+      become: true
+      ansible.builtin.dnf:
+        name:
+          - nmstate
+
+    - name: Install python packages
+      ansible.builtin.pip:
+        name:
+          - kubernetes
+
+    - name: Delete content & directory
+      ansible.builtin.file:
+        state: absent
+        path: /home/{{ ansible_user }}/openshift-multicluster/installer/{{ cluster_name }}
+
+    - name: Just get information about the repository whether or not it has already been cloned locally
+      ansible.builtin.stat:
+        path: /home/{{ ansible_user }}/openshift-multicluster
+      register: git_repo_exists
+
+    - name: Clone git repo
+      ansible.builtin.git:
+        repo: https://github.com/Vikaspogu/openshift-multicluster.git
+        dest: /home/{{ ansible_user }}/openshift-multicluster
+        clone: true
+        update: false
+      when: not git_repo_exists.stat.exists
+
+    - name: Update git repo
+      ansible.builtin.git:
+        repo: https://github.com/Vikaspogu/openshift-multicluster.git
+        dest: /home/{{ ansible_user }}/openshift-multicluster
+        clone: false
+        update: true
+        force: true
+      when: git_repo_exists.stat.exists
+
+    - name: Add pull secret
+      ansible.builtin.lineinfile:
+        path: /home/{{ ansible_user }}/openshift-multicluster/installer/{{ cluster_name }}/install-config.yaml
+        state: present
+        regexp: 'pullSecret'
+        line: "pullSecret: '{{ redhat_pull_secret }}'"
+
+    - name: Run the agent create
+      ansible.builtin.command:
+        cmd: /usr/local/bin/openshift-install agent create image --dir installer/{{ cluster_name }}
+        chdir: /home/{{ ansible_user }}/openshift-multicluster
+
+    - name: Fetch ISO image to localhost
+      ansible.builtin.fetch:
+        src: /home/{{ ansible_user }}/openshift-multicluster/installer/{{ cluster_name }}/agent.x86_64.iso
+        dest: /tmp/
+        flat: true
+
+    - name: Copy agent ISO to proxmox
+      ansible.builtin.copy:
+        src: /tmp/agent.x86_64.iso
+        dest: /var/lib/vz/template/iso
+        mode: '0755'
+      delegate_to: '{{ item }}'
+      loop:
+        - pxm-thor
+        - pxm-odin
+
+    - name: Cleanup ISO image
+      ansible.builtin.file:
+        path: /tmp/agent.x86_64.iso
+        state: absent

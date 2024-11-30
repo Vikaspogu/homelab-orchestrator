@@ -1,0 +1,99 @@
+---
+- name: Playbook to Create VM template
+  hosts: pxm-thor
+  gather_facts: false
+  vars:
+    rhel_down_version: '9.5'
+    rhel_down_token_url: 'https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token'
+    rhel_down_images_url: 'https://api.access.redhat.com/management/v1/images/rhel/{{ rhel_down_version }}/x86_64'
+    storageName: "{{'nvme-odin' if proxmox_node == 'pxm-odin' else 'nvme'}}"
+  vars_files:
+    - ../../vars/common.vault.yaml
+  tasks:
+    - name: Create cloud-init folder
+      ansible.builtin.file:
+        path: /var/lib/vz/snippets/
+        state: directory
+        mode: '0755'
+
+    - name: Copy cloud-init file to proxmox
+      ansible.builtin.template:
+        src: ../../templates/{{ vm_name }}.yaml.j2
+        dest: /var/lib/vz/snippets/{{ vm_name }}.yaml
+        force: true
+        mode: 'u=rw,g=r,o=r'
+
+    - name: Retrieve information about specific VM by ID
+      community.general.proxmox_vm_info:
+        api_user: '{{ datacenter.username }}@pve'
+        api_password: '{{ datacenter.password }}'
+        api_host: '{{ proxmox_node_ip }}'
+        node: '{{ proxmox_node }}'
+        vmid: '{{ id }}'
+      register: vm_info
+      delegate_to: localhost
+
+    - name: Execute when template doesn't exist
+      when: vm_info.proxmox_vms | length == 0
+      block:
+        - name: Login to Red Hat APIs
+          ansible.builtin.uri:
+            url: '{{ rhel_down_token_url }}'
+            method: POST
+            body_format: form-urlencoded
+            body:
+              grant_type: refresh_token
+              client_id: rhsm-api
+              refresh_token: '{{ aap_setup_down_offline_token }}'
+          register: __rhel_down_login
+
+        - name: Collecting the available installers
+          ansible.builtin.uri:
+            url: '{{ rhel_down_images_url }}'
+            method: GET
+            return_content: true
+            headers:
+              Authorization: 'Bearer {{ __rhel_down_login.json.access_token }}'
+          register: __rhel_down_output
+
+        - name: Simplify the list of possible downloads
+          ansible.builtin.set_fact:
+            __rhel_down_images: "{{ __rhel_down_output.json.body | selectattr('filename', 'match', 'rhel-.*-x86_64-kvm.qcow2') | sort(attribute='datePublished', reverse=True) }}"
+
+        - name: Downloading the latest installer of type {{ rhel_down_type }}
+          ansible.builtin.get_url:
+            url: '{{ __rhel_down_images[0].downloadHref }}'
+            dest: '/tmp/{{ __rhel_down_images[0].filename }}'
+            mode: 0644
+            headers:
+              Authorization: 'Bearer {{ __rhel_down_login.json.access_token }}'
+          when:
+            - "'qcow2' in __rhel_down_images[0].filename"
+          register: __rhel_down_downloads
+
+        - name: Create a VM to use as a template
+          ansible.builtin.command: 'qm create {{ id }} --name {{ vm_name }} --memory 4096 --cores 2 --net0 virtio,bridge=vmbr0 --cpu cputype=max'
+
+        - name: Import disk image
+          ansible.builtin.command: 'qm importdisk {{ id }} /tmp/{{ __rhel_down_images[0].filename }} {{storageName}}'
+
+        - name: Configure VM to use imported image
+          ansible.builtin.command: 'qm set {{ id }} --scsihw virtio-scsi-pci --scsi0 {{storageName}}:vm-{{ id }}-disk-0'
+
+        - name: Add cloud-init image as CDROM
+          ansible.builtin.command: 'qm set {{ id }} --ide2 {{storageName}}:cloudinit'
+
+        - name: Configure boot from the image
+          ansible.builtin.command: 'qm set {{ id }} --boot c --bootdisk scsi0'
+
+        - name: Attach serial console
+          ansible.builtin.command: 'qm set {{ id }} --serial0 socket --vga serial0'
+
+        - name: Enable agent
+          ansible.builtin.command: 'qm set {{ id }} --agent enabled=1'
+
+        - name: Set boot to start
+          ansible.builtin.command: qm set {{ id }} --onboot 1
+
+        - name: Create template
+          ansible.builtin.command: 'qm template {{ id }}'

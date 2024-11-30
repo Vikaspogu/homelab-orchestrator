@@ -1,0 +1,147 @@
+---
+- name: Playbook to Proxmox
+  hosts: proxmox
+  gather_facts: true
+  vars:
+    scrutiny_version: 'v0.8.1'
+  vars_files:
+    - ../../vars/common.vault.yaml
+  tasks:
+    - name: Prepare proxmox
+      block:
+        - name: Disable IPv6
+          ansible.posix.sysctl:
+            name: '{{ item }}'
+            value: '1'
+            sysctl_set: true
+            state: present
+          register: ipv6_disable
+          loop:
+            - net.ipv6.conf.all.disable_ipv6
+            - net.ipv6.conf.default.disable_ipv6
+            - net.ipv6.conf.lo.disable_ipv6
+
+        - name: Gather network interfaces
+          ansible.builtin.shell: "ip -o link show | awk -F': ' '{print $2}' | grep -vE '^lo|^tap|^fw|^veth'"
+          register: interfaces
+
+        - name: Add post-up commands for disabling offloading
+          ansible.builtin.lineinfile:
+            backup: true
+            path: /etc/network/interfaces
+            search_string: '^iface {{ item }} inet'
+            insertafter: '^iface {{ item }} inet'
+            line: '        post-up /sbin/ethtool -K {{ item }} gso off gro off tso off tx off rx off rx-vlan-offload off tx-vlan-offload off'
+            state: present
+          with_items: '{{ interfaces.stdout_lines }}'
+
+        - name: Install common packages
+          ansible.builtin.apt:
+            name:
+              - rsyslog
+            install_recommends: false
+            update_cache: true
+            cache_valid_time: 3600
+            autoclean: true
+            autoremove: true
+          register: apt_install_common
+          retries: 5
+          until: apt_install_common is success
+
+        - name: Copy cloud-init file to proxmox
+          ansible.builtin.template:
+            src: ../../templates/promtail.conf.j2
+            dest: /etc/rsyslog.d/50-promtail.conf
+            force: true
+            mode: 'u=rw,g=r,o=r'
+
+        - name: Restart rsyslog service for logging
+          ansible.builtin.service:
+            name: rsyslog
+            state: restarted
+
+        - name: Check if automation role exists
+          ansible.builtin.shell: pveum role list
+          register: pvenum_role
+          changed_when: false
+
+        - name: Create automation role
+          ansible.builtin.shell: pveum role add AutomationProv -privs "VM.Allocate VM.Clone VM.Config.CDROM VM.Config.CPU VM.Config.Cloudinit VM.Config.Disk VM.Config.HWType VM.Config.Memory VM.Config.Network VM.Config.Options VM.Monitor VM.Audit VM.PowerMgmt Datastore.AllocateSpace Datastore.Audit Sys.Modify SDN.Use"
+          when: '"AutomationProv" not in pvenum_role.stdout'
+
+        - name: Check if automation user exists
+          ansible.builtin.shell: pveum user list
+          register: pvenum_user
+          changed_when: false
+
+        - name: Only when user doesn't exist
+          when: '"{{ datacenter.username }}@pve" not in pvenum_user.stdout'
+          block:
+            - name: Create automation user
+              ansible.builtin.shell: pveum user add {{ datacenter.username }}@pve --password {{ datacenter.password }}
+            - name: Access control
+              ansible.builtin.shell: pveum aclmod / -user {{ datacenter.username }}@pve -role AutomationProv
+
+        - name: Check if api user exists
+          ansible.builtin.shell: pveum user list
+          register: pvenum_user
+          changed_when: false
+
+        - name: Create api user if it doesnt exists
+          when: '"api@pam" not in pvenum_user.stdout'
+          block:
+            - name: Create API group
+              ansible.builtin.shell: pveum group add api-ro-users -comment "Informative comment"
+            - name: Create ACL groups
+              ansible.builtin.shell: pveum aclmod / -group api-ro-users -role PVEAuditor -propagate 1
+            - name: Create API user
+              ansible.builtin.shell: pveum user add api@pam -group api-ro-users -comment "Informative comment"
+            - name: Create API token
+              ansible.builtin.shell: pveum user token add api@pam homepage -privsep 1
+              register: token_out
+            - name: Print token
+              ansible.builtin.debug:
+                var: token_out.stdout_lines
+            - name: Create ACL role
+              ansible.builtin.shell: pveum aclmod / -token 'api@pam!homepage' -role PVEAuditor -propagate 1
+
+        - name: Create homeassistant user if it doesnt exists
+          when: '"homeassistant@pve" not in pvenum_user.stdout'
+          block:
+            - name: Create API group
+              ansible.builtin.shell: pveum groupadd homeassistant -comment "Group for Home Assistant"
+            - name: Create ACL groups
+              ansible.builtin.shell: pveum aclmod / -group homeassistant -role PVEAuditor -propagate 1
+            - name: Create a user
+              ansible.builtin.shell: pveum user add homeassistant@pve -group homeassistant -password {{datacenter.hass_user_password}} -comment "User for Home Assistant" -expire 1 -enable 1
+
+        - name: Add scrutiny collector to hosts
+          block:
+            - name: Software - Install dependencies (base)
+              apt:
+                name: cron
+                state: present
+
+            # Directory structure
+            - name: Files - Create a directory to hold Scrutiny-related stuff
+              file: path=/opt/scrutiny state=directory
+
+            - name: Files - Create a directory to store binaries
+              file: path=/opt/scrutiny/bin state=directory
+
+            # Binary (autodetects architecture)
+            - name: Binary - Install the collector binary (amd64)
+              get_url:
+                url: https://github.com/AnalogJ/scrutiny/releases/download/{{ scrutiny_version }}/scrutiny-collector-metrics-linux-amd64
+                dest: /opt/scrutiny/bin/scrutiny-collector-metrics-linux
+                mode: '0755'
+              when: ansible_architecture == "x86_64"
+
+            # Cron
+            - name: Cron - Create a root crontab entry to run the collector periodically
+              cron:
+                name: 'Scrutiny - Run the Collector'
+                minute: '0'
+                hour: '1'
+                job: . /etc/profile; /opt/scrutiny/bin/scrutiny-collector-metrics-linux run --api-endpoint "{{ scrutiny_address}}" --host-id "{{ ansible_hostname }}"
+                user: root

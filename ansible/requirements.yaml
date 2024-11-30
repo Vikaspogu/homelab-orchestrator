@@ -1,0 +1,20 @@
+---
+collections:
+  - name: ansible.posix
+    version: 1.5.4
+  - name: ansible.utils
+    version: 3.0.0
+  - name: community.general
+    version: 8.1.0
+  - name: community.sops
+    version: 1.6.7
+  - name: kubernetes.core
+    version: 3.0.0
+  - name: ansibleguy.opnsense
+    version: 1.2.8
+  - name: ansible.controller
+    version: 4.5.12 #4.6.1 for 2.5
+  - name: infra.controller_configuration
+    version: 2.11.0
+  - name: infra.aap_utilities
+    version: 2.4.0

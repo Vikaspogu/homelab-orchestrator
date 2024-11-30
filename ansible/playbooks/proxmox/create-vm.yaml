@@ -1,0 +1,22 @@
+---
+- name: Playbook to create a VM
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - ../../vars/common.vault.yaml
+  tasks:
+    - name: Create a VM
+      community.general.proxmox_kvm:
+        node: '{{ proxmox_node }}'
+        api_user: '{{ datacenter.username }}@pve'
+        api_password: '{{ datacenter.password }}'
+        api_host: '{{ proxmox_node_ip }}'
+        name: '{{ vm_name }}'
+        cpu: '{{ cpu_type }}'
+        cores: '{{ cores }}'
+        memory: '{{ memory }}'
+        scsihw: 'virtio-scsi-single'
+        scsi:
+          scsi0: '{{ storage_type }}:{{ disk_size }},iothread=1,format=raw'
+        net:
+          net0: 'virtio={{ mac_address }},bridge=vmbr0,firewall=1'

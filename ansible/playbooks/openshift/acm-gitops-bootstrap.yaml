@@ -1,0 +1,40 @@
+---
+- name: Playbook to prepare VM for openshift installer
+  hosts: aap-controller
+  gather_facts: false
+  environment:
+    K8S_AUTH_KUBECONFIG: '/home/{{ ansible_user }}/openshift-multicluster/installer/dev-acm/auth/kubeconfig'
+  vars_files:
+    - ../../vars/common.vault.yaml
+  tasks:
+    - name: Provision bootstrapping argocd operator
+      kubernetes.core.k8s:
+        definition: "{{ lookup('kubernetes.core.kustomize', dir='github.com/Vikaspogu/openshift-multicluster/components/openshift-gitops-operator') }}"
+
+    - name: Wait till the openshift-gitops-server pods is created
+      kubernetes.core.k8s_info:
+        kind: Pod
+        namespace: openshift-gitops
+      register: pod_list
+      until: pod_list | json_query('resources[*].status.phase') | unique == ["Running"]
+      retries: 30
+      delay: 60
+
+    - name: Check if secret exists
+      kubernetes.core.k8s_info:
+        kind: Secret
+        name: sops-age
+        namespace: openshift-gitops
+      register: secret_result
+
+    - name: Create SOPS secret
+      when: secret_result.resources | length == 0
+      block:
+        - name: Create secret from the template
+          kubernetes.core.k8s:
+            state: present
+            template: '../../templates/sops-secret.yaml.j2'
+
+    - name: Update openshift-gitops instance
+      kubernetes.core.k8s:
+        definition: "{{ lookup('kubernetes.core.kustomize', dir='github.com/Vikaspogu/openshift-multicluster/.bootstrap') }}"

@@ -1,0 +1,96 @@
+{
+  "name": "Create a VM Survey",
+  "description": "Create a VM Survey",
+  "spec": [
+    {
+      "type": "text",
+      "question_name": "VM Name",
+      "question_description": "What is the name of the VM",
+      "variable": "vm_name",
+      "min": 1,
+      "max": 25,
+      "required": true,
+      "default": ""
+    },
+    {
+      "type": "text",
+      "question_name": "Proxmox Node",
+      "question_description": "Name of the proxmox node",
+      "variable": "proxmox_node",
+      "min": 1,
+      "max": 25,
+      "required": true,
+      "default": ""
+    },
+    {
+      "type": "text",
+      "question_name": "Proxmox Node IP",
+      "question_description": "IP of the proxmox node",
+      "variable": "proxmox_node_ip",
+      "min": 1,
+      "max": 25,
+      "required": true,
+      "default": ""
+    },
+    {
+      "type": "text",
+      "question_name": "CPU Type",
+      "question_description": "Type of the VMs CPU",
+      "variable": "cpu_type",
+      "min": 1,
+      "max": 25,
+      "required": true,
+      "default": "max"
+    },
+    {
+      "type": "text",
+      "question_name": "Cores",
+      "question_description": "Number of Cores",
+      "variable": "cores",
+      "min": 1,
+      "max": 9,
+      "required": true,
+      "default": "4"
+    },
+    {
+      "type": "text",
+      "question_name": "Memory",
+      "question_description": "Amount of Memory",
+      "variable": "memory",
+      "min": 1,
+      "max": 25,
+      "required": true,
+      "default": "8192"
+    },
+    {
+      "type": "text",
+      "question_name": "Storage Type",
+      "question_description": "Type of the storage",
+      "variable": "storage_type",
+      "min": 1,
+      "max": 25,
+      "required": false,
+      "default": "zfs-pxm"
+    },
+    {
+      "type": "text",
+      "question_name": "Size of the Disk",
+      "question_description": "Size of the VM Disk",
+      "variable": "disk_size",
+      "min": 1,
+      "max": 25,
+      "required": false,
+      "default": "200"
+    },
+    {
+      "type": "text",
+      "question_name": "MAC Address of the VM",
+      "question_description": "MAC Address of the VM",
+      "variable": "mac_address",
+      "min": 1,
+      "max": 25,
+      "required": true,
+      "default": "bc:24:11:a0:6e:99"
+    }
+  ]
+}
