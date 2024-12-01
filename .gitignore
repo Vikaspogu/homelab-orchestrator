@@ -11,3 +11,4 @@ kube*
 terraform.tfstate*
 *.tfvars
 node_modules/*
+extra_vars.json

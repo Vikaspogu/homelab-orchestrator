@@ -5,7 +5,7 @@
     id: 9001
     vm_name: rhel-9-cloudinit-template
     proxmox_node: pxm-thor
-    proxmox_node_ip: '10.30.30.41'
+    proxmox_node_ip: '{{ pxm_odin }}'
 
 - name: Import CloudInit VM
   ansible.builtin.import_playbook: '../proxmox/create-cloudinit-vm.yaml'
@@ -17,14 +17,14 @@
     memory: 20480
     disk_size: 212G
     proxmox_node: pxm-thor
-    proxmox_node_ip: '10.30.30.41'
+    proxmox_node_ip: '{{ pxm_odin }}'
 
 - name: Start AAP VM
   ansible.builtin.import_playbook: '../proxmox/start-vm.yaml'
   vars:
     vm_name: aap-controller
     proxmox_node: pxm-thor
-    proxmox_node_ip: '10.30.30.41'
+    proxmox_node_ip: '{{ pxm_odin }}'
 
 - name: Playbook to Create VM template
   hosts: aap-controller
