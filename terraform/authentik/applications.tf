@@ -65,7 +65,7 @@ locals {
       client_secret = module.onepassword_application["jellyfin"].fields["CLIENT_SECRET"]
       group         = authentik_group.admins.id
       icon_url      = "https://avatars.githubusercontent.com/u/45698031?s=200&v=4"
-      redirect_uri  = "https://jellyfin.${var.cluster_domain}/sso/OID/start/authentik"
+      redirect_uri  = "https://jellyfin.${var.cluster_domain}/sso/OID/redirect/authentik"
       launch_url    = "https://jellyfin.${var.cluster_domain}/sso/OID/start/authentik"
     }
   }
