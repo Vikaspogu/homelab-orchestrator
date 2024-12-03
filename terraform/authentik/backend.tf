@@ -4,6 +4,10 @@ terraform {
     key    = "authentik/authentik.tfstate"
     region = "main" # Region validation will be skipped
 
+    endpoints = {
+      s3 = "https://s3.vikaspogu.com" # Minio endpoint
+    }
+
     skip_credentials_validation = true
     skip_requesting_account_id  = true
     skip_metadata_api_check     = true
