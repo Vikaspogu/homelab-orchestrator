@@ -13,9 +13,7 @@ terraform {
   }
 }
 
-provider "onepassword" {
-  url = "http://onepassword-connect.default.svc.cluster.local:8080"
-}
+provider "onepassword" {}
 
 module "onepassword_authentik" {
   source = "github.com/joryirving/terraform-1password-item.git?ref=HEAD"
