@@ -1,6 +1,6 @@
 terraform {
   backend "s3" {
-    bucket = "terraform-state"
+    bucket = "tofu-state"
     key    = "authentik/authentik.tfstate"
     region = "main" # Region validation will be skipped
 
