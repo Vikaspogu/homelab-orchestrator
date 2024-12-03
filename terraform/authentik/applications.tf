@@ -4,7 +4,8 @@ locals {
     "openshift",
     "freshrss",
     "paperless",
-    "pgadmin"
+    "pgadmin",
+    "jellyfin"
   ]
 }
 
@@ -58,6 +59,14 @@ locals {
       icon_url      = "https://www.pgadmin.org/static/docs/pgadmin4-dev/docs/en_US/_build/html/_images/logo-right-128.png"
       redirect_uri  = "https://pgadmin4.${var.cluster_domain}/oauth2/authorize"
       launch_url    = "https://pgadmin4.${var.cluster_domain}/oauth2/authorize"
+    },
+    jellyfin = {
+      client_id     = module.onepassword_application["jellyfin"].fields["CLIENT_ID"]
+      client_secret = module.onepassword_application["jellyfin"].fields["CLIENT_SECRET"]
+      group         = authentik_group.admins.id
+      icon_url      = "https://avatars.githubusercontent.com/u/45698031?s=200&v=4"
+      redirect_uri  = "https://jellyfin.${var.cluster_domain}/sso/OID/start/authentik"
+      launch_url    = "https://jellyfin.${var.cluster_domain}/sso/OID/start/authentik"
     }
   }
 }
