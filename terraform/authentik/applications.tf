@@ -5,7 +5,8 @@ locals {
     "freshrss",
     "paperless",
     "pgadmin",
-    "jellyfin"
+    "jellyfin",
+    "mealie"
   ]
 }
 
@@ -67,6 +68,14 @@ locals {
       icon_url      = "https://avatars.githubusercontent.com/u/45698031?s=200&v=4"
       redirect_uri  = "https://jellyfin.${var.cluster_domain}/sso/OID/redirect/authentik"
       launch_url    = "https://jellyfin.${var.cluster_domain}/sso/OID/start/authentik"
+    },
+    mealie = {
+      client_id     = module.onepassword_application["mealie"].fields["CLIENT_ID"]
+      client_secret = module.onepassword_application["mealie"].fields["CLIENT_SECRET"]
+      group         = authentik_group.admins.id
+      icon_url      = "https://avatars.githubusercontent.com/u/92342333?s=200&v=4"
+      redirect_uri  = "https://mealie.${var.cluster_domain}/login"
+      launch_url    = "https://mealie.${var.cluster_domain}/login"
     }
   }
 }
