@@ -1,12 +1,12 @@
 ---
 - name: Playbook to Create VM template
-  hosts: pxm_thor
+  hosts: proxmox
   gather_facts: false
   vars:
     rhel_down_version: '9.5'
     rhel_down_token_url: 'https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token'
     rhel_down_images_url: 'https://api.access.redhat.com/management/v1/images/rhel/{{ rhel_down_version }}/x86_64'
-    storageName: "{{'nvme-odin' if proxmox_node == 'pxm_odin' else 'nvme'}}"
+    storageName: "{{'nvme-odin' if proxmox_node == 'pxm-odin' else 'nvme'}}"
   vars_files:
     - ../../vars/common.vault.yaml
   tasks:

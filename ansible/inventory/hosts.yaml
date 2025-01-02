@@ -1,15 +1,12 @@
 ---
 proxmox:
   hosts:
-    pxm_thor:
+    proxmox:
       ansible_user: root
-      ansible_host: proxmox
-    pxm_odin:
+    pxm-odin:
       ansible_user: root
-      ansible_host: pxm-odin
-    pxm_loki:
+    pxm-loki:
       ansible_user: root
-      ansible_host: pxm-loki
 aap:
   hosts:
     aap_controller:
