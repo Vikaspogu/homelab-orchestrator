@@ -35,8 +35,7 @@
           disk_size: '200'
           mac_address: '52:50:56:11:22:11'
           storage_type: nvme
-          proxmox_node: proxmox
-          proxmox_node_ip: '{{ proxmox }}'
+          proxmox_node_ip: '{{ pxm-thor }}'
         related:
           success_nodes:
             - identifier: 'Mount ISO on Master-0 VM'
@@ -53,8 +52,7 @@
           disk_size: '200'
           mac_address: '52:50:56:11:22:22'
           storage_type: nvme
-          proxmox_node: proxmox
-          proxmox_node_ip: '{{ proxmox }}'
+          proxmox_node_ip: '{{ pxm-thor }}'
         related:
           success_nodes:
             - identifier: 'Mount ISO on Master-1 VM'
@@ -84,7 +82,7 @@
           type: job_template
         extra_data:
           vm_name: master-0
-          proxmox_node_ip: '{{ proxmox }}'
+          proxmox_node_ip: '{{ pxm-thor }}'
         related:
           success_nodes:
             - identifier: 'Additional disk on Master-0 VM'
@@ -96,7 +94,7 @@
           type: job_template
         extra_data:
           vm_name: master-1
-          proxmox_node_ip: '{{ proxmox }}'
+          proxmox_node_ip: '{{ pxm-thor }}'
         related:
           success_nodes:
             - identifier: 'Additional disk on Master-1 VM'
@@ -121,7 +119,7 @@
         extra_data:
           vm_name: master-0
           storage_type: nvme
-          proxmox_node_ip: '{{ proxmox }}'
+          proxmox_node_ip: '{{ pxm-thor }}'
           disk_size: '250'
       - identifier: Additional disk on Master-1 VM
         unified_job_template:
@@ -132,7 +130,7 @@
         extra_data:
           vm_name: master-1
           storage_type: nvme
-          proxmox_node_ip: '{{ proxmox }}'
+          proxmox_node_ip: '{{ pxm-thor }}'
           disk_size: '250'
       - identifier: Additional disk on Master-2 VM
         unified_job_template:

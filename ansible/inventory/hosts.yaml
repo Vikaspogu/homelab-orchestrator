@@ -1,7 +1,7 @@
 ---
 proxmox:
   hosts:
-    proxmox:
+    pxm-thor:
       ansible_user: root
     pxm-odin:
       ansible_user: root

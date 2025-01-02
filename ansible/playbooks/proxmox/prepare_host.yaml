@@ -1,6 +1,6 @@
 ---
 - name: Playbook to Proxmox
-  hosts: proxmox
+  hosts: pxm-thor
   gather_facts: true
   vars:
     scrutiny_version: 'v0.8.1'

@@ -1,6 +1,6 @@
 ---
 - name: Playbook to Create VM template
-  hosts: proxmox
+  hosts: pxm-thor
   gather_facts: false
   vars:
     rhel_down_version: '9.5'

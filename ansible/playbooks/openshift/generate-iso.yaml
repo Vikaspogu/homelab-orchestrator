@@ -87,7 +87,7 @@
         mode: '0755'
       delegate_to: '{{ item }}'
       loop:
-        - proxmox
+        - pxm-thor
         - pxm-odin
 
     - name: Cleanup ISO image

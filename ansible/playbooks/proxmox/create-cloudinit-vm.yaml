@@ -1,6 +1,6 @@
 ---
 - name: Playbook to create a VM
-  hosts: proxmox
+  hosts: pxm-thor
   gather_facts: false
   vars_files:
     - ../../vars/common.vault.yaml
