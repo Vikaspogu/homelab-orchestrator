@@ -103,7 +103,7 @@
         organization: Default
         source: 'scm'
         source_project: '{{ awx_project_name }}'
-        source_path: '../../inventory/hosts.yaml'
+        source_path: 'ansible/inventory/hosts.yaml'
 
     - name: Create a Job Template with no survey
       ansible.builtin.import_tasks: ../../awx/job_templates/job-template-no-survey.yaml
