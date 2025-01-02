@@ -6,8 +6,10 @@ proxmox:
       ansible_host: proxmox
     pxm_odin:
       ansible_user: root
+      ansible_host: pxm-odin
     pxm_loki:
       ansible_user: root
+      ansible_host: pxm-loki
 aap:
   hosts:
     aap_controller:
