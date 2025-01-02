@@ -52,6 +52,7 @@
           disk_size: '200'
           mac_address: '52:50:56:11:22:22'
           storage_type: nvme
+          proxmox_node: asgard
           proxmox_node_ip: '{{ pxm_thor }}'
         related:
           success_nodes:
@@ -69,6 +70,7 @@
           disk_size: '200'
           mac_address: '52:50:56:11:22:33'
           storage_type: nvme-odin
+          proxmox_node: asgard
           proxmox_node_ip: '{{ pxm_odin }}'
         related:
           success_nodes:
@@ -81,6 +83,7 @@
           type: job_template
         extra_data:
           vm_name: master-0
+          proxmox_node: asgard
           proxmox_node_ip: '{{ pxm_thor }}'
         related:
           success_nodes:
@@ -93,6 +96,7 @@
           type: job_template
         extra_data:
           vm_name: master-1
+          proxmox_node: asgard
           proxmox_node_ip: '{{ pxm_thor }}'
         related:
           success_nodes:
@@ -105,6 +109,7 @@
           type: job_template
         extra_data:
           vm_name: master-2
+          proxmox_node: asgard
           proxmox_node_ip: '{{ pxm_odin }}'
         related:
           success_nodes:
@@ -118,6 +123,7 @@
         extra_data:
           vm_name: master-0
           storage_type: nvme
+          proxmox_node: asgard
           proxmox_node_ip: '{{ pxm_thor }}'
           disk_size: '250'
       - identifier: Additional disk on Master-1 VM
@@ -129,6 +135,7 @@
         extra_data:
           vm_name: master-1
           storage_type: nvme
+          proxmox_node: asgard
           proxmox_node_ip: '{{ pxm_thor }}'
           disk_size: '250'
       - identifier: Additional disk on Master-2 VM
@@ -140,5 +147,6 @@
         extra_data:
           vm_name: master-2
           storage_type: nvme-odin
+          proxmox_node: asgard
           proxmox_node_ip: '{{ pxm_odin }}'
           disk_size: '250'
