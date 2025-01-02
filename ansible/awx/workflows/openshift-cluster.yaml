@@ -69,7 +69,6 @@
           disk_size: '200'
           mac_address: '52:50:56:11:22:33'
           storage_type: nvme-odin
-          proxmox_node: pxm-odin
           proxmox_node_ip: '{{ pxm-odin }}'
         related:
           success_nodes:
