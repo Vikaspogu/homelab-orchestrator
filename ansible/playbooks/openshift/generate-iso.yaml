@@ -1,6 +1,6 @@
 ---
 - name: Playbook to prepare VM for openshift installer
-  hosts: aap-controller
+  hosts: aap_controller
   gather_facts: false
   tasks:
     - name: Download installer clients
@@ -87,8 +87,8 @@
         mode: '0755'
       delegate_to: '{{ item }}'
       loop:
-        - pxm-thor
-        - pxm-odin
+        - pxm_thor
+        - pxm_odin
 
     - name: Cleanup ISO image
       ansible.builtin.file:

@@ -1,6 +1,6 @@
 ---
 - name: Playbook to setup Ansible Automation Platform
-  hosts: aap-controller
+  hosts: aap_controller
   gather_facts: false
   become: true
   roles:

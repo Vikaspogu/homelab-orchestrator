@@ -1,6 +1,6 @@
 ---
 - name: Playbook to create a VM
-  hosts: pxm-thor
+  hosts: pxm_thor
   gather_facts: false
   vars_files:
     - ../../vars/common.vault.yaml

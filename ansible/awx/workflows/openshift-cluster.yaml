@@ -35,7 +35,7 @@
           disk_size: '200'
           mac_address: '52:50:56:11:22:11'
           storage_type: nvme
-          proxmox_node: pxm-thor
+          proxmox_node: pxm_thor
           proxmox_node_ip: '{{ pxm_thor }}'
         related:
           success_nodes:
@@ -53,7 +53,7 @@
           disk_size: '200'
           mac_address: '52:50:56:11:22:22'
           storage_type: nvme
-          proxmox_node: pxm-thor
+          proxmox_node: pxm_thor
           proxmox_node_ip: '{{ pxm_thor }}'
         related:
           success_nodes:
@@ -71,7 +71,7 @@
           disk_size: '200'
           mac_address: '52:50:56:11:22:33'
           storage_type: nvme-odin
-          proxmox_node: pxm-odin
+          proxmox_node: pxm_odin
           proxmox_node_ip: '{{ pxm_odin }}'
         related:
           success_nodes:

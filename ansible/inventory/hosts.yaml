@@ -1,17 +1,17 @@
 ---
 proxmox:
   hosts:
-    pxm-thor:
+    pxm_thor:
       ansible_user: root
       ansible_host: '{{pxm_thor}}'
-    pxm-odin:
+    pxm_odin:
       ansible_user: root
       ansible_host: '{{pxm_odin}}'
-    pxm-loki:
+    pxm_loki:
       ansible_user: root
       ansible_host: '{{pxm_loki}}'
 aap:
   hosts:
-    aap-controller:
+    aap_controller:
       ansible_user: vikaspogu
       ansible_host: '{{aap_controller}}'
