@@ -11,7 +11,7 @@ collections:
   - name: kubernetes.core
     version: 3.0.0
   - name: ansibleguy.opnsense
-    version: 1.2.8
+    version: 1.2.12
   - name: ansible.controller
     version: 4.5.12 #4.6.1 for 2.5
   - name: infra.controller_configuration
