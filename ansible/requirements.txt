@@ -6,6 +6,6 @@ netaddr==0.10.1
 openshift==0.13.2
 passlib==1.7.4
 proxmoxer==2.2.0
-requests==2.31.0
+requests==2.32.3
 botocore
 boto3
