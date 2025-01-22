@@ -6,7 +6,8 @@ locals {
     "paperless",
     "pgadmin",
     "jellyfin",
-    "mealie"
+    "mealie",
+    "argocd-workflows"
   ]
 }
 
@@ -76,6 +77,14 @@ locals {
       icon_url      = "https://avatars.githubusercontent.com/u/92342333?s=200&v=4"
       redirect_uri  = "https://mealie.${var.cluster_domain}/login"
       launch_url    = "https://mealie.${var.cluster_domain}/login"
+    },
+    argocd-workflows = {
+      client_id     = module.onepassword_application["argocd-workflows"].fields["CLIENT_ID"]
+      client_secret = module.onepassword_application["argocd-workflows"].fields["CLIENT_SECRET"]
+      group         = authentik_group.admins.id
+      icon_url      = "https://avatars.githubusercontent.com/u/30269780?s=200&v=4"
+      redirect_uri  = "https://argo-workflows-openshift-gitops.apps.dev-acm.v3socp.boo/oauth2/callback"
+      launch_url    = "https://argo-workflows-openshift-gitops.apps.dev-acm.v3socp.boo/oauth2/callback"
     }
   }
 }
