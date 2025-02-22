@@ -5,9 +5,9 @@ collections:
   - name: ansible.utils
     version: 5.1.2
   - name: community.general
-    version: 10.2.0
+    version: 10.3.1
   - name: community.sops
-    version: 2.0.1
+    version: 2.0.2
   - name: kubernetes.core
     version: 5.1.0
   - name: ansibleguy.opnsense
@@ -17,4 +17,4 @@ collections:
   - name: infra.controller_configuration
     version: 2.11.0
   - name: infra.aap_utilities
-    version: 2.4.0
+    version: 2.5.2
