@@ -9,5 +9,5 @@ proxmox:
       ansible_user: root
 aap:
   hosts:
-    aap_controller:
+    aap-controller:
       ansible_user: vikaspogu

@@ -32,7 +32,7 @@
           memory: '99392'
           disk_size: '100'
           mac_address: '52:50:56:11:22:44'
-          storage_type: nvme-odin
+          storage_type: nvme
           proxmox_node_ip: '{{ pxm_odin }}'
         related:
           success_nodes:
@@ -57,6 +57,6 @@
           type: job_template
         extra_data:
           vm_name: sno
-          storage_type: nvme-odin
+          storage_type: nvme
           proxmox_node_ip: '{{ pxm_odin }}'
           disk_size: '300'
