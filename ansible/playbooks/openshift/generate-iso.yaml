@@ -88,7 +88,7 @@
       delegate_to: '{{ item }}'
       loop:
         - pxm-thor
-        - pxm_odin
+        - pxm-odin
 
     - name: Cleanup ISO image
       ansible.builtin.file:
