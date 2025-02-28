@@ -33,7 +33,7 @@
           disk_size: '100'
           mac_address: '52:50:56:11:22:44'
           storage_type: nvme
-          proxmox_node_ip: '{{ pxm_odin }}'
+          proxmox_node_ip: '{{ pxm-odin }}'
         related:
           success_nodes:
             - identifier: 'Mount ISO on SNO VM'
@@ -45,7 +45,7 @@
           type: job_template
         extra_data:
           vm_name: sno
-          proxmox_node_ip: '{{ pxm_odin }}'
+          proxmox_node_ip: '{{ pxm-odin }}'
         related:
           success_nodes:
             - identifier: 'Additional disk on SNO VM'
@@ -58,5 +58,5 @@
         extra_data:
           vm_name: sno
           storage_type: nvme
-          proxmox_node_ip: '{{ pxm_odin }}'
+          proxmox_node_ip: '{{ pxm-odin }}'
           disk_size: '300'

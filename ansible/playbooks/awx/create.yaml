@@ -4,7 +4,7 @@
   vars:
     id: 9001
     vm_name: rhel-9-cloudinit-template
-    proxmox_node_ip: '{{ pxm_odin }}'
+    proxmox_node_ip: '{{ pxm-odin }}'
 
 - name: Import CloudInit VM
   ansible.builtin.import_playbook: '../proxmox/create-cloudinit-vm.yaml'
@@ -15,13 +15,13 @@
     cores: 8
     memory: 20480
     disk_size: 212G
-    proxmox_node_ip: '{{ pxm_odin }}'
+    proxmox_node_ip: '{{ pxm-odin }}'
 
 - name: Start AAP VM
   ansible.builtin.import_playbook: '../proxmox/start-vm.yaml'
   vars:
     vm_name: aap-controller
-    proxmox_node_ip: '{{ pxm_odin }}'
+    proxmox_node_ip: '{{ pxm-odin }}'
 
 - name: Playbook to Install AAP
   hosts: aap-controller
