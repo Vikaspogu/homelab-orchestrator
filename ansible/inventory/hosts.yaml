@@ -5,8 +5,6 @@ proxmox:
       ansible_user: root
     pxm-odin:
       ansible_user: root
-    pxm-loki:
-      ansible_user: root
 aap:
   hosts:
     aap-controller:
