@@ -1,6 +1,6 @@
 ---
 - name: Playbook to prepare VM for openshift installer
-  hosts: aap_controller
+  hosts: aap-controller
   gather_facts: false
   environment:
     K8S_AUTH_KUBECONFIG: '/home/{{ ansible_user }}/openshift-multicluster/installer/dev-acm/auth/kubeconfig'

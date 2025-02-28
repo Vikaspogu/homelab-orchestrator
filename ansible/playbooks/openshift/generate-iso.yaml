@@ -1,6 +1,6 @@
 ---
 - name: Playbook to prepare VM for openshift installer
-  hosts: aap_controller
+  hosts: aap-controller
   gather_facts: false
   tasks:
     - name: Download installer clients
