@@ -34,7 +34,7 @@
           memory: '79392'
           disk_size: '200'
           mac_address: '52:50:56:11:22:11'
-          storage_type: nvme
+          storage_type: nvme-pxm-thor
           proxmox_node: pxm-thor
           proxmox_node_ip: '{{ pxm_thor }}'
         related:
@@ -52,7 +52,7 @@
           memory: '79392'
           disk_size: '200'
           mac_address: '52:50:56:11:22:22'
-          storage_type: nvme
+          storage_type: nvme-pxm-thor
           proxmox_node: pxm-thor
           proxmox_node_ip: '{{ pxm_thor }}'
         related:
@@ -123,7 +123,7 @@
           type: job_template
         extra_data:
           vm_name: master-0
-          storage_type: nvme
+          storage_type: nvme-pxm-thor
           proxmox_node: pxm-thor
           proxmox_node_ip: '{{ pxm_thor }}'
           disk_size: '250'
@@ -135,7 +135,7 @@
           type: job_template
         extra_data:
           vm_name: master-1
-          storage_type: nvme
+          storage_type: nvme-pxm-thor
           proxmox_node: pxm-thor
           proxmox_node_ip: '{{ pxm_thor }}'
           disk_size: '250'

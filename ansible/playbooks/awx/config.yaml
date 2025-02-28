@@ -79,7 +79,7 @@
     - name: Add EE to the controller instance
       ansible.controller.execution_environment:
         name: 'Custom EE'
-        image: quay.io/rhn_gps_vpogu/custom-aap24-ee-rhel9@sha256:70f84084287adb54638e6c487d69e0914d7a0db3e3ad7856e7e7fcff5dd859af
+        image: quay.io/rhn_gps_vpogu/custom-aap24-ee-rhel9@sha256:23a36a738eaeb7d7082e1c68dbc9294e6da27a73b35e9c78579fc6706cd88efe
         credential: 'Quay Credentials'
 
     - name: '{{ awx_project_name }}'
