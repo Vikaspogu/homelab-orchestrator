@@ -14,6 +14,8 @@ collections:
     version: 1.2.12
   - name: ansible.controller
     version: 4.6.8 #for 2.5
+  - name: ansible.platform
+    version: 2.5.3
   - name: infra.controller_configuration
     version: 2.11.0
   - name: infra.aap_utilities

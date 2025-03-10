@@ -15,6 +15,7 @@
     cores: 8
     memory: 20480
     disk_size: 212G
+    storage_name: nvme
     proxmox_node_ip: '{{ pxm_odin }}'
 
 - name: Start AAP VM

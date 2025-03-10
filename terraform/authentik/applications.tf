@@ -7,7 +7,8 @@ locals {
     "pgadmin",
     "jellyfin",
     "mealie",
-    "argocd-workflows"
+    "argocd-workflows",
+    "aap-controller"
   ]
 }
 
@@ -85,6 +86,14 @@ locals {
       icon_url      = "https://avatars.githubusercontent.com/u/30269780?s=200&v=4"
       redirect_uri  = "https://argo-workflows-openshift-gitops.apps.dev-acm.v3socp.boo/oauth2/callback"
       launch_url    = "https://argo-workflows-openshift-gitops.apps.dev-acm.v3socp.boo/oauth2/callback"
+    },
+    aap-controller = {
+      client_id     = module.onepassword_application["aap-controller"].fields["CLIENT_ID"]
+      client_secret = module.onepassword_application["aap-controller"].fields["CLIENT_SECRET"]
+      group         = authentik_group.admins.id
+      icon_url      = "https://repository-images.githubusercontent.com/177642958/95e2ed0f-953b-4348-b452-54c229136b15"
+      redirect_uri  = "https://aap-controller.${var.cluster_domain}/api/gateway/social/complete/ansible_base-authentication-authenticator_plugins-oidc__authentik/"
+      launch_url    = "https://aap-controller.${var.cluster_domain}"
     }
   }
 }

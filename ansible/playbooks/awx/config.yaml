@@ -7,6 +7,10 @@
     CONTROLLER_USERNAME: '{{ controller_username }}'
     CONTROLLER_PASSWORD: '{{ controller_password }}'
     CONTROLLER_VERIFY_SSL: 'false'
+    GATEWAY_HOSTNAME: '{{ controller_hostname }}'
+    GATEWAY_USERNAME: '{{ controller_username }}'
+    GATEWAY_PASSWORD: '{{ controller_password }}'
+    GATEWAY_VERIFY_SSL: 'false'
   vars_files:
     - ../../vars/common.vault.yaml
   tasks:
@@ -24,6 +28,28 @@
       ansible.controller.license:
         manifest: '{{ repository_path.stdout }}/manifest_subscription.zip'
         validate_certs: false
+
+    - name: Authenticators | Configuration # noqa fqcn[action-core]
+      ansible.platform.authenticator:
+        name: 'Authentik'
+        type: 'ansible_base.authentication.authenticator_plugins.oidc'
+        enabled: true
+        configuration:
+          OIDC_ENDPOINT: '{{OIDC_ENDPOINT}}'
+          KEY: '{{CLIENT_ID}}'
+          SECRET: '{{CLIENT_SECRET}}'
+          GROUPS_CLAIM: 'groups'
+
+    - name: Authenticator Map | Configuration
+      ansible.platform.authenticator_map:
+        name: 'Authentik Map'
+        authenticator: 'Authentik'
+        revoke: true
+        map_type: is_superuser
+        triggers:
+          groups:
+            has_or:
+              - 'admins'
 
     - name: Create an inventory
       ansible.controller.inventory:

@@ -26,6 +26,7 @@
             api_host: '{{ proxmox_node_ip }}'
             name: '{{ vm_name }}'
             clone: '{{ template_name }}'
+            storage: '{{ storage_name }}'
             timeout: 120
           register: vm_details
           delegate_to: localhost
