@@ -51,6 +51,19 @@
             has_or:
               - 'admins'
 
+    - name: Add webhook notification
+      ansible.controller.notification_template:
+        name: Gotify
+        notification_type: webhook
+        organization: Default
+        notification_configuration:
+          url: http://gotify.vikaspogu.com/message
+          headers:
+            'accept': 'application/json'
+            'Content-Type': 'application/json'
+            'Authorization': 'Bearer {{GOTIFY_APPLICATION_TOKEN}}'
+        state: present
+
     - name: Create an inventory
       ansible.controller.inventory:
         name: '{{ awx_inventory_name }}'
