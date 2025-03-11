@@ -57,11 +57,19 @@
         notification_type: webhook
         organization: Default
         notification_configuration:
-          url: http://gotify.vikaspogu.com/message
+          url: '{{GOTIFY_APPLICATION_WEBHOOK}}'
           headers:
             'accept': 'application/json'
             'Content-Type': 'application/json'
-            'Authorization': 'Bearer {{GOTIFY_APPLICATION_TOKEN}}'
+        state: present
+
+    - name: Add notifiers to Default Organization
+      ansible.controller.organization:
+        name: Default
+        notification_templates_started: ['Gotify']
+        notification_templates_success: ['Gotify']
+        notification_templates_error: ['Gotify']
+        notification_templates_approvals: ['Gotify']
         state: present
 
     - name: Create an inventory
