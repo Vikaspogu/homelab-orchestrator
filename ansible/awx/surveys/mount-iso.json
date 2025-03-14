@@ -36,7 +36,7 @@
       "type": "text",
       "question_name": "Proxmox Node IP",
       "question_description": "IP of the proxmox node",
-      "variable": "proxmox_node_ip",
+      "variable": "proxmox_hostname",
       "min": 1,
       "max": 25,
       "required": true,

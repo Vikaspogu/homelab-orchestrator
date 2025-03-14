@@ -10,6 +10,6 @@
         node: '{{ proxmox_node }}'
         api_user: '{{ datacenter.username }}@pve'
         api_password: '{{ datacenter.password }}'
-        api_host: '{{ proxmox_node_ip }}'
+        api_host: '{{ proxmox_hostname }}.{{domain_name}}'
         name: '{{ vm_name }}'
         state: started

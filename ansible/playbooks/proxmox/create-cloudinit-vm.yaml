@@ -9,7 +9,7 @@
       community.general.proxmox_vm_info:
         api_user: '{{ datacenter.username }}@pve'
         api_password: '{{ datacenter.password }}'
-        api_host: '{{ proxmox_node_ip }}'
+        api_host: '{{ proxmox_hostname }}.{{domain_name}}'
         node: '{{ proxmox_node }}'
         name: '{{ vm_name }}'
       register: vm_info
@@ -23,7 +23,7 @@
             node: '{{ proxmox_node }}'
             api_user: '{{ datacenter.username }}@pve'
             api_password: '{{ datacenter.password }}'
-            api_host: '{{ proxmox_node_ip }}'
+            api_host: '{{ proxmox_hostname }}.{{domain_name}}'
             name: '{{ vm_name }}'
             clone: '{{ template_name }}'
             storage: '{{ storage_name }}'

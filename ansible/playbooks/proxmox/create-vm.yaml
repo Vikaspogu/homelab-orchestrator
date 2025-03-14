@@ -10,7 +10,7 @@
         node: '{{ proxmox_node }}'
         api_user: '{{ datacenter.username }}@pve'
         api_password: '{{ datacenter.password }}'
-        api_host: '{{ proxmox_node_ip }}'
+        api_host: '{{ proxmox_hostname }}.{{domain_name}}'
         name: '{{ vm_name }}'
         cpu: '{{ cpu_type }}'
         cores: '{{ cores }}'
@@ -23,5 +23,5 @@
       register: vm_details
 
     - name: Set ISO
-      ansible.builtin.command: qm set {{ vm_details.vmid }} --ide2 "local:iso{{iso_name}},media=cdrom"
+      ansible.builtin.command: qm set {{ vm_details.vmid }} --ide2 "local:iso/{{iso_name}},media=cdrom"
       when: iso_name is defined

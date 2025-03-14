@@ -13,24 +13,22 @@
       "default": ""
     },
     {
-      "type": "text",
+      "type": "multiplechoice",
       "question_name": "Proxmox Node",
       "question_description": "Name of the proxmox node",
       "variable": "proxmox_node",
-      "min": 1,
-      "max": 25,
-      "required": true,
-      "default": ""
+      "choices": ["pxm-odin", "pxm-thor"],
+      "default": "pxm-thor",
+      "required": true
     },
     {
-      "type": "text",
-      "question_name": "Proxmox Node IP",
-      "question_description": "IP of the proxmox node",
-      "variable": "proxmox_node_ip",
-      "min": 1,
-      "max": 25,
+      "type": "multiplechoice",
+      "question_name": "Proxmox Hostname",
+      "question_description": "Hostname of the proxmox node",
+      "variable": "proxmox_hostname",
       "required": true,
-      "default": ""
+      "choices": ["pxm-thor", "pxm-odin"],
+      "default": "pxm-thor"
     },
     {
       "type": "multiplechoice",
@@ -67,7 +65,7 @@
       "question_description": "Type of the storage",
       "variable": "storage_type",
       "required": false,
-      "choices": ["ssd", "local-lvm", "nvme"],
+      "choices": ["ssd", "local-lvm", "nvme", "nvme-pxm-thor"],
       "default": ""
     },
     {
