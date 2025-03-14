@@ -25,4 +25,4 @@
     - name: Set ISO
       ansible.builtin.command: qm set {{ vm_details.vmid }} --ide2 "local:iso/{{iso_name}},media=cdrom"
       when: iso_name is defined
-      delegate_to: pxm-odin
+      delegate_to: '{{ proxmox_hostname }}'
