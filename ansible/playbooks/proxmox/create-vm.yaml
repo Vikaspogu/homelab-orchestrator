@@ -19,4 +19,9 @@
         scsi:
           scsi0: '{{ storage_type }}:{{ disk_size }},iothread=1,format=raw'
         net:
-          net0: 'virtio={{ mac_address }},bridge=vmbr0,firewall=1'
+          net0: '{{net_model}}={{ mac_address }},bridge=vmbr0,firewall=1'
+      register: vm_details
+
+    - name: Set ISO
+      ansible.builtin.command: qm set {{ vm_details.vmid }} --ide2 "local:iso{{iso_name}},media=cdrom"
+      when: iso_name is defined

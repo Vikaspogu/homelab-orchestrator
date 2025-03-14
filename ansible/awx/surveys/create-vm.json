@@ -33,13 +33,14 @@
       "default": ""
     },
     {
-      "type": "text",
+      "type": "multiplechoice",
       "question_name": "CPU Type",
       "question_description": "Type of the VMs CPU",
       "variable": "cpu_type",
       "min": 1,
       "max": 25,
       "required": true,
+      "choices": ["max", "host"],
       "default": "max"
     },
     {
@@ -63,14 +64,13 @@
       "default": "8192"
     },
     {
-      "type": "text",
+      "type": "multiplechoice",
       "question_name": "Storage Type",
       "question_description": "Type of the storage",
       "variable": "storage_type",
-      "min": 1,
-      "max": 25,
       "required": false,
-      "default": "zfs-pxm"
+      "choices": ["ssd", "local-lvm", "nvme"],
+      "default": ""
     },
     {
       "type": "text",
@@ -91,6 +91,22 @@
       "max": 25,
       "required": true,
       "default": "bc:24:11:a0:6e:99"
+    },
+    {
+      "type": "multiplechoice",
+      "question_name": "Network Model",
+      "question_description": "Network Model",
+      "variable": "net_model",
+      "required": true,
+      "choices": ["vmxnet3", "virtio"],
+      "default": "virtio"
+    },
+    {
+      "type": "text",
+      "question_name": "Name of the ISO",
+      "question_description": "Name of the ISO",
+      "variable": "iso_name",
+      "default": ""
     }
   ]
 }
