@@ -38,7 +38,7 @@
       "question_description": "Type of the VMs CPU",
       "variable": "cpu_type",
       "required": true,
-      "choices": ["max", "host"],
+      "choices": ["max", "host", "kvm64"],
       "default": "kvm64"
     },
     {
