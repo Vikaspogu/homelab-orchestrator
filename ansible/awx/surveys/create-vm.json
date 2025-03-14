@@ -37,11 +37,9 @@
       "question_name": "CPU Type",
       "question_description": "Type of the VMs CPU",
       "variable": "cpu_type",
-      "min": 1,
-      "max": 25,
       "required": true,
       "choices": ["max", "host"],
-      "default": "max"
+      "default": "kvm64"
     },
     {
       "type": "text",
@@ -49,7 +47,7 @@
       "question_description": "Number of Cores",
       "variable": "cores",
       "min": 1,
-      "max": 9,
+      "max": 3,
       "required": true,
       "default": "4"
     },
@@ -106,6 +104,7 @@
       "question_name": "Name of the ISO",
       "question_description": "Name of the ISO",
       "variable": "iso_name",
+      "required": false,
       "default": ""
     }
   ]
