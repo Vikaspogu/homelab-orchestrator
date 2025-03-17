@@ -21,3 +21,7 @@ collections:
   - name: infra.aap_utilities
     version: 2.5.2
   - name: community.vmware
+roles:
+  - name: vcenter_permissions
+    src: https://github.com/Vikaspogu/ansible-roles.git
+    version: main
