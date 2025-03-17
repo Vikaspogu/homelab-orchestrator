@@ -19,6 +19,10 @@
     - {
         name: 'OpenShift - ACM GitOps Bootstrap',
         file: ansible/playbooks/openshift/acm-gitops-bootstrap.yaml,
-        enable_survey: true,
-        survey_file: '../surveys/acm-gitops-bootstrap.json',
+        enable_survey: false,
+      }
+    - {
+        name: 'OpenShift - Vcenter Permissions Setup',
+        file: ansible/playbooks/openshift/vcenter-permissions.yaml,
+        enable_survey: false,
       }
