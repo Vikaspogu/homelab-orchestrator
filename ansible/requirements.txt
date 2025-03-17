@@ -1,5 +1,4 @@
-ansible==11.3.0
-ansible-lint==25.1.3
+ansible>=2.17
 bcrypt==4.3.0
 jmespath==1.0.1
 netaddr==1.3.0
@@ -9,3 +8,10 @@ proxmoxer==2.2.0
 requests==2.32.3
 botocore
 boto3
+pyvmomi
+urllib3
+PyYAML>=3.11
+requests-oauthlib
+pyVim
+vmware-vcenter
+vmware-vapi-common-client
