@@ -39,12 +39,16 @@
         remote_src: true
         mode: '0755'
 
-    - name: Copy certs and update ca-trust
+    - name: Copy config directory contents to /opt/tomcat/conf
       become: true
+      ansible.builtin.copy:
+        src: /tmp/certs/lin/
+        dest: /etc/pki/ca-trust/source/anchors/
+
+    - name: Copy certs and update ca-trust
       ansible.builtin.command:
         cmd: '{{item}}'
       with_items:
-        - cp /tmp/certs/lin/* /etc/pki/ca-trust/source/anchors
         - update-ca-trust extract
         - rm -rf /tmp/certs
 
