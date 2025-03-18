@@ -1,0 +1,44 @@
+---
+- name: create vm Playbook
+  hosts: localhost
+  become: false
+  gather_facts: false
+  vars_files:
+    - ../../vars/common.vault.yaml
+  tasks:
+    - name: create folder
+      community.vmware.vcenter_folder:
+        hostname: '{{ vcenter.hostname }}'
+        username: '{{ vcenter.admin_username }}'
+        password: '{{ vcenter.admin_password }}'
+        validate_certs: 'false'
+        datacenter_name: 'homelab'
+        folder_name: 'rhel9_vms'
+        folder_type: vm
+        state: present
+    - name: create VM
+      community.vmware.vmware_guest:
+        hostname: '{{ vcenter.hostname }}'
+        username: '{{ vcenter.admin_username }}'
+        password: '{{ vcenter.admin_password }}'
+        validate_certs: 'false'
+        datacenter: 'homelab'
+        name: 'testvm'
+        folder: 'rhel9_vms'
+        state: 'poweroff'
+        template: 'RHEL9_Template'
+        cluster: 'cluster1'
+        disk:
+          - size_gb: '10'
+            type: 'thin'
+            datastore: 'datastore1'
+        hardware:
+          memory_mb: '2046'
+          num_cpus: '2'
+          scsi: 'paravirtual'
+        networks:
+          - name: 'VM Network'
+            device_name: 'vmxnet3'
+      register: deploy_vm
+
+    - ansible.builtin.debug: msg={{deploy_vm}}

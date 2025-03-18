@@ -26,3 +26,8 @@
         file: ansible/playbooks/openshift/vcenter-permissions.yaml,
         enable_survey: false,
       }
+    - {
+        name: 'VCenter - Provision VM from Template',
+        file: ansible/playbooks/vcenter/provision-vm.yaml,
+        enable_survey: false,
+      }
