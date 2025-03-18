@@ -25,7 +25,7 @@
         datacenter: 'homelab'
         name: 'testvm'
         folder: 'rhel9_vms'
-        state: 'poweroff'
+        state: 'poweredoff'
         template: 'RHEL9_Template'
         cluster: 'cluster1'
         disk:
