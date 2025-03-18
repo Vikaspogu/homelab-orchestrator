@@ -17,6 +17,15 @@
       "variable": "cluster_name",
       "required": true,
       "default": ""
+    },
+    {
+      "type": "multiplechoice",
+      "question_name": "Cluster Type",
+      "question_description": "Type of the OpenShift cluster to deploy",
+      "variable": "cluster_type",
+      "required": true,
+      "choices": ["sno", "three-node"],
+      "default": "sno"
     }
   ]
 }

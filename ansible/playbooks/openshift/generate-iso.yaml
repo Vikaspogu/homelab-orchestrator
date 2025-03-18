@@ -62,7 +62,7 @@
         force: true
       when: git_repo_exists.stat.exists
 
-    - tags: three_node_cluster
+    - when: cluster_type == "three-node"
       block:
         - name: Add pull secret
           ansible.builtin.lineinfile:
@@ -97,7 +97,7 @@
             path: /tmp/agent.x86_64.iso
             state: absent
 
-    - tags: sno_cluster
+    - when: cluster_type == 'sno'
       block:
         - name: Update pull secret
           ansible.builtin.lineinfile:
