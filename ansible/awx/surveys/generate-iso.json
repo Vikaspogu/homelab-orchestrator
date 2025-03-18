@@ -3,12 +3,13 @@
   "description": "Prepare ISO",
   "spec": [
     {
-      "type": "text",
+      "type": "multiplechoice",
       "question_name": "Cluster Name",
       "question_description": "Name of the cluster to deploy",
       "variable": "cluster_name",
       "required": false,
-      "default": "sno"
+      "choices": ["proxmox", "vsphere"],
+      "default": "vsphere"
     },
     {
       "type": "multiplechoice",
@@ -16,8 +17,8 @@
       "question_description": "Type of the OpenShift cluster to deploy",
       "variable": "cluster_type",
       "required": false,
-      "choices": ["sno", "three-node"],
-      "default": "sno"
+      "choices": ["proxmox", "vsphere"],
+      "default": "vsphere"
     }
   ]
 }

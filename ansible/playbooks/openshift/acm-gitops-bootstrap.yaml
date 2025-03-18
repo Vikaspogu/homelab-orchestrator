@@ -3,7 +3,7 @@
   hosts: aap-controller
   gather_facts: false
   environment:
-    K8S_AUTH_KUBECONFIG: '/home/{{ ansible_user }}/openshift-multicluster/installer/dev-acm/auth/kubeconfig'
+    K8S_AUTH_KUBECONFIG: '/home/{{ ansible_user }}/openshift-multicluster/installer/proxmox/auth/kubeconfig'
   vars_files:
     - ../../vars/common.vault.yaml
   tasks:

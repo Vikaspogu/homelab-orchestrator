@@ -92,7 +92,7 @@
         force: true
       when: git_repo_exists.stat.exists
 
-    - when: cluster_type == "three-node"
+    - when: cluster_type == "proxmox"
       block:
         - name: Add pull secret
           ansible.builtin.lineinfile:
@@ -127,7 +127,7 @@
             path: /tmp/agent.x86_64.iso
             state: absent
 
-    - when: cluster_type == 'sno'
+    - when: cluster_type == 'vsphere'
       block:
         - name: Update pull secret
           ansible.builtin.lineinfile:

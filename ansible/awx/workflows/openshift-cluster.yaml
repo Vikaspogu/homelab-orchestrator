@@ -16,7 +16,7 @@
           type: job_template
         extra_data:
           redhat_pull_secret: '{{ redhat_pull_secret | string }}'
-          cluster_name: dev-acm
+          cluster_name: proxmox
         related:
           success_nodes:
             - identifier: 'Create Master-0 VM'

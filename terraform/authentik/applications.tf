@@ -84,8 +84,8 @@ locals {
       client_secret = module.onepassword_application["argocd-workflows"].fields["CLIENT_SECRET"]
       group         = authentik_group.admins.id
       icon_url      = "https://avatars.githubusercontent.com/u/30269780?s=200&v=4"
-      redirect_uri  = "https://argo-workflows-openshift-gitops.apps.dev-acm.v3socp.boo/oauth2/callback"
-      launch_url    = "https://argo-workflows-openshift-gitops.apps.dev-acm.v3socp.boo/oauth2/callback"
+      redirect_uri  = "https://argo-workflows-openshift-gitops.apps.proxmox.v3socp.boo/oauth2/callback"
+      launch_url    = "https://argo-workflows-openshift-gitops.apps.proxmox.v3socp.boo/oauth2/callback"
     },
     aap-controller = {
       client_id     = module.onepassword_application["aap-controller"].fields["CLIENT_ID"]
