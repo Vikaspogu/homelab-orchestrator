@@ -35,6 +35,7 @@
       ansible.builtin.unarchive:
         src: https://vcenter.vikaspogu.com/certs/download.zip
         dest: /tmp/
+        validate_certs: false
         remote_src: true
         mode: '0755'
 
