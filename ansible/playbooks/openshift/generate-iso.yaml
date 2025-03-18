@@ -44,6 +44,7 @@
       ansible.builtin.copy:
         src: /tmp/certs/lin/
         dest: /etc/pki/ca-trust/source/anchors/
+        remote_src: true
 
     - name: Copy certs and update ca-trust
       ansible.builtin.command:
