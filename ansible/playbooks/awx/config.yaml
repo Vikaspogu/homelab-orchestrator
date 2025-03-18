@@ -172,10 +172,3 @@
       until: not acm_cluster_workflow.failed
       retries: 10
       delay: 10
-
-    - name: Create SNO cluster workflow
-      ansible.builtin.import_tasks: ../../awx/workflows/sno-openshift-cluster.yaml
-      register: sno_cluster_workflow
-      until: not sno_cluster_workflow.failed
-      retries: 10
-      delay: 10

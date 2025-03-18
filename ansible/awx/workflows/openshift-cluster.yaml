@@ -15,7 +15,6 @@
           name: 'OpenShift - Prepare Cluster ISO'
           type: job_template
         extra_data:
-          redhat_pull_secret: '{{ redhat_pull_secret | string }}'
           cluster_name: proxmox
         related:
           success_nodes:
