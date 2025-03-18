@@ -17,15 +17,18 @@
         - https://mirror.openshift.com/pub/openshift-v4/amd64/clients/ocp/latest/openshift-client-linux.tar.gz
         - https://developers.redhat.com/content-gateway/file/pub/openshift-v4/clients/helm/3.12.1/helm-linux-amd64.tar.gz
         - https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.3.0/kustomize_v5.3.0_linux_amd64.tar.gz
-        - https://github.com/mikefarah/yq/releases/download/v4.45.1/yq_darwin_amd64.tar.gz
+        - https://github.com/mikefarah/yq/releases/download/v4.45.1/yq_linux_amd64.tar.gz
 
     - name: Copy to user bin
       become: true
       ansible.builtin.copy:
-        dest: /usr/local/bin/helm
-        src: /usr/local/bin/helm-linux-amd64
+        dest: '{{ item.dest }}'
+        src: '{{ item.src }}'
         remote_src: true
         mode: '0755'
+      loop:
+        - { src: /usr/local/bin/helm-linux-amd64, dest: /usr/local/bin/helm }
+        - { src: /usr/local/bin/yq_linux_amd64, dest: /usr/local/bin/yq }
 
     - name: Install Packages
       become: true
