@@ -26,6 +26,14 @@
       "required": true,
       "choices": ["sno", "three-node"],
       "default": "sno"
+    },
+    {
+      "type": "text",
+      "question_name": "VCenter Service Account Password",
+      "question_description": "VCenter Service Account Password",
+      "variable": "vcenter.admin_password",
+      "required": true,
+      "default": ""
     }
   ]
 }
