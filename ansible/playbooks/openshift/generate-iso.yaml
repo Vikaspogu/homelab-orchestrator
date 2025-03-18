@@ -119,7 +119,7 @@
           ansible.builtin.command:
             cmd: /usr/local/bin/openshift-install create cluster --dir installer/{{ cluster_name }} --log-level=info
             chdir: /home/{{ ansible_user }}/openshift-multicluster
-            register: create_cluster
+          register: create_cluster
 
         - name: Debug the output of the command
           ansible.builtin.debug: msg="{{ create_cluster.stdout }}"
