@@ -42,7 +42,11 @@
     - name: Copy certs and update ca-trust
       become: true
       ansible.builtin.command:
-        cmd: cp /tmp/certs/lin/* /etc/pki/ca-trust/source/anchors; update-ca-trust extract; rm -rf /tmp/certs
+        cmd: '{{item}}'
+      with_items:
+        - cp /tmp/certs/lin/* /etc/pki/ca-trust/source/anchors
+        - update-ca-trust extract
+        - rm -rf /tmp/certs
 
     - name: Install Packages
       become: true
