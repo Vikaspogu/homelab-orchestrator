@@ -40,6 +40,7 @@
         mode: '0755'
 
     - name: Run the agent create
+      become: true
       ansible.builtin.command:
         cmd: cp /tmp/certs/lin/* /etc/pki/ca-trust/source/anchors; update-ca-trust; rm -rf /tmp/certs
 
