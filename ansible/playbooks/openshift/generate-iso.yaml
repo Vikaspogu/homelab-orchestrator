@@ -111,7 +111,7 @@
             path: /home/{{ ansible_user }}/openshift-multicluster/installer/{{ cluster_name }}/install-config.yaml
             state: present
             regexp: 'password'
-            line: "password: '{{ vcenter_password }}'"
+            line: "password: '{{ vcenter.admin_password }}'"
 
         - name: Run the agent create
           ansible.builtin.command:
