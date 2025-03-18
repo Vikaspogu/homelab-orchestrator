@@ -138,7 +138,7 @@
 
         - name: Update password secret
           ansible.builtin.command:
-            cmd: yq -i '.platform.vsphere.vcenters.0.password="{{ openshift.vcenter_svc_account_password }}"' /home/{{ ansible_user }}/openshift-multicluster/installer/{{ cluster_name }}/install-config.yaml
+            cmd: yq -i '.platform.vsphere.vcenters.0.password="{{ vcenter.admin_password }}"' /home/{{ ansible_user }}/openshift-multicluster/installer/{{ cluster_name }}/install-config.yaml
 
         - name: Run the create cluster
           ansible.builtin.command:
