@@ -2,6 +2,8 @@
 - name: Playbook to prepare VM for openshift installer
   hosts: aap-controller
   gather_facts: false
+  vars_files:
+    - ../../vars/common.vault.yaml
   tasks:
     - name: Download installer clients
       become: true

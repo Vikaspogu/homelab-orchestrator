@@ -7,7 +7,7 @@
       "question_name": "Red Hat Pull Secret",
       "question_description": "Red Hat Pull Secret",
       "variable": "redhat_pull_secret",
-      "required": true,
+      "required": false,
       "default": ""
     },
     {
@@ -15,15 +15,15 @@
       "question_name": "Cluster Name",
       "question_description": "Name of the cluster to deploy",
       "variable": "cluster_name",
-      "required": true,
-      "default": ""
+      "required": false,
+      "default": "sno"
     },
     {
       "type": "multiplechoice",
       "question_name": "Cluster Type",
       "question_description": "Type of the OpenShift cluster to deploy",
       "variable": "cluster_type",
-      "required": true,
+      "required": false,
       "choices": ["sno", "three-node"],
       "default": "sno"
     },
@@ -32,7 +32,7 @@
       "question_name": "VCenter Service Account Password",
       "question_description": "VCenter Service Account Password",
       "variable": "vcenter.admin_password",
-      "required": true,
+      "required": false,
       "default": ""
     }
   ]
