@@ -30,6 +30,18 @@
         - { src: /usr/local/bin/helm-linux-amd64, dest: /usr/local/bin/helm }
         - { src: /usr/local/bin/yq_linux_amd64, dest: /usr/local/bin/yq }
 
+    - name: Download certs clients
+      become: true
+      ansible.builtin.unarchive:
+        src: https://vcenter.vikaspogu.com/certs/download.zip
+        dest: /tmp/
+        remote_src: true
+        mode: '0755'
+
+    - name: Run the agent create
+      ansible.builtin.command:
+        cmd: cp /tmp/certs/lin/* /etc/pki/ca-trust/source/anchors; update-ca-trust; rm -rf /tmp/certs
+
     - name: Install Packages
       become: true
       ansible.builtin.dnf:
