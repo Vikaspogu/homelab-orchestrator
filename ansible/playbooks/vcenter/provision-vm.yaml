@@ -5,7 +5,7 @@
   gather_facts: false
   vars_files:
     - ../../vars/common.vault.yaml
-  vars:
+  environment:
     VMWARE_HOST: '{{ vcenter.hostname }}'
     VMWARE_USER: '{{ vcenter.admin_username }}'
     VMWARE_PASSWORD: '{{ vcenter.admin_password }}'
