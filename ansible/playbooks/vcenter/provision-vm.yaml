@@ -37,8 +37,8 @@
           num_cpus: '2'
           scsi: 'paravirtual'
         networks:
-          - name: 'VM Network'
-            device_name: 'vmxnet3'
+          - name: VM Network
+            device_type: vmxnet3
             start_connected: true
             connected: true
       register: create_vm
