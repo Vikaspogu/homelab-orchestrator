@@ -42,6 +42,13 @@
         networks:
           - name: 'VM Network'
             device_name: 'vmxnet3'
+      register: create_vm
+
+    - name: configure VM
+      vars:
+        vm_name: testvm
+      community.vmware.vmware_guest:
+        name: '{{vm_name}}'
         advanced_settings:
           - key: 'guestinfo.metadata'
             value: "{{ lookup('ansible.builtin.template', '../../templates/meta-data.j2') | b64encode }}"
@@ -51,6 +58,6 @@
             value: "{{ lookup('ansible.builtin.template', '../../templates/meta-data.j2') | b64encode }}"
           - key: 'guestinfo.userdata.encoding'
             value: 'base64'
-      register: deploy_vm
+      register: configure_vm
 
-    - ansible.builtin.debug: msg={{deploy_vm}}
+    - ansible.builtin.debug: msg={{configure_vm}}
