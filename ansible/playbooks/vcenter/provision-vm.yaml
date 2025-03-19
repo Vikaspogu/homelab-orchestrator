@@ -16,14 +16,17 @@
         folder_name: 'rhel9_vms'
         folder_type: vm
         state: present
+
     - name: create VM
+      vars:
+        vm_name: testvm
       community.vmware.vmware_guest:
         hostname: '{{ vcenter.hostname }}'
         username: '{{ vcenter.admin_username }}'
         password: '{{ vcenter.admin_password }}'
         validate_certs: 'false'
         datacenter: 'homelab'
-        name: 'testvm'
+        name: '{{vm_name}}'
         folder: 'rhel9_vms'
         state: 'poweredoff'
         template: 'RHEL9_Template'
@@ -39,6 +42,15 @@
         networks:
           - name: 'VM Network'
             device_name: 'vmxnet3'
+        advanced_settings:
+          - key: 'guestinfo.metadata'
+            value: "{{ lookup('template', 'meta-data.j2') | b64encode }}"
+          - key: 'guestinfo.metadata.encoding'
+            value: 'base64'
+          - key: 'guestinfo.userdata'
+            value: "{{ lookup('template', 'user-data.j2') | b64encode }}"
+          - key: 'guestinfo.userdata.encoding'
+            value: 'base64'
       register: deploy_vm
 
     - ansible.builtin.debug: msg={{deploy_vm}}
