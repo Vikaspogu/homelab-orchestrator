@@ -1,2 +1,9 @@
 instance-id: {{vm_name}}
 local-hostname: {{vm_name}}
+network:
+  version: 2
+  ethernets:
+    nics:
+      match:
+        name: ens*
+      dhcp4: yes
