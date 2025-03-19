@@ -40,6 +40,7 @@
           - name: 'VM Network'
             device_name: 'vmxnet3'
             start_connected: true
+            connected: true
       register: create_vm
 
     - name: configure VM
