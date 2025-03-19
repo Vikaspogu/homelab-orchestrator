@@ -1,2 +1,11 @@
 instance-id: {{vm_name}}
 local-hostname: {{vm_name}}
+network:
+  version: 1
+  config:
+    - type: physical
+      name: {{vm_interface}}
+      subnets:
+        - type: static
+          address: {{vm_ip_addr}}
+          gateway: {{vm_gw_addr}}
