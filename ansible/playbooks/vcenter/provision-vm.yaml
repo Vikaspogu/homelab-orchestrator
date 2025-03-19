@@ -5,13 +5,14 @@
   gather_facts: false
   vars_files:
     - ../../vars/common.vault.yaml
+  vars:
+    VMWARE_HOST: '{{ vcenter.hostname }}'
+    VMWARE_USER: '{{ vcenter.admin_username }}'
+    VMWARE_PASSWORD: '{{ vcenter.admin_password }}'
+    VMWARE_VALIDATE_CERTS: 'false'
   tasks:
     - name: create folder
       community.vmware.vcenter_folder:
-        hostname: '{{ vcenter.hostname }}'
-        username: '{{ vcenter.admin_username }}'
-        password: '{{ vcenter.admin_password }}'
-        validate_certs: 'false'
         datacenter_name: 'homelab'
         folder_name: 'rhel9_vms'
         folder_type: vm
@@ -21,10 +22,6 @@
       vars:
         vm_name: testvm
       community.vmware.vmware_guest:
-        hostname: '{{ vcenter.hostname }}'
-        username: '{{ vcenter.admin_username }}'
-        password: '{{ vcenter.admin_password }}'
-        validate_certs: 'false'
         datacenter: 'homelab'
         name: '{{vm_name}}'
         folder: 'rhel9_vms'
