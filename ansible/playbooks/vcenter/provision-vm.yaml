@@ -44,7 +44,7 @@
     - name: configure VM
       vars:
         vm_name: testvm
-        vm_interface: eth0
+        vm_interface: ens33
         vm_ip_addr: 10.30.30.53/24
         vm_gw_addr: 10.30.30.1
       community.vmware.vmware_guest:
