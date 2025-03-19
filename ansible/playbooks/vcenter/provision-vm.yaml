@@ -5,6 +5,8 @@
   gather_facts: false
   vars_files:
     - ../../vars/common.vault.yaml
+  vars:
+    vm_name: testvm
   environment:
     VMWARE_HOST: '{{ vcenter.hostname }}'
     VMWARE_USER: '{{ vcenter.admin_username }}'
@@ -19,8 +21,6 @@
         state: present
 
     - name: create VM
-      vars:
-        vm_name: testvm
       community.vmware.vmware_guest:
         datacenter: 'homelab'
         name: '{{vm_name}}'
@@ -36,11 +36,8 @@
           memory_mb: '4096'
           num_cpus: '2'
           scsi: 'paravirtual'
-      register: create_vm
 
     - name: configure VM
-      vars:
-        vm_name: testvm
       community.vmware.vmware_guest:
         name: '{{vm_name}}'
         advanced_settings:
@@ -52,12 +49,18 @@
             value: "{{ lookup('ansible.builtin.template', '../../templates/user-data.j2') | b64encode }}"
           - key: 'guestinfo.userdata.encoding'
             value: 'base64'
-      register: configure_vm
 
     - name: Start VM
-      vars:
-        vm_name: testvm
       community.vmware.vmware_guest:
         name: '{{vm_name}}'
         state: poweredon
         wait_for_ip_address: true
+      register: vm_details
+
+    - ansible.builtin.debug:
+        msg: '{{vm_details.instance.ipv4}}'
+
+    - name: Run the create cluster
+      ansible.builtin.command:
+        cmd: fips-mode-setup --disable
+      delegate_to: '{{vm_details.instance.ipv4}}'
