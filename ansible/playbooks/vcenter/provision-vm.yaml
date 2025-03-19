@@ -36,11 +36,6 @@
           memory_mb: '4096'
           num_cpus: '2'
           scsi: 'paravirtual'
-        networks:
-          - name: VM Network
-            device_type: vmxnet3
-            start_connected: true
-            connected: true
       register: create_vm
 
     - name: configure VM
