@@ -10,15 +10,6 @@
       "required": false,
       "choices": ["proxmox", "vsphere"],
       "default": "vsphere"
-    },
-    {
-      "type": "multiplechoice",
-      "question_name": "Cluster Type",
-      "question_description": "Type of the OpenShift cluster to deploy",
-      "variable": "cluster_type",
-      "required": false,
-      "choices": ["proxmox", "vsphere"],
-      "default": "vsphere"
     }
   ]
 }

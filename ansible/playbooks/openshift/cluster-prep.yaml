@@ -92,7 +92,7 @@
         force: true
       when: git_repo_exists.stat.exists
 
-    - when: cluster_type == "proxmox"
+    - when: cluster_name == "proxmox"
       block:
         - name: Add pull secret
           ansible.builtin.lineinfile:
@@ -127,7 +127,7 @@
             path: /tmp/agent.x86_64.iso
             state: absent
 
-    - when: cluster_type == 'vsphere'
+    - when: cluster_name == 'vsphere'
       block:
         - name: Update pull secret
           ansible.builtin.lineinfile:
@@ -139,12 +139,3 @@
         - name: Update password secret
           ansible.builtin.command:
             cmd: yq -i '.platform.vsphere.vcenters.0.password="{{ vcenter.admin_password }}"' /home/{{ ansible_user }}/openshift-multicluster/installer/{{ cluster_name }}/install-config.yaml
-
-        - name: Run the create cluster
-          ansible.builtin.command:
-            cmd: /usr/local/bin/openshift-install create cluster --dir installer/{{ cluster_name }} --log-level=info
-            chdir: /home/{{ ansible_user }}/openshift-multicluster
-          register: create_cluster
-
-        - name: Debug the output of the command
-          ansible.builtin.debug: msg="{{ create_cluster.stdout }}"

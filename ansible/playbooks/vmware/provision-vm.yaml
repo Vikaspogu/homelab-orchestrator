@@ -61,6 +61,7 @@
         msg: '{{vm_details.instance.ipv4}}'
 
     - name: Run the create cluster
+      become: true
       ansible.builtin.command:
         cmd: fips-mode-setup --disable
       delegate_to: '{{vm_details.instance.ipv4}}'

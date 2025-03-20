@@ -55,8 +55,8 @@
         survey_file: '../surveys/upload-iso.json',
       }
     - {
-        name: 'OpenShift - Prepare Cluster ISO',
-        file: ansible/playbooks/openshift/generate-iso.yaml,
+        name: 'OpenShift - Prepare Cluster for Installation',
+        file: ansible/playbooks/openshift/cluster-prep.yaml,
         enable_survey: true,
-        survey_file: '../surveys/generate-iso.json',
+        survey_file: '../surveys/cluster-prep.json',
       }

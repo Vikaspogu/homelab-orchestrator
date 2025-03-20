@@ -27,7 +27,7 @@
         enable_survey: false,
       }
     - {
-        name: 'VCenter - Provision VM from Template',
-        file: ansible/playbooks/vcenter/provision-vm.yaml,
+        name: 'VMWare - Provision VM from Template',
+        file: ansible/playbooks/vmware/provision-vm.yaml,
         enable_survey: false,
       }
