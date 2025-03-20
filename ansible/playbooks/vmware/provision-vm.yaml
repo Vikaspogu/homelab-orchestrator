@@ -60,50 +60,65 @@
     - ansible.builtin.debug:
         msg: '{{vm_details.instance.ipv4}}'
 
-    - name: Download katello rpm from satellite capsule
-      ansible.builtin.dnf:
-        name: '{{ item }}/pub/katello-ca-consumer-latest.noarch.rpm'
-        state: present
-        validate_certs: no
-        disable_gpg_check: yes
-      with_items:
-        - '{{satellite.url}}'
-
-    - name: Register system and add subscription
-      redhat.satellite.registration_command:
-        activation_keys: ['{{ satellite.activation_key }}']
-        organization: '{{satellite.org}}'
-        server_url: '{{satellite.url}}'
-        validate_certs: false
-
-    - name: Enable SELinux in enforcing mode
-      ansible.posix.selinux:
-        policy: targeted
-        state: enforcing
-
-    - name: Run the command module
+    - delegate_to: '10.30.30.61'
+      name: Configure system
       become: true
-      ansible.builtin.command:
-        cmd: '{{item}}'
-      with_items:
-        - fips-mode-setup --disable
-        - update-crypto-policies --set DEFAULT:AD-SUPPORT
-      delegate_to: '{{vm_details.instance.ipv4}}'
+      block:
+        - name: Download katello rpm from satellite capsule
+          ansible.builtin.dnf:
+            name: '{{ item }}/pub/katello-ca-consumer-latest.noarch.rpm'
+            state: present
+            validate_certs: no
+            disable_gpg_check: yes
+          with_items:
+            - '{{satellite.url}}'
 
-    - name: Install packages
-      ansible.builtin.package:
-        name:
-          - common-tools
-          - realmd
-          - oddjob
-          - oddjob-mkhomedir
-          - sssd
-          - adcli
-          - krb5-workstation
-          - authconfig
-        state: present
+        - name: Register system and add subscription
+          redhat.satellite.registration_command:
+            username: '{{satellite.username}}'
+            password: '{{satellite.password}}'
+            activation_keys:
+              - '{{satellite.keys}}'
+            organization: '{{satellite.org}}'
+            server_url: '{{satellite.url}}'
+            validate_certs: false
+            force: true
+          register: registration_result
+          delegate_to: localhost
+          become: false
 
-    - name: Remove all wireless packages
-      ansible.builtin.package:
-        name: 'iwl*'
-        state: absent
+        - name: Perform registration
+          ansible.builtin.shell:
+            cmd: |
+              set -o pipefail
+              {{ registration_result.registration_command }}
+
+        - name: Enable SELinux in enforcing mode
+          ansible.posix.selinux:
+            policy: targeted
+            state: enforcing
+
+        - name: Run the command module
+          ansible.builtin.command:
+            cmd: '{{item}}'
+          with_items:
+            - fips-mode-setup --disable
+            - update-crypto-policies --set DEFAULT:AD-SUPPORT
+
+        - name: Install packages
+          ansible.builtin.dnf:
+            name:
+              # - common-tools
+              - realmd
+              - oddjob
+              - oddjob-mkhomedir
+              - sssd
+              - adcli
+              - krb5-workstation
+              - authconfig
+            state: present
+
+        - name: Remove all wireless packages
+          ansible.builtin.package:
+            name: 'iwl*'
+            state: absent
