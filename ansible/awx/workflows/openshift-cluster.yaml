@@ -12,7 +12,7 @@
         unified_job_template:
           organization:
             name: Default
-          name: 'OpenShift - Prepare Cluster ISO'
+          name: 'OpenShift - Prepare Cluster for Installation'
           type: job_template
         extra_data:
           cluster_name: proxmox
