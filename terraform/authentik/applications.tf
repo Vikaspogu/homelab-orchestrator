@@ -92,8 +92,8 @@ locals {
       client_secret = module.onepassword_application["aap-controller"].fields["CLIENT_SECRET"]
       group         = authentik_group.admins.id
       icon_url      = "https://repository-images.githubusercontent.com/177642958/95e2ed0f-953b-4348-b452-54c229136b15"
-      redirect_uri  = "https://aap-controller.${var.cluster_domain}/api/gateway/social/complete/ansible_base-authentication-authenticator_plugins-oidc__authentik/"
-      launch_url    = "https://aap-controller.${var.cluster_domain}"
+      redirect_uri  = "https://aap-controller.vikaspogu.internal/api/gateway/social/complete/ansible_base-authentication-authenticator_plugins-oidc__authentik/"
+      launch_url    = "https://aap-controller.vikaspogu.internal"
     }
   }
 }
