@@ -60,8 +60,43 @@
     - ansible.builtin.debug:
         msg: '{{vm_details.instance.ipv4}}'
 
-    - name: Run the create cluster
+    # - name: Download katello rpm from satellite capsule
+    #   ansible.builtin.dnf:
+    #     name: "{{ item }}"
+    #     state: present
+    #     validate_certs: no
+    #     disable_gpg_check: yes
+    #   with_items:
+    #     - url
+
+    - name: Enable SELinux in enforcing mode
+      ansible.posix.selinux:
+        policy: targeted
+        state: enforcing
+
+    - name: Run the command module
       become: true
       ansible.builtin.command:
-        cmd: fips-mode-setup --disable
+        cmd: '{{item}}'
+      with_items:
+        - fips-mode-setup --disable
+        - update-crypto-policies --set DEFAULT:AD-SUPPORT
       delegate_to: '{{vm_details.instance.ipv4}}'
+
+    - name: Install packages
+      ansible.builtin.package:
+        name:
+          - common-tools
+          - realmd
+          - oddjob
+          - oddjob-mkhomedir
+          - sssd
+          - adcli
+          - krb5-workstation
+          - authconfig
+        state: present
+
+    - name: Remove all wireless packages
+      ansible.builtin.package:
+        name: 'iwl*'
+        state: absent
