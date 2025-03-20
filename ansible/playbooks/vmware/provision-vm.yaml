@@ -60,14 +60,21 @@
     - ansible.builtin.debug:
         msg: '{{vm_details.instance.ipv4}}'
 
-    # - name: Download katello rpm from satellite capsule
-    #   ansible.builtin.dnf:
-    #     name: "{{ item }}"
-    #     state: present
-    #     validate_certs: no
-    #     disable_gpg_check: yes
-    #   with_items:
-    #     - url
+    - name: Download katello rpm from satellite capsule
+      ansible.builtin.dnf:
+        name: '{{ item }}/pub/katello-ca-consumer-latest.noarch.rpm'
+        state: present
+        validate_certs: no
+        disable_gpg_check: yes
+      with_items:
+        - '{{satellite.url}}'
+
+    - name: Register system and add subscription
+      redhat.satellite.registration_command:
+        activation_keys: ['{{ satellite.activation_key }}']
+        organization: '{{satellite.org}}'
+        server_url: '{{satellite.url}}'
+        validate_certs: false
 
     - name: Enable SELinux in enforcing mode
       ansible.posix.selinux:
