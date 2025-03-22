@@ -39,7 +39,7 @@
     - name: Template a file for the kustomization.yaml file
       ansible.builtin.template:
         src: '../../templates/kustomization.yaml.j2'
-        dest: /home/{{ ansible_user }}/openshift-multicluster/.bootstrap_template
+        dest: /home/{{ ansible_user }}/openshift-multicluster/.bootstrap_template/kustomization.yaml
 
     - name: Update openshift-gitops instance
       ansible.builtin.command:
