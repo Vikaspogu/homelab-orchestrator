@@ -41,7 +41,5 @@
         dest: /home/{{ ansible_user }}/openshift-multicluster/.bootstrap
 
     - name: Update openshift-gitops instance
-      kubernetes.core.k8s:
-        definition: "{{ lookup('kubernetes.core.kustomize', dir='.bootstrap') }}"
-      args:
-        chdir: /home/{{ ansible_user }}/openshift-multicluster
+      ansible.builtin.command:
+        cmd: oc apply -k /home/{{ ansible_user }}/openshift-multicluster/.bootstrap
