@@ -4,6 +4,7 @@
   gather_facts: false
   environment:
     K8S_AUTH_KUBECONFIG: '/home/{{ ansible_user }}/openshift-multicluster/installer/{{cluster_name}}/auth/kubeconfig'
+    KUBECONFIG: '/home/{{ ansible_user }}/openshift-multicluster/installer/{{cluster_name}}/auth/kubeconfig'
   vars_files:
     - ../../vars/common.vault.yaml
   tasks:
