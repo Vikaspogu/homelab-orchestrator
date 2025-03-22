@@ -38,8 +38,8 @@
     - name: Template a file for the kustomization.yaml file
       ansible.builtin.template:
         src: '../../templates/kustomization.yaml.j2'
-        dest: github.com/Vikaspogu/openshift-multicluster/.bootstrap
+        dest: /home/{{ ansible_user }}/openshift-multicluster/.bootstrap
 
     - name: Update openshift-gitops instance
       kubernetes.core.k8s:
-        definition: "{{ lookup('kubernetes.core.kustomize', dir='github.com/Vikaspogu/openshift-multicluster/.bootstrap') }}"
+        definition: "{{ lookup('kubernetes.core.kustomize', dir='/home/{{ ansible_user }}/openshift-multicluster//.bootstrap') }}"

@@ -31,14 +31,6 @@ locals {
       redirect_uri  = "https://grafana.${var.cluster_domain}/login/generic_oauth"
       launch_url    = "https://grafana.${var.cluster_domain}/login/generic_oauth"
     },
-    openshift = {
-      client_id     = module.onepassword_application["openshift"].fields["CLIENT_ID"]
-      client_secret = module.onepassword_application["openshift"].fields["CLIENT_SECRET"]
-      group         = authentik_group.admins.id
-      icon_url      = "https://austindewey.com/wp-content/uploads/2018/10/Logotype_RH_OpenShift_StackedLogo_RGB_Black.png"
-      redirect_uri  = "https://oauth-openshift.${var.openshift_cluster_domain}/oauth2callback/authentik"
-      launch_url    = "https://console-openshift-console.${var.openshift_cluster_domain}/"
-    },
     freshrss = {
       client_id     = module.onepassword_application["freshrss"].fields["CLIENT_ID"]
       client_secret = module.onepassword_application["freshrss"].fields["CLIENT_SECRET"]
@@ -79,13 +71,37 @@ locals {
       redirect_uri  = "https://mealie.${var.cluster_domain}/login"
       launch_url    = "https://mealie.${var.cluster_domain}/login"
     },
-    argocd-workflows = {
-      client_id     = module.onepassword_application["argocd-workflows"].fields["CLIENT_ID"]
-      client_secret = module.onepassword_application["argocd-workflows"].fields["CLIENT_SECRET"]
+    openshift-proxmox = {
+      client_id     = module.onepassword_application["openshift"].fields["CLIENT_ID_PROXMOX"]
+      client_secret = module.onepassword_application["openshift"].fields["CLIENT_SECRET_PROXMOX"]
+      group         = authentik_group.admins.id
+      icon_url      = "https://austindewey.com/wp-content/uploads/2018/10/Logotype_RH_OpenShift_StackedLogo_RGB_Black.png"
+      redirect_uri  = "https://oauth-openshift.${var.openshift_proxmox_cluster_domain}/oauth2callback/authentik"
+      launch_url    = "https://console-openshift-console.${var.openshift_proxmox_cluster_domain}/"
+    },
+    openshift-vsphere = {
+      client_id     = module.onepassword_application["openshift"].fields["CLIENT_ID_VSPHERE"]
+      client_secret = module.onepassword_application["openshift"].fields["CLIENT_SECRET_VSPHERE"]
+      group         = authentik_group.admins.id
+      icon_url      = "https://austindewey.com/wp-content/uploads/2018/10/Logotype_RH_OpenShift_StackedLogo_RGB_Black.png"
+      redirect_uri  = "https://oauth-openshift.${var.openshift_vsphere_cluster_domain}/oauth2callback/authentik"
+      launch_url    = "https://console-openshift-console.${var.openshift_vsphere_cluster_domain}/"
+    },
+    argocd-workflows-proxmox = {
+      client_id     = module.onepassword_application["argocd-workflows"].fields["CLIENT_ID_PROXMOX"]
+      client_secret = module.onepassword_application["argocd-workflows"].fields["CLIENT_SECRET_PROXMOX"]
       group         = authentik_group.admins.id
       icon_url      = "https://avatars.githubusercontent.com/u/30269780?s=200&v=4"
-      redirect_uri  = "https://argo-workflows-openshift-gitops.apps.proxmox.v3socp.boo/oauth2/callback"
-      launch_url    = "https://argo-workflows-openshift-gitops.apps.proxmox.v3socp.boo/oauth2/callback"
+      redirect_uri  = "https://argo-workflows-openshift-gitops.${var.openshift_proxmox_cluster_domain}/oauth2/callback"
+      launch_url    = "https://argo-workflows-openshift-gitops.${var.openshift_proxmox_cluster_domain}/oauth2/callback"
+    },
+    argocd-workflows-vsphere = {
+      client_id     = module.onepassword_application["argocd-workflows"].fields["CLIENT_ID_VSPHERE"]
+      client_secret = module.onepassword_application["argocd-workflows"].fields["CLIENT_SECRET_VSPHERE"]
+      group         = authentik_group.admins.id
+      icon_url      = "https://avatars.githubusercontent.com/u/30269780?s=200&v=4"
+      redirect_uri  = "https://argo-workflows-openshift-gitops.${var.openshift_vsphere_cluster_domain}/oauth2/callback"
+      launch_url    = "https://argo-workflows-openshift-gitops.${var.openshift_vsphere_cluster_domain}/oauth2/callback"
     },
     aap-controller = {
       client_id     = module.onepassword_application["aap-controller"].fields["CLIENT_ID"]
