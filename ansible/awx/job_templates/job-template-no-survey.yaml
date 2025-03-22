@@ -17,11 +17,6 @@
     validate_certs: false
   loop:
     - {
-        name: 'OpenShift - ACM GitOps Bootstrap',
-        file: ansible/playbooks/openshift/acm-gitops-bootstrap.yaml,
-        enable_survey: false,
-      }
-    - {
         name: 'OpenShift - Vcenter Permissions Setup',
         file: ansible/playbooks/openshift/vcenter-permissions.yaml,
         enable_survey: false,

@@ -60,3 +60,9 @@
         enable_survey: true,
         survey_file: '../surveys/cluster-prep.json',
       }
+    - {
+        name: 'OpenShift - GitOps Bootstrap',
+        file: ansible/playbooks/openshift/gitops-bootstrap.yaml,
+        enable_survey: true,
+        survey_file: '../surveys/gitops-bootstrap.json',
+      }

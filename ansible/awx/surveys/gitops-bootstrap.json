@@ -1,6 +1,6 @@
 {
-  "name": "Prepare Cluster Installation",
-  "description": "Prepare Cluster Installation",
+  "name": "Bootstrap GitOps on Cluster",
+  "description": "Bootstrap GitOps on Cluster",
   "spec": [
     {
       "type": "multiplechoice",

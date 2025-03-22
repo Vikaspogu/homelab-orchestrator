@@ -3,7 +3,7 @@
   hosts: aap-controller
   gather_facts: false
   environment:
-    K8S_AUTH_KUBECONFIG: '/home/{{ ansible_user }}/openshift-multicluster/installer/proxmox/auth/kubeconfig'
+    K8S_AUTH_KUBECONFIG: '/home/{{ ansible_user }}/openshift-multicluster/installer/{{cluster_name}}/auth/kubeconfig'
   vars_files:
     - ../../vars/common.vault.yaml
   tasks:
@@ -34,6 +34,11 @@
           kubernetes.core.k8s:
             state: present
             template: '../../templates/sops-secret.yaml.j2'
+
+    - name: Template a file for the kustomization.yaml file
+      ansible.builtin.template:
+        src: '../../templates/kustomization.yaml.j2'
+        dest: github.com/Vikaspogu/openshift-multicluster/.bootstrap
 
     - name: Update openshift-gitops instance
       kubernetes.core.k8s:
