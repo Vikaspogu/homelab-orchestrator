@@ -33,13 +33,25 @@
         - podman build -f image/Containerfile -t localhost/rhel-bootc-vmdk image
         - podman run --rm -it --privileged -v /var/lib/containers/storage:/var/lib/containers/storage -v ./output:/output --security-opt label=type:unconfined_t --pull newer registry.redhat.io/rhel9/bootc-image-builder:9.4 --local --type vmdk localhost/rhel-bootc-vmdk:latest
 
+    - name: Copy files from foo to bar
+      ansible.builtin.copy:
+        remote_src: true
+        src: /tmp/rhel-bootc-vmdk/output/vmdk/disk.vmdk
+        dest: /tmp/rhel-bootc-vmdk/output/vmdk/rhel-bootc-vmdk.vmdk
+
+    - name: create folder
+      community.vmware.vcenter_folder:
+        datacenter_name: 'homelab'
+        folder_name: 'vm-templates'
+        folder_type: vm
+        state: present
+
     - name: Copy file to datastore
       community.vmware.vsphere_copy:
-        src: /tmp/rhel-bootc-vmdk/output/vmdk/disk.vmdk
+        src: /tmp/rhel-bootc-vmdk/output/vmdk/rhel-bootc-vmdk.vmdk
         datacenter: 'homelab'
         datastore: datastore1
-        path: rhel-bootc-vmdk
-        diskformat: StreamVmdk
+        path: vm-templates/rhel-bootc-vmdk
         timeout: 360
 
     - name: Cleanup directory
