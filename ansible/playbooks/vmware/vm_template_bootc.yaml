@@ -6,10 +6,10 @@
   vars_files:
     - ../../vars/common.vault.yaml
   environment:
-    VMWARE_HOST: '{{ vcenter.hostname }}'
-    VMWARE_USER: '{{ vcenter.admin_username }}'
-    VMWARE_PASSWORD: '{{ vcenter.admin_password }}'
-    VMWARE_VALIDATE_CERTS: 'false'
+    GOVC_URL: '{{ vcenter.hostname }}'
+    GOVC_USERNAME: '{{ vcenter.admin_username }}'
+    GOVC_PASSWORD: '{{ vcenter.admin_password }}'
+    GOVC_INSECURE: 'false'
   tasks:
     - name: Creates directory
       ansible.builtin.file:
@@ -39,20 +39,11 @@
         src: /tmp/rhel-bootc-vmdk/output/vmdk/disk.vmdk
         dest: /tmp/rhel-bootc-vmdk/output/vmdk/rhel-bootc-vmdk.vmdk
 
-    - name: create folder
-      community.vmware.vcenter_folder:
-        datacenter_name: 'homelab'
-        folder_name: 'vm-templates'
-        folder_type: vm
-        state: present
-
-    - name: Copy file to datastore
-      community.vmware.vsphere_copy:
-        src: /tmp/rhel-bootc-vmdk/output/vmdk/rhel-bootc-vmdk.vmdk
-        datacenter: 'homelab'
-        datastore: datastore1
-        path: vm-templates/rhel-bootc-vmdk
-        timeout: 360
+    - name: Run govc commands
+      ansible.builtin.command:
+        cmd: 'govc import.vmdk -dc="homelab" -ds="datastore1" output/vmdk/rhel-bootc-vmdk.vmdk vm-templates'
+      args:
+        chdir: /tmp/rhel-bootc-vmdk
 
     - name: Cleanup directory
       ansible.builtin.file:
