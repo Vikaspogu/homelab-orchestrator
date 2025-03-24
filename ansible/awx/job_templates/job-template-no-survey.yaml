@@ -26,3 +26,8 @@
         file: ansible/playbooks/vmware/provision-vm.yaml,
         enable_survey: false,
       }
+    - {
+        name: 'VMWare - Provision VMDK RHEL9 Template',
+        file: ansible/playbooks/vmware/vm_template_bootc.yaml,
+        enable_survey: false,
+      }

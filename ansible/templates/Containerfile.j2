@@ -1,0 +1,5 @@
+FROM registry.redhat.io/rhel9/rhel-bootc:9.4
+RUN dnf -y install cloud-init open-vm-tools && \
+    ln -s ../cloud-init.target /usr/lib/systemd/system/default.target.wants && \
+    rm -rf /var/{cache,log} /var/lib/{dnf,rhsm} && \
+    systemctl enable vmtoolsd.service

@@ -1,0 +1,43 @@
+---
+- name: create vmdk template Playbook
+  hosts: aap-controller
+  become: true
+  gather_facts: false
+  vars_files:
+    - ../../vars/common.vault.yaml
+  environment:
+    VMWARE_HOST: '{{ vcenter.hostname }}'
+    VMWARE_USER: '{{ vcenter.admin_username }}'
+    VMWARE_PASSWORD: '{{ vcenter.admin_password }}'
+    VMWARE_VALIDATE_CERTS: 'false'
+  tasks:
+    - name: Creates directory
+      ansible.builtin.file:
+        path: '{{item}}'
+        state: directory
+      with_items:
+        - /tmp/rhel-bootc-vmdk/image
+        - /tmp/rhel-bootc-vmdk/output
+
+    - name: Template a file for the Containerfile
+      ansible.builtin.template:
+        src: '../../templates/Containerfile.j2'
+        dest: /tmp/rhel-bootc-vmdk/image/Containerfile
+
+    - name: Run podman commands
+      ansible.builtin.command:
+        cmd: '{{item}}'
+      args:
+        chdir: /tmp/rhel-bootc-vmdk
+      with_items:
+        - podman build -f image/Containerfile -t localhost/rhel-bootc-vmdk image
+        - podman run --rm -it --privileged -v /var/lib/containers/storage:/var/lib/containers/storage -v ./output:/output --security-opt label=type:unconfined_t --pull newer registry.redhat.io/rhel9/bootc-image-builder:9.4 --local --type vmdk localhost/rhel-bootc-vmdk:latest
+
+    - name: Copy file to datastore using other_system
+      community.vmware.vsphere_copy:
+        src: /tmp/rhel-bootc-vmdk/output/vmdk/disk.vmdk
+        datacenter: 'homelab'
+        datastore: datastore1
+        path: rhel-bootc-vmdk.vmdk
+        timeout: 360
+      delegate_to: other_system
