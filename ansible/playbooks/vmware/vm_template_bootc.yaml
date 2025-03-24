@@ -38,7 +38,7 @@
         src: /tmp/rhel-bootc-vmdk/output/vmdk/disk.vmdk
         datacenter: 'homelab'
         datastore: datastore1
-        path: rhel-bootc-vmdk.vmdk
+        path: rhel-bootc-vmdk
         diskformat: StreamVmdk
         timeout: 360
 

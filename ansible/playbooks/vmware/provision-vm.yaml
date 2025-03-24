@@ -26,7 +26,7 @@
         name: '{{vm_name}}'
         folder: 'rhel9_vms'
         state: 'poweredoff'
-        template: 'RHEL9_Template'
+        template: 'rhel-bootc-vmdk'
         cluster: 'cluster1'
         disk:
           - size_gb: '18'
