@@ -39,4 +39,10 @@
         datacenter: 'homelab'
         datastore: datastore1
         path: rhel-bootc-vmdk.vmdk
+        diskformat: StreamVmdk
         timeout: 360
+
+    - name: Cleanup directory
+      ansible.builtin.file:
+        path: '/tmp/rhel-bootc-vmdk'
+        state: absent
