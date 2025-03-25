@@ -77,7 +77,7 @@ locals {
       client_secret = module.onepassword_application["hoarder"].fields["CLIENT_SECRET"]
       group         = authentik_group.admins.id
       icon_url      = "https://avatars.githubusercontent.com/u/92342333?s=200&v=4"
-      redirect_uri  = "https://hoarder.${var.cluster_domain}/login"
+      redirect_uri  = "https://hoarder.${var.cluster_domain}/api/auth/callback/custom"
       launch_url    = "https://hoarder.${var.cluster_domain}/login"
     },
     openshift-proxmox = {
