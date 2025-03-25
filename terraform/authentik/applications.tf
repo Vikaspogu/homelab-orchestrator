@@ -6,6 +6,7 @@ locals {
     "paperless",
     "pgadmin",
     "jellyfin",
+    "hoarder",
     "mealie",
     "argocd-workflows",
     "aap-controller"
@@ -70,6 +71,14 @@ locals {
       icon_url      = "https://avatars.githubusercontent.com/u/92342333?s=200&v=4"
       redirect_uri  = "https://mealie.${var.cluster_domain}/login"
       launch_url    = "https://mealie.${var.cluster_domain}/login"
+    },
+    hoarder = {
+      client_id     = module.onepassword_application["hoarder"].fields["CLIENT_ID"]
+      client_secret = module.onepassword_application["hoarder"].fields["CLIENT_SECRET"]
+      group         = authentik_group.admins.id
+      icon_url      = "https://avatars.githubusercontent.com/u/92342333?s=200&v=4"
+      redirect_uri  = "https://hoarder.${var.cluster_domain}/login"
+      launch_url    = "https://hoarder.${var.cluster_domain}/login"
     },
     openshift-proxmox = {
       client_id     = module.onepassword_application["openshift"].fields["CLIENT_ID_PROXMOX"]
