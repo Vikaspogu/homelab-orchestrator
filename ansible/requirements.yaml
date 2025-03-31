@@ -9,7 +9,7 @@ collections:
   - name: community.sops
     version: 2.0.3
   - name: kubernetes.core
-    version: 5.1.0
+    version: 5.2.0
   - name: ansible.controller
     version: 4.6.8 #for 2.5
   - name: ansible.platform
