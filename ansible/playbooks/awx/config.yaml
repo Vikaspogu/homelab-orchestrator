@@ -63,6 +63,11 @@
             'Content-Type': 'application/json'
         state: present
 
+    - name: Configure Settings
+      ansible.controller.settings:
+        settings:
+          SESSION_COOKIE_AGE: 7200
+
     - name: Add notifiers to Default Organization
       ansible.controller.organization:
         name: Default
