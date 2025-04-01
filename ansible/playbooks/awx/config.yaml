@@ -64,7 +64,7 @@
         state: present
 
     - name: Configure Settings
-      ansible.controller.settings:
+      ansible.platform.settings:
         settings:
           SESSION_COOKIE_AGE: 7200
 
