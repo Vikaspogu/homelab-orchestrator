@@ -6,7 +6,7 @@
     state: present
     inventory: '{{ awx_inventory_name }}'
     playbook: '{{ item.file }}'
-
+    project: '{{ awx_project_name }}'
     credentials:
       - 'Host Credentials'
       - 'Vault Credentials'
