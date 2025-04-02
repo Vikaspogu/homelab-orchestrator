@@ -26,7 +26,7 @@
         name: '{{vm_name}}'
         folder: 'rhel9_vms'
         state: 'poweredoff'
-        template: 'rhel-bootc-vmdk'
+        template: 'RHEL9_Template'
         cluster: 'cluster1'
         disk:
           - size_gb: '18'
@@ -60,72 +60,72 @@
     - ansible.builtin.debug:
         msg: '{{vm_details.instance.ipv4}}'
 
-    # - delegate_to: '10.30.30.61'
-    #   name: Configure system
-    #   become: true
-    #   block:
-    #     - name: Run the command module
-    #       ansible.builtin.command:
-    #         cmd: subscription-manager identity
-    #       register: subscription_result
+    - delegate_to: '{{vm_details.instance.ipv4}}'
+      name: Configure system
+      become: true
+      block:
+        - name: Run the command module
+          ansible.builtin.command:
+            cmd: subscription-manager identity
+          register: subscription_result
 
-    #     - name: Register only when subscription identity is empty
-    #       when: subscription_result.stdout.find('system identity') == -1
-    #       block:
-    #         - name: Download katello rpm from satellite capsule
-    #           ansible.builtin.dnf:
-    #             name: '{{ item }}/pub/katello-ca-consumer-latest.noarch.rpm'
-    #             state: present
-    #             validate_certs: no
-    #             disable_gpg_check: yes
-    #           with_items:
-    #             - '{{satellite.url}}'
+        - name: Register only when subscription identity is empty
+          when: subscription_result.stdout.find('system identity') == -1
+          block:
+            - name: Download katello rpm from satellite capsule
+              ansible.builtin.dnf:
+                name: '{{ item }}/pub/katello-ca-consumer-latest.noarch.rpm'
+                state: present
+                validate_certs: no
+                disable_gpg_check: yes
+              with_items:
+                - '{{satellite.url}}'
 
-    #         - name: Register system and add subscription
-    #           redhat.satellite.registration_command:
-    #             username: '{{satellite.username}}'
-    #             password: '{{satellite.password}}'
-    #             activation_keys:
-    #               - '{{satellite.keys}}'
-    #             organization: '{{satellite.org}}'
-    #             server_url: '{{satellite.url}}'
-    #             validate_certs: false
-    #           register: registration_result
-    #           delegate_to: localhost
-    #           become: false
+            - name: Register system and add subscription
+              redhat.satellite.registration_command:
+                username: '{{satellite.username}}'
+                password: '{{satellite.password}}'
+                activation_keys:
+                  - '{{satellite.keys}}'
+                organization: '{{satellite.org}}'
+                server_url: '{{satellite.url}}'
+                validate_certs: false
+              register: registration_result
+              delegate_to: localhost
+              become: false
 
-    #         - name: Perform registration
-    #           ansible.builtin.shell:
-    #             cmd: |
-    #               set -o pipefail
-    #               {{ registration_result.registration_command }}
+            - name: Perform registration
+              ansible.builtin.shell:
+                cmd: |
+                  set -o pipefail
+                  {{ registration_result.registration_command }}
 
-    #     - name: Enable SELinux in enforcing mode
-    #       ansible.posix.selinux:
-    #         policy: targeted
-    #         state: enforcing
+        - name: Enable SELinux in enforcing mode
+          ansible.posix.selinux:
+            policy: targeted
+            state: enforcing
 
-    #     - name: Run the command module
-    #       ansible.builtin.command:
-    #         cmd: '{{item}}'
-    #       with_items:
-    #         - fips-mode-setup --disable
-    #         - update-crypto-policies --set DEFAULT:AD-SUPPORT
+        - name: Run the command module
+          ansible.builtin.command:
+            cmd: '{{item}}'
+          with_items:
+            - fips-mode-setup --disable
+            - update-crypto-policies --set DEFAULT:AD-SUPPORT
 
-    #     - name: Install packages
-    #       ansible.builtin.dnf:
-    #         name:
-    #           # - common-tools
-    #           - realmd
-    #           - oddjob
-    #           - oddjob-mkhomedir
-    #           - sssd
-    #           - adcli
-    #           - krb5-workstation
-    #           - authconfig
-    #         state: present
+        - name: Install packages
+          ansible.builtin.dnf:
+            name:
+              # - common-tools
+              - realmd
+              - oddjob
+              - oddjob-mkhomedir
+              - sssd
+              - adcli
+              - krb5-workstation
+              - authconfig
+            state: present
 
-    #     - name: Remove all wireless packages
-    #       ansible.builtin.package:
-    #         name: 'iwl*'
-    #         state: absent
+        - name: Remove all wireless packages
+          ansible.builtin.package:
+            name: 'iwl*'
+            state: absent

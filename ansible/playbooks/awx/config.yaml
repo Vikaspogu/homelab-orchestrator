@@ -35,8 +35,9 @@
 
     - name: Create a new token using existing token
       ansible.hub.ah_token:
-        ah_token: '{{ ah_token }}'
+        state: present
       no_log: True
+      register: ah_token
 
     - name: Authenticators | Configuration # noqa fqcn[action-core]
       ansible.platform.authenticator:
@@ -72,10 +73,15 @@
             'Content-Type': 'application/json'
         state: present
 
-    - name: Configure Settings
+    - name: Configure Platform Settings
       ansible.platform.settings:
         settings:
           SESSION_COOKIE_AGE: 7200
+
+    - name: Configure Controller Settings
+      ansible.controller.settings:
+        settings:
+          GALAXY_IGNORE_CERTS: true
 
     - name: Add notifiers to Default Organization
       ansible.controller.organization:
@@ -95,7 +101,7 @@
         organization: Default
         inputs:
           url: https://aap-controller.vikaspogu.internal/pulp_ansible/galaxy/rh-certified/
-          token: '{{ ah_token }}'
+          token: '{{ ah_token.ansible_facts.ah_token.token }}'
 
     - name: Private Hub community Credentials
       ansible.controller.credential:
@@ -104,7 +110,16 @@
         organization: Default
         inputs:
           url: https://aap-controller.vikaspogu.internal/pulp_ansible/galaxy/community/
-          token: '{{ ah_token }}'
+          token: '{{ ah_token.ansible_facts.ah_token.token }}'
+
+    - name: Private Hub validated Credentials
+      ansible.controller.credential:
+        name: Automation Hub validated credentials
+        credential_type: Ansible Galaxy/Automation Hub API Token
+        organization: Default
+        inputs:
+          url: https://aap-controller.vikaspogu.internal/pulp_ansible/galaxy/validated/
+          token: '{{ ah_token.ansible_facts.ah_token.token }}'
 
     - name: Machine Credentials
       ansible.controller.credential:
@@ -141,6 +156,7 @@
         galaxy_credentials:
           - Automation Hub rh-certified credentials
           - Automation Hub community credentials
+          - Automation Hub validated credentials
 
     - name: Add EE to the controller instance
       ansible.controller.execution_environment:
