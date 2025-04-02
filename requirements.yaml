@@ -16,7 +16,7 @@ collections:
     version: 2.5.20250213
   - name: ansible.hub
   - name: infra.controller_configuration
-    version: 2.9.0
+    version: 2.11.0
   - name: infra.aap_utilities
     version: 2.5.1
   - name: community.vmware
