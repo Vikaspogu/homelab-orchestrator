@@ -6,8 +6,7 @@
     state: present
     inventory: '{{ awx_inventory_name }}'
     playbook: '{{ item.file }}'
-    project: '{{ awx_project_name }}'
-    execution_environment: 'Custom EE'
+
     credentials:
       - 'Host Credentials'
       - 'Vault Credentials'
