@@ -65,16 +65,20 @@
       become: true
       block:
         - name: Read device information (always use unit when probing)
-          community.general.parted: device=/dev/sda unit=MiB
-          register: sdb_info
+          community.general.parted:
+            device: /dev/sda
+            unit: MiB
+          register: disk_info
 
         - name: Extend an existing partition to fill all available space
           community.general.parted:
             device: /dev/sda
-            number: '{{ sdb_info.partitions | length }}'
+            number: '{{ disk_info.partitions | length }}'
+            label: gpt
+            unit: MiB
             part_end: '100%'
-            resize: true
             state: present
+            resize: true
 
         - name: Extend the LVM to the new space on {{ disk }}
           community.general.lvg:
@@ -86,9 +90,8 @@
           community.general.lvol:
             vg: rhel
             lv: root
-            size: 100%
+            size: +100%FREE
             resizefs: true
-            force: yes
 
         - name: Run the command module
           ansible.builtin.command:
