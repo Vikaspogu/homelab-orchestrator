@@ -76,8 +76,11 @@
             resize: true
             state: present
 
-        - name: Resize the physical volume /dev/sda
-          ansible.builtin.shell: pvresize /dev/sda
+        - name: Extend the LVM to the new space on {{ disk }}
+          community.general.lvg:
+            vg: 'rhel'
+            pvs: '/dev/sda{{ disk_info.partitions | length }}'
+            pvresize: true
 
         - name: Extend the logical volume to take all remaining space of the PVs and resize the underlying filesystem
           community.general.lvol:
