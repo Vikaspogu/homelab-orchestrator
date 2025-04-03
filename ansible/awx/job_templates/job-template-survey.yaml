@@ -65,3 +65,9 @@
         enable_survey: true,
         survey_file: '../surveys/gitops-bootstrap.json',
       }
+    - {
+        name: 'VMWare - Provision VM from Template',
+        file: ansible/playbooks/vmware/provision-vm.yaml,
+        enable_survey: true,
+        survey_file: '../surveys/provision-vm.json',
+      }

@@ -20,13 +20,3 @@
         file: ansible/playbooks/openshift/vcenter-permissions.yaml,
         enable_survey: false,
       }
-    - {
-        name: 'VMWare - Provision VM from Template',
-        file: ansible/playbooks/vmware/provision-vm.yaml,
-        enable_survey: false,
-      }
-    - {
-        name: 'VMWare - Provision VMDK RHEL9 Template',
-        file: ansible/playbooks/vmware/vm-template-bootc.yaml,
-        enable_survey: false,
-      }
