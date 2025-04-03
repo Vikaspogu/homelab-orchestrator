@@ -64,6 +64,29 @@
       name: Configure system
       become: true
       block:
+        - name: Read device information (always use unit when probing)
+          community.general.parted: device=/dev/sda unit=MiB
+          register: sdb_info
+
+        - name: Extend an existing partition to fill all available space
+          community.general.parted:
+            device: /dev/sda
+            number: '{{ sdb_info.partitions | length }}'
+            part_end: '100%'
+            resize: true
+            state: present
+
+        - name: Resize the physical volume /dev/sda
+          ansible.builtin.shell: pvresize /dev/sda
+
+        - name: Extend the logical volume to take all remaining space of the PVs and resize the underlying filesystem
+          community.general.lvol:
+            vg: rhel
+            lv: root
+            size: 100%
+            resizefs: true
+            force: yes
+
         - name: Run the command module
           ansible.builtin.command:
             cmd: subscription-manager identity
