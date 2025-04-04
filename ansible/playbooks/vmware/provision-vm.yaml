@@ -14,14 +14,14 @@
     VMWARE_VALIDATE_CERTS: 'false'
   tasks:
     - name: create folder
-      community.vmware.vcenter_folder:
+      vmware.vmware_rest.vcenter_vm:
         datacenter_name: 'homelab'
         folder_name: 'rhel9_vms'
         folder_type: vm
         state: present
 
     - name: create VM
-      community.vmware.vmware_guest:
+      vmware.vmware_rest.vcenter_vm:
         datacenter: 'homelab'
         name: '{{vm_name}}'
         folder: 'rhel9_vms'
@@ -38,7 +38,7 @@
           scsi: 'paravirtual'
 
     - name: configure VM
-      community.vmware.vmware_guest:
+      vmware.vmware_rest.vcenter_vm:
         name: '{{vm_name}}'
         advanced_settings:
           - key: 'guestinfo.metadata'
@@ -51,7 +51,7 @@
             value: 'base64'
 
     - name: Start VM
-      community.vmware.vmware_guest:
+      vmware.vmware_rest.vcenter_vm:
         name: '{{vm_name}}'
         state: poweredon
         wait_for_ip_address: true
