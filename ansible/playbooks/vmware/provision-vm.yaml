@@ -13,18 +13,18 @@
     VMWARE_PASSWORD: '{{ vcenter.admin_password }}'
     VMWARE_VALIDATE_CERTS: 'false'
   tasks:
-    - name: create folder
-      community.vmware.vcenter_folder:
-        datacenter_name: 'homelab'
-        folder_name: 'rhel9_vms'
-        folder_type: vm
-        state: present
+    # - name: create folder
+    #   community.vmware.vcenter_folder:
+    #     datacenter_name: 'homelab'
+    #     folder_name: 'rhel9_vms'
+    #     folder_type: vm
+    #     state: present
 
     - name: create VM
       community.vmware.vmware_guest:
         datacenter: 'homelab'
         name: '{{vm_name}}'
-        folder: 'rhel9_vms'
+        folder: ''
         state: 'poweredoff'
         template: 'RHEL9_Template'
         cluster: 'cluster1'
