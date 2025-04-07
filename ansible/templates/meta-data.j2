@@ -1,2 +1,21 @@
 instance-id: {{vm_name}}
 local-hostname: {{vm_name}}
+network:
+  version: 1
+  config:
+    - type: physical
+      name: ens33
+      subnets:
+        - type: static
+          address: {{vm_ip}}
+          gateway: {{vm_ip}}
+          dns_nameservers:
+          {%- set dns_list = vm_dns_ns.split(',') -%}
+          {% for dns in dns_list %}
+          - {{dns}}
+          {%- endfor %}
+          dns_search:
+          {%- set dns_search_list = vm_dns_search.split(',') -%}
+          {%- for dns in dns_search_list %}
+          - {{dns}}
+          {%- endfor %}

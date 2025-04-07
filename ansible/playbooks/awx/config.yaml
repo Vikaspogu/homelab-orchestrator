@@ -94,13 +94,19 @@
         name: '{{ awx_inventory_name }}'
         organization: Default
 
+    - name: Create a new token using existing token
+      ansible.hub.ah_token:
+        state: present
+      no_log: True
+      register: ah_token
+
     - name: Private Hub rh-certified Credentials
       ansible.controller.credential:
         name: Automation Hub rh-certified credentials
         credential_type: Ansible Galaxy/Automation Hub API Token
         organization: Default
         inputs:
-          url: https://aap-controller.vikaspogu.internal/pulp_ansible/galaxy/rh-certified/
+          url: https://<replace>/pulp_ansible/galaxy/rh-certified/
           token: '{{ ah_token.ansible_facts.ah_token.token }}'
 
     - name: Private Hub community Credentials
@@ -109,7 +115,7 @@
         credential_type: Ansible Galaxy/Automation Hub API Token
         organization: Default
         inputs:
-          url: https://aap-controller.vikaspogu.internal/pulp_ansible/galaxy/community/
+          url: https://<replace>/pulp_ansible/galaxy/community/
           token: '{{ ah_token.ansible_facts.ah_token.token }}'
 
     - name: Private Hub validated Credentials
@@ -118,8 +124,16 @@
         credential_type: Ansible Galaxy/Automation Hub API Token
         organization: Default
         inputs:
-          url: https://aap-controller.vikaspogu.internal/pulp_ansible/galaxy/validated/
+          url: https://<replace>/pulp_ansible/galaxy/validated/
           token: '{{ ah_token.ansible_facts.ah_token.token }}'
+    - name: Update organization that pulls content from galaxy.ansible.com
+      ansible.controller.organization:
+        name: 'DMS_Infra'
+        state: present
+        galaxy_credentials:
+          - Automation Hub rh-certified credentials
+          - Automation Hub community credentials
+          - Automation Hub validated credentials
 
     - name: Machine Credentials
       ansible.controller.credential:
@@ -151,7 +165,7 @@
 
     - name: Update organization that pulls content from galaxy.ansible.com
       ansible.controller.organization:
-        name: 'Default'
+        name: 'DMS_Infra'
         state: present
         galaxy_credentials:
           - Automation Hub rh-certified credentials
