@@ -12,7 +12,6 @@ network:
           address: {{vm_ip}}
           gateway: {{vm_ip}}
           dns_nameservers:
-          {{vm_dns_ns | split(",")| indent(width=10)}}
           {%- for dns in dns_list %}
           - {{dns|to_yaml(indent=10)}}
           {%- endfor %}
