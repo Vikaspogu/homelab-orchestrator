@@ -12,10 +12,10 @@ network:
           address: {{vm_ip}}
           gateway: {{vm_ip}}
           dns_nameservers:
-{% for dns in dns_list %}
-          - {{dns}}
-{%- endfor %}
+          {% for dns in dns_list %}
+          - {{dns|to_yaml(indent=10)}}
+          {%- endfor %}
           dns_search:
-{% for dns in dns_search_list %}
-          - {{dns}}
-{% endfor %}
+          {% for dns in dns_search_list %}
+          - {{dns|to_yaml(indent=10)}}
+          {% endfor %}
