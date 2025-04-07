@@ -1,3 +1,5 @@
+{% set dns_search_list = vm_dns_search.split(',') %}
+{% set dns_list = vm_dns_ns.split(',') %}
 instance-id: {{vm_name}}
 local-hostname: {{vm_name}}
 network:
@@ -10,12 +12,10 @@ network:
           address: {{vm_ip}}
           gateway: {{vm_ip}}
           dns_nameservers:
-          {% set dns_list = vm_dns_ns.split(',') %}
-          {%- for dns in dns_list %}
+          {% for dns in dns_list %}
           - {{dns}}
           {%- endfor %}
           dns_search:
-          {% set dns_search_list = vm_dns_search.split(',') %}
-          {%- for dns in dns_search_list %}
+          {% for dns in dns_search_list %}
           - {{dns}}
           {% endfor %}
