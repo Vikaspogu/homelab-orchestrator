@@ -94,7 +94,7 @@
             resizefs: true
         - name: Add user to sudoers file
           ansible.builtin.copy:
-            path: '/etc/sudoers.d/{{item}}'
+            dest: '/etc/sudoers.d/{{item}}'
             content: |
               '{{item}} ALL=(ALL) ALL'
             validate: 'visudo -cf %s'
