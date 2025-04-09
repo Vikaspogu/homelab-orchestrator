@@ -92,7 +92,14 @@
             lv: root
             size: +100%FREE
             resizefs: true
-
+        - name: Add user to sudoers file
+          ansible.builtin.copy:
+            path: '/etc/sudoers.d/{{item}}'
+            content: |
+              '{{item}} ALL=(ALL) ALL'
+            validate: 'visudo -cf %s'
+          with_items:
+            - test
         - name: Run the command module
           ansible.builtin.command:
             cmd: subscription-manager identity
