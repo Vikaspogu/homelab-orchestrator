@@ -96,7 +96,7 @@
           ansible.builtin.copy:
             dest: '/etc/sudoers.d/{{item}}'
             content: |
-              '{{item}} ALL=(ALL) ALL'
+              {{item}} ALL=(ALL) ALL
             validate: 'visudo -cf %s'
           with_items:
             - test
