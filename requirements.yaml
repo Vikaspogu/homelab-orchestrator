@@ -18,7 +18,7 @@ collections:
   - name: infra.controller_configuration
     version: 3.0.2
   - name: infra.aap_utilities
-    version: 2.5.1
+    version: 2.6.1
   - name: community.vmware
   - name: redhat.satellite
     version: 5.3.0
