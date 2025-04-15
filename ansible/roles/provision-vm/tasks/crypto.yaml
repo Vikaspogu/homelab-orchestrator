@@ -1,6 +1,13 @@
 ---
 - set_fact:
-    crypto_policy: "{{ '{{crypto.rhel8}}' if ansible_distribution_version is version('8', '>=') else '{{crypto.rhel9}}' }}"
+    crypto_policy: >-
+      {% if ansible_facts['distribution'] == 'RedHat' and ansible_facts['distribution_major_version'] | int == 7 %}
+        {{crypto.rhel8}}
+      {% elif ansible_facts['distribution'] == 'RedHat' and ansible_facts['distribution_major_version'] | int == 8 %}
+        {{crypto.rhel8}}
+      {% elif ansible_facts['distribution'] == 'RedHat' and ansible_facts['distribution_major_version'] | int == 9 %}
+        {{crypto.rhel9}}
+      {% endif %}
 
 - name: Enable crypto policy allowing RC4 encryption
   ansible.builtin.command:
