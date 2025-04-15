@@ -9,6 +9,5 @@
       {% endif %}
 - name: Install packages
   ansible.builtin.dnf:
-    name:
-      - '{{packages_list}}'
+    name: '{{packages_list}}'
     state: present
