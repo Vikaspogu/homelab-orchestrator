@@ -9,5 +9,5 @@
       {% endif %}
 - name: Install packages
   ansible.builtin.dnf:
-    name: '{{packages_list}}'
+    name: '{{packages_list | split(",") | regex_replace("[\s\\n]+","")}}'
     state: present
