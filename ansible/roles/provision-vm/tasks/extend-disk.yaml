@@ -1,0 +1,29 @@
+---
+- name: Read device information (always use unit when probing)
+  community.general.parted:
+    device: /dev/sda
+    unit: MiB
+  register: disk_info
+
+- name: Extend an existing partition to fill all available space
+  community.general.parted:
+    device: /dev/sda
+    number: '{{ disk_info.partitions | length }}'
+    label: gpt
+    unit: MiB
+    part_end: '100%'
+    state: present
+    resize: true
+
+- name: Extend the LVM to the new space on {{ disk }}
+  community.general.lvg:
+    vg: 'rhel'
+    pvs: '/dev/sda{{ disk_info.partitions | length }}'
+    pvresize: true
+
+- name: Extend the logical volume to take all remaining space of the PVs and resize the underlying filesystem
+  community.general.lvol:
+    vg: rhel
+    lv: root
+    size: +100%FREE
+    resizefs: true

@@ -1,0 +1,9 @@
+---
+- name: Add user to sudoers file
+  ansible.builtin.copy:
+    dest: '/etc/sudoers.d/{{item}}'
+    content: |
+      {{item}} ALL=(ALL) ALL
+    validate: 'visudo -cf %s'
+  with_items:
+    - test

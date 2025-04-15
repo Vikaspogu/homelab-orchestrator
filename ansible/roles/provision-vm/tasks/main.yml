@@ -1,0 +1,14 @@
+---
+# tasks file for provision-vm
+- name: Create VM in Vcenter
+  ansible.builtin.import_tasks: vcenter.yaml
+
+- delegate_to: '{{vm_details.instance.ipv4}}'
+  name: Configure '{{vm_details.instance.ipv4}}' system
+  become: true
+  block:
+    - name: Extend disk size
+      ansible.builtin.import_tasks: extend-disk.yaml
+
+    - name: Apply crypto values
+      ansible.builtin.import_tasks: crypto.yaml

@@ -1,0 +1,7 @@
+---
+- set_fact:
+    cypto_policy: "{{ '{{crypto.rhel8}}' if ansible_distribution_version is version('8', '>=') else '{{crypto.rhel8}}' }}"
+
+- name: Enable crypto policy allowing RC4 encryption
+  ansible.builtin.command:
+    cmd: 'update-crypto-policies --set {{cypto_policy}}'
