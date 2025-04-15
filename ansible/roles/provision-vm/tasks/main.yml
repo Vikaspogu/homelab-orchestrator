@@ -12,3 +12,6 @@
 
     - name: Apply crypto values
       ansible.builtin.import_tasks: crypto.yaml
+
+    - name: Install Packages
+      ansible.builtin.import_tasks: packages.yaml

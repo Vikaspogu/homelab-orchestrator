@@ -1,0 +1,14 @@
+- set_fact:
+    packages_list: >-
+      {% if ansible_facts['distribution'] == 'RedHat' and ansible_facts['distribution_major_version'] | int == 7 %}
+        {{packages.rhel8}}
+      {% elif ansible_facts['distribution'] == 'RedHat' and ansible_facts['distribution_major_version'] | int == 8 %}
+        {{packages.rhel8}}
+      {% elif ansible_facts['distribution'] == 'RedHat' and ansible_facts['distribution_major_version'] | int == 9 %}
+        {{packages.rhel9}}
+      {% endif %}
+- name: Install packages
+  ansible.builtin.dnf:
+    name:
+      - '{{packages_list}}'
+    state: present
