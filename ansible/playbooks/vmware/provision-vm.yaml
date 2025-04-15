@@ -13,4 +13,4 @@
   tasks:
     - name: Provision VM
       ansible.builtin.include_role:
-        name: provision-vm
+        name: ../../roles/provision-vm
