@@ -8,7 +8,7 @@
       "question_description": "JSON array of VM name and IPs",
       "variable": "vm_list",
       "required": true,
-      "default": [{ "name": "", "ip": "" }]
+      "default": "[{ \"name\": \"\", \"ip\": \"\" }]"
     }
   ]
 }
