@@ -18,6 +18,8 @@
       ansible.builtin.include_role:
         name: ../../roles/provision-vm
       loop: '{{ vm_list | to_yaml | list}}'
+      loop_control:
+        loop_var: item
       vars:
         vm_name: '{{item.name}}'
         vm_ip: '{{item.ip}}'
