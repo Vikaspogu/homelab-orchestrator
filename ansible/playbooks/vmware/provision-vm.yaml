@@ -14,7 +14,7 @@
     - name: Provision VM
       ansible.builtin.include_role:
         name: ../../roles/provision-vm
-      loop: '{{ vm_list }}'
+      loop: '{{ vm_list | from_json | list }}'
       loop_control:
         loop_var: vm
       vars:
