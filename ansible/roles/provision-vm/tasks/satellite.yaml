@@ -20,8 +20,7 @@
       redhat.satellite.registration_command:
         username: '{{satellite.username}}'
         password: '{{satellite.password}}'
-        activation_keys:
-          - '{{satellite.keys}}'
+        activation_keys: '{{activation_keys}}'
         organization: '{{satellite.org}}'
         server_url: '{{satellite.url}}'
         validate_certs: false

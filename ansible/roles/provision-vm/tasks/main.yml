@@ -7,6 +7,27 @@
   name: Configure '{{vm_details.instance.ipv4}}' system
   become: true
   block:
+    - name: Set Variable based on Operating system
+      set_fact:
+        crypto_policy: >-
+          {% if ansible_facts['distribution'] == 'RedHat' and ansible_facts['distribution_major_version'] | int == 8 %}
+            {{crypto.rhel8}}
+          {% elif ansible_facts['distribution'] == 'RedHat' and ansible_facts['distribution_major_version'] | int == 9 %}
+            {{crypto.rhel9}}
+          {% endif %}
+        packages_list: >-
+          {% if ansible_facts['distribution'] == 'RedHat' and ansible_facts['distribution_major_version'] | int == 8 %}
+            {{packages.rhel8}}
+          {% elif ansible_facts['distribution'] == 'RedHat' and ansible_facts['distribution_major_version'] | int == 9 %}
+            {{packages.rhel9}}
+          {% endif %}
+        activation_keys: >-
+          {% if ansible_facts['distribution'] == 'RedHat' and ansible_facts['distribution_major_version'] | int == 8 %}
+            [rhel8keys,rhel8keysOrg1]
+          {% elif ansible_facts['distribution'] == 'RedHat' and ansible_facts['distribution_major_version'] | int == 9 %}
+            [rhel9keys]
+          {% endif %}
+
     - name: Extend disk size
       ansible.builtin.import_tasks: extend-disk.yaml
 

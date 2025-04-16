@@ -3,14 +3,12 @@
   "description": "Provision a VM in Vcenter",
   "spec": [
     {
-      "type": "text",
-      "question_name": "VM Name",
-      "question_description": "What is the name of the VM",
-      "variable": "vm_name",
-      "min": 1,
-      "max": 25,
+      "type": "textarea",
+      "question_name": "List of VMs to provision",
+      "question_description": "JSON array of VM name and IPs",
+      "variable": "vm_list",
       "required": true,
-      "default": ""
+      "default": [{ "name": "", "ip": "" }]
     }
   ]
 }
