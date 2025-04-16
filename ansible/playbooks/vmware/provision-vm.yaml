@@ -17,4 +17,4 @@
       vars:
         vm_name: '{{item.name}}'
         vm_ip: '{{item.ip}}'
-      loop: '{{ vm_list }}'
+      loop: '{{ vm_list | from_json }}'
