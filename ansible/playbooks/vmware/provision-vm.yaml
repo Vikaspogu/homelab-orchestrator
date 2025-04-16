@@ -10,11 +10,14 @@
     VMWARE_USER: '{{ vcenter.admin_username }}'
     VMWARE_PASSWORD: '{{ vcenter.admin_password }}'
     VMWARE_VALIDATE_CERTS: 'false'
+  vars:
+    vm_list: >-
+      '[{ "name": "test1", "ip": "10.0.10.1"},{"name": "test2", "ip": "10.0.10.2" }]'
   tasks:
     - name: Provision VM
       ansible.builtin.include_role:
         name: ../../roles/provision-vm
-      loop: '{{ vm_list | list}}'
+      loop: '{{ vm_list | to_yaml}}'
       vars:
         vm_name: '{{item.name}}'
         vm_ip: '{{item.ip}}'
