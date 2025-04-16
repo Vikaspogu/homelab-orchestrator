@@ -19,7 +19,7 @@
         name: ../../roles/provision-vm
       loop: '{{ vm_list | to_yaml | list}}'
       loop_control:
-        loop_var: item
+        loop_var: vm_list_item
       vars:
-        vm_name: '{{item.name}}'
-        vm_ip: '{{item.ip}}'
+        vm_name: '{{vm_list_item.name}}'
+        vm_ip: '{{vm_list_item.ip}}'
