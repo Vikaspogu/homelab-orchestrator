@@ -15,4 +15,4 @@
     - name: Provision VM
       ansible.builtin.import_role:
         name: ../../roles/provision-vm
-      loop: '{{ vm_list | to_yaml | list}}'
+      loop: '{{ vm_list | to_yaml }}'
