@@ -11,7 +11,8 @@
     VMWARE_PASSWORD: '{{ vcenter.admin_password }}'
     VMWARE_VALIDATE_CERTS: 'false'
   tasks:
+    - role
     - name: Provision VM
-      ansible.builtin.include_role:
+      ansible.builtin.import_role:
         name: ../../roles/provision-vm
       loop: '{{ vm_list | to_yaml | list}}'
