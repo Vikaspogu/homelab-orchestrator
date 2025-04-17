@@ -16,7 +16,7 @@
       num_cpus: '2'
       scsi: 'paravirtual'
     networks:
-      ip: '{{vm_ip}}'
+      - ip: '{{vm_ip}}'
 
 - name: configure VM
   community.vmware.vmware_guest:
