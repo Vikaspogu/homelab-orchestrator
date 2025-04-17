@@ -2,7 +2,7 @@
 - name: create VM
   community.vmware.vmware_guest:
     datacenter: 'homelab'
-    name: '{{vm_loop_var.name}}'
+    name: '{{item.name}}'
     folder: ''
     state: 'poweredoff'
     template: 'RHEL9_Template'
@@ -16,11 +16,11 @@
       num_cpus: '2'
       scsi: 'paravirtual'
     networks:
-      ip: '{{vm_loop_var.ip}}'
+      ip: '{{item.ip}}'
 
 - name: configure VM
   vars:
-    vm_name: '{{ vm_loop_var.name }}'
+    vm_name: '{{ item.name }}'
   community.vmware.vmware_guest:
     name: '{{vm_name}}'
     advanced_settings:
