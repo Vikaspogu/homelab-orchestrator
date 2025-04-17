@@ -1,7 +1,4 @@
 ---
-- name:
-  ansible.builtin.debug:
-    msg: '{{vm_name}}'
 # tasks file for provision-vm
 - name: Create VM in Vcenter
   ansible.builtin.import_tasks: vcenter.yaml
