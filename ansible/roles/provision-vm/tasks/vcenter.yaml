@@ -15,12 +15,12 @@
       memory_mb: '4096'
       num_cpus: '2'
       scsi: 'paravirtual'
-    networks:
-      - name: VM Network
-        ip: '{{vm_ip}}'
-        netmask: 255.255.255.0
-        gateway: 10.30.30.1
-        mac: aa:bb:dd:aa:00:14
+    # networks:
+    #   - name: VM Network
+    #     ip: '{{vm_ip}}'
+    #     netmask: 255.255.255.0
+    #     gateway: 10.30.30.1
+    #     mac: aa:bb:dd:aa:00:14
 
 - name: configure VM
   community.vmware.vmware_guest:
