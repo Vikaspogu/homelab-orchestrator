@@ -13,7 +13,7 @@
   tasks:
     - role
     - name: Provision VM
-      ansible.builtin.import_role:
+      ansible.builtin.include_role:
         name: ../../roles/provision-vm
       loop: '{{ vm_list | to_yaml }}'
       loop_control:
