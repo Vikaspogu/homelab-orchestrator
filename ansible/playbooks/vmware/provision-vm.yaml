@@ -16,4 +16,4 @@
         name: ../../roles/provision-vm
       loop: '{{ vm_list | to_yaml | list}}'
       loop_control:
-        loop_var: vm_details
+        loop_var: vm_list
