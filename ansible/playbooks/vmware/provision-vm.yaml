@@ -12,11 +12,11 @@
     VMWARE_VALIDATE_CERTS: 'false'
   tasks:
     - ansible.builtin.debug:
-        msg: '{{ vm_list | from_json | to_yaml }}'
+        msg: '{{ vm_list | from_json | to_yaml | regex_replace("[\s\\n]+","")}}'
     - name: Provision VM
       ansible.builtin.include_role:
         name: ../../roles/provision-vm
-      loop: '{{ vm_list | from_json | to_yaml }}'
+      loop: '{{ vm_list | from_json | to_yaml | regex_replace("[\s\\n]+","")}}'
       loop_control:
         loop_var: vm_list_data
       vars:
