@@ -11,6 +11,9 @@
     VMWARE_PASSWORD: '{{ vcenter.admin_password }}'
     VMWARE_VALIDATE_CERTS: 'false'
   tasks:
+    - name: Install bottle python package
+      ansible.builtin.pip:
+        name: pyVmomi>=8.0.3.0.1
     - name: Provision VM
       ansible.builtin.include_role:
         name: ../../roles/provision-vm
