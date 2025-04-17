@@ -11,11 +11,12 @@
     VMWARE_PASSWORD: '{{ vcenter.admin_password }}'
     VMWARE_VALIDATE_CERTS: 'false'
   tasks:
-    - role
+    - ansible.builtin.debug:
+        msg: '{{ vm_list | from_json | to_yaml }}'
     - name: Provision VM
       ansible.builtin.include_role:
         name: ../../roles/provision-vm
-      loop: '{{ vm_list | to_yaml }}'
+      loop: '{{ vm_list | from_json | to_yaml }}'
       loop_control:
         loop_var: vm_list_data
       vars:
