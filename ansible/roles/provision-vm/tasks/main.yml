@@ -26,7 +26,7 @@
     - ansible.builtin.debug:
         msg: '{{vm_vars_list}}'
     - ansible.builtin.debug:
-        msg: '{{vm_vars_list[0].crypto_policy| trim}}'
+        msg: '{{vm_vars_list[crypto_policy]| trim}}'
     - name: Extend disk size
       ansible.builtin.import_tasks: extend-disk.yaml
 
