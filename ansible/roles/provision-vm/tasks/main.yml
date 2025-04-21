@@ -20,6 +20,8 @@
             activation_keys == [rhel9keys]
           {% endif %}
     - ansible.builtin.debug:
+        msg: '{{vm_vars}}'
+    - ansible.builtin.debug:
         msg: '{{vm_vars.crypto_policy}}'
     - name: Extend disk size
       ansible.builtin.import_tasks: extend-disk.yaml
