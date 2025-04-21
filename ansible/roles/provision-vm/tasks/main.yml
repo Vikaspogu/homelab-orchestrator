@@ -11,22 +11,19 @@
       set_fact:
         vm_vars: >-
           {% if ansible_facts['distribution'] == 'RedHat' and ansible_facts['distribution_major_version'] | int == 8 %}
-            {'crypto_policy': {{crypto.rhel8}}
+            'crypto_policy': {{crypto.rhel8}}
             'packages_list': {{packages.rhel8}}
-            'activation_keys': [rhel8keys,rhel8keysOrg1]}
+            'activation_keys': [rhel8keys,rhel8keysOrg1]
           {% elif ansible_facts['distribution'] == 'RedHat' and ansible_facts['distribution_major_version'] | int == 9 %}
-            {'crypto_policy': {{crypto.rhel9}}
+            'crypto_policy': {{crypto.rhel9}}
             'packages_list': {{packages.rhel9}}
-            'activation_keys': [rhel9keys]}
+            'activation_keys': [rhel9keys]
           {% endif %}
-    - name: Set Variable based on Operating system
-      set_fact:
-        vm_vars_list: "{{vm_vars.splitlines()|map('from_yaml')|list }}"
 
-    - ansible.builtin.debug:
-        msg: '{{vm_vars_list}}'
-    - ansible.builtin.debug:
-        msg: '{{vm_vars_list[crypto_policy]| trim}}'
+    - name: Set Variable to List
+      set_fact:
+        vm_vars_list: "{{vm_vars.splitlines()|map('from_yaml')|list}}"
+
     - name: Extend disk size
       ansible.builtin.import_tasks: extend-disk.yaml
 

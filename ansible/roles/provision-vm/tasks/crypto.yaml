@@ -1,4 +1,4 @@
 ---
 - name: Enable crypto policy allowing RC4 encryption
   ansible.builtin.command:
-    cmd: 'update-crypto-policies --set {{vm_vars.crypto_policy}}'
+    cmd: 'update-crypto-policies --set {{vm_vars_list[0].crypto_policy}}'
