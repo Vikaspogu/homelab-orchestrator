@@ -21,12 +21,12 @@
           {% endif %}
     - name: Set Variable based on Operating system
       set_fact:
-        vm_vars_list: '{{vm_vars| from_yaml }}'
+        vm_vars_list: "{{vm_vars.splitlines()|map('from_yaml')|list }}"
 
     - ansible.builtin.debug:
         msg: '{{vm_vars_list}}'
     - ansible.builtin.debug:
-        msg: "{{vm_vars_list['crypto_policy']| trim}}"
+        msg: '{{vm_vars_list[0].crypto_policy| trim}}'
     - name: Extend disk size
       ansible.builtin.import_tasks: extend-disk.yaml
 
