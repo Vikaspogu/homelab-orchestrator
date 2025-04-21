@@ -19,10 +19,14 @@
             packages_list == {{packages.rhel9}}
             activation_keys == [rhel9keys]
           {% endif %}
+    - name: Set Variable based on Operating system
+      set_fact:
+        vm_vars_list: "{{vm_vars.splitlines()|map('from_yaml')|list}}"
+
     - ansible.builtin.debug:
-        msg: '{{vm_vars}}'
+        msg: '{{vm_vars_list}}'
     - ansible.builtin.debug:
-        msg: '{{vm_vars.crypto_policy}}'
+        msg: '{{vm_vars_list.crypto_policy}}'
     - name: Extend disk size
       ansible.builtin.import_tasks: extend-disk.yaml
 
