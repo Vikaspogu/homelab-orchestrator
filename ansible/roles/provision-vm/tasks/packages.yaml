@@ -1,4 +1,4 @@
 - name: Install packages
   ansible.builtin.dnf:
-    name: '{{packages_list | split(",") | regex_replace("[\s\\n]+","")}}'
+    name: '{{vm_vars.packages_list | split(",") | regex_replace("[\s\\n]+","")}}'
     state: present
