@@ -13,3 +13,13 @@ patches:
       - op: replace
         path: /spec/source/path
         value: "clusters/{{cluster_name}}"
+configMapGenerator:
+  - name: environment-variables
+    literals:
+      - KUSTOMIZE_PLUGIN_HOME=/etc/kustomize/plugin
+      - CLUSTER_NAME={{cluster_name}}
+      - CLUSTER_BASE_DOMAIN=v3socp.boo
+      - PLATFORM_BASE_DOMAIN={{cluster_name}}.v3socp.boo
+      - INFRA_GITOPS_REPO=https://github.com/Vikaspogu/openshift-multicluster.git
+generatorOptions:
+  disableNameSuffixHash: true
