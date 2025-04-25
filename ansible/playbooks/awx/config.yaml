@@ -71,6 +71,7 @@
           headers:
             'accept': 'application/json'
             'Content-Type': 'application/json'
+            'application': 'Ansible Platform'
         state: present
 
     - name: Configure Platform Settings
