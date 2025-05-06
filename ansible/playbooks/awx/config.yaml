@@ -43,6 +43,7 @@
       ansible.platform.authenticator:
         name: 'Authentik'
         type: 'ansible_base.authentication.authenticator_plugins.oidc'
+        slug: 'authentik'
         enabled: true
         configuration:
           OIDC_ENDPOINT: '{{OIDC_ENDPOINT}}'
