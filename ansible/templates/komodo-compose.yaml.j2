@@ -1,0 +1,27 @@
+####################################
+# 🦎 KOMODO COMPOSE - PERIPHERY 🦎 #
+####################################
+
+## This compose file will deploy:
+##   1. Komodo Periphery
+
+services:
+  periphery:
+    image: ghcr.io/moghtech/komodo-periphery:1.17.5@sha256:1fb06b443845c4ffe0a86ea8f82a50f71497b501778d6391012dbd0036dd1168
+    labels:
+      komodo.skip: # Prevent Komodo from stopping with StopAllContainers
+    restart: unless-stopped
+    logging:
+      driver: ${COMPOSE_LOGGING_DRIVER:-journald}
+    environment:
+      PERIPHERY_ROOT_DIRECTORY: /home/{{ ansible_user }}/komodo
+      PERIPHERY_PASSKEYS: '{{PERIPHERY_PASSKEYS}}'
+      PERIPHERY_SSL_ENABLED: "false"
+      PERIPHERY_DISABLE_TERMINALS: "false"
+      PERIPHERY_INCLUDE_DISK_MOUNTS: /etc/hostname
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /proc:/proc
+      - /home/{{ ansible_user }}/komodo:/home/{{ ansible_user }}/komodo
+    ports:
+      - 8120:8120

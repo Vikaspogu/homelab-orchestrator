@@ -10,7 +10,7 @@
         node: '{{ proxmox_node }}'
         api_user: '{{ datacenter.username }}@pve'
         api_password: '{{ datacenter.password }}'
-        api_host: '{{ proxmox_hostname }}.{{domain_name}}'
+        api_host: '{{proxmox_hostname}}.{{domain_internal}}'
         name: '{{ vm_name }}'
         cpu: '{{ cpu_type }}'
         cores: '{{ cores }}'

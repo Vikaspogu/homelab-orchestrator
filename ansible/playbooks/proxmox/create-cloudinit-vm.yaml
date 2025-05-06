@@ -1,6 +1,6 @@
 ---
 - name: Playbook to create a VM
-  hosts: pxm-odin
+  hosts: '{{proxmox_hostname}}'
   gather_facts: false
   vars_files:
     - ../../vars/common.vault.yaml
@@ -9,7 +9,7 @@
       community.general.proxmox_vm_info:
         api_user: '{{ datacenter.username }}@pve'
         api_password: '{{ datacenter.password }}'
-        api_host: '{{ proxmox_hostname }}.{{domain_name}}'
+        api_host: '{{proxmox_hostname}}.{{domain_internal}}'
         node: '{{ proxmox_node }}'
         name: '{{ vm_name }}'
       register: vm_info
@@ -23,7 +23,7 @@
             node: '{{ proxmox_node }}'
             api_user: '{{ datacenter.username }}@pve'
             api_password: '{{ datacenter.password }}'
-            api_host: '{{ proxmox_hostname }}.{{domain_name}}'
+            api_host: '{{proxmox_hostname}}.{{domain_internal}}'
             name: '{{ vm_name }}'
             clone: '{{ template_name }}'
             storage: '{{ storage_name }}'

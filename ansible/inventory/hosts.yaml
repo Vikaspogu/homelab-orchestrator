@@ -5,6 +5,8 @@ proxmox:
       ansible_user: root
     pxm-odin:
       ansible_user: root
+    komodo-odin.vikaspogu.internal:
+      ansible_user: vikaspogu
 aap:
   hosts:
     aap-controller:

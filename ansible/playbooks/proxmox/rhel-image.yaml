@@ -1,0 +1,35 @@
+---
+- name: Login to Red Hat APIs
+  ansible.builtin.uri:
+    url: '{{ rhel_down_token_url }}'
+    method: POST
+    body_format: form-urlencoded
+    body:
+      grant_type: refresh_token
+      client_id: rhsm-api
+      refresh_token: '{{ aap_setup_down_offline_token }}'
+  register: __rhel_down_login
+
+- name: Collecting the available installers
+  ansible.builtin.uri:
+    url: '{{ rhel_down_images_url }}'
+    method: GET
+    return_content: true
+    headers:
+      Authorization: 'Bearer {{ __rhel_down_login.json.access_token }}'
+  register: __rhel_down_output
+
+- name: Simplify the list of possible downloads
+  ansible.builtin.set_fact:
+    __rhel_down_images: "{{ __rhel_down_output.json.body | selectattr('filename', 'match', 'rhel-.*-x86_64-kvm.qcow2') | sort(attribute='datePublished', reverse=True) }}"
+
+- name: Downloading the latest installer of type {{ rhel_down_type }}
+  ansible.builtin.get_url:
+    url: '{{ __rhel_down_images[0].downloadHref }}'
+    dest: '/tmp/{{ __rhel_down_images[0].filename }}'
+    mode: 0644
+    headers:
+      Authorization: 'Bearer {{ __rhel_down_login.json.access_token }}'
+  when:
+    - "'qcow2' in __rhel_down_images[0].filename"
+  register: __rhel_down_downloads
