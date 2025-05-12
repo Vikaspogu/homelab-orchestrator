@@ -1,7 +1,7 @@
 ---
 - name: Start a VM
   community.general.proxmox_kvm:
-    node: '{{ proxmox_node }}'
+    node: '{{ proxmox_hostname }}'
     api_user: '{{ datacenter.username }}@pve'
     api_password: '{{ datacenter.password }}'
     api_host: '{{proxmox_hostname}}.{{domain_internal}}'

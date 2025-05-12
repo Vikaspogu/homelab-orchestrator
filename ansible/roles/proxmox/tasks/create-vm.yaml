@@ -4,7 +4,7 @@
     api_user: '{{ datacenter.username }}@pve'
     api_password: '{{ datacenter.password }}'
     api_host: '{{proxmox_hostname}}.{{domain_internal}}'
-    node: '{{ proxmox_node }}'
+    node: '{{ proxmox_hostname }}'
     name: '{{ vm_name }}'
   register: vm_info
   delegate_to: localhost
@@ -14,7 +14,7 @@
   block:
     - name: Create a VM from template
       community.general.proxmox_kvm:
-        node: '{{ proxmox_node }}'
+        node: '{{ proxmox_hostname }}'
         api_user: '{{ datacenter.username }}@pve'
         api_password: '{{ datacenter.password }}'
         api_host: '{{proxmox_hostname}}.{{domain_internal}}'
@@ -28,7 +28,7 @@
 
     - name: Create a VM
       community.general.proxmox_kvm:
-        node: '{{ proxmox_node }}'
+        node: '{{ proxmox_hostname }}'
         api_user: '{{ datacenter.username }}@pve'
         api_password: '{{ datacenter.password }}'
         api_host: '{{proxmox_hostname}}.{{domain_internal}}'
