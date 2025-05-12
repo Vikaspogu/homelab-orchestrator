@@ -38,7 +38,7 @@
 
 - name: Playbook to Install Post Configuration
   hosts: omv-odin.vikaspogu.internal
-  gather_facts: true
+  gather_facts: false
   become: true
   vars_files:
     - ../../vars/common.vault.yaml
@@ -54,6 +54,8 @@
       until: 'res.cloud_init_data_facts.status.v1.stage is defined and not res.cloud_init_data_facts.status.v1.stage'
       retries: 50
       delay: 5
+    - name: Gathering facts
+      setup:
 
   tasks:
     - name: Install gpg
