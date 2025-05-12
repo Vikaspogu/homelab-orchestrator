@@ -14,5 +14,6 @@ collections:
   - name: redhat.satellite
   - name: community.docker
 roles:
-  - name: geerlingguy.docker
-    version: 7.3.0
+  - src: https://github.com/geerlingguy/ansible-role-docker.git
+    scm: git
+    version: master
