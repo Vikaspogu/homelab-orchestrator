@@ -96,7 +96,7 @@
 
     - name: adding existing user '{{ user }}' to group sudo
       ansible.builtin.user:
-        name: '{{ user }}'
+        name: '{{ ansible_user }}'
         groups: _ssh
         append: yes
 
