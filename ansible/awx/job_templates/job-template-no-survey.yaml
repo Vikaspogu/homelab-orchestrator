@@ -17,11 +17,11 @@
   loop:
     - {
         name: 'Proxmox - OMV Deployment',
-        file: ansible/playbooks/vms/swarm.yaml,
+        file: ansible/playbooks/vms/omv.yaml,
         enable_survey: false,
       }
     - {
         name: 'Proxmox - Swarm Deployment',
-        file: ansible/playbooks/vms/omv.yaml,
+        file: ansible/playbooks/vms/swarm.yaml,
         enable_survey: false,
       }
