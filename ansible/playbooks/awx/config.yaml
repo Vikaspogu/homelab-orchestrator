@@ -202,9 +202,9 @@
       retries: 10
       delay: 10
 
-    - name: Create 3 node cluster workflow
-      ansible.builtin.import_tasks: ../../awx/workflows/openshift-cluster.yaml
-      register: acm_cluster_workflow
-      until: not acm_cluster_workflow.failed
-      retries: 10
-      delay: 10
+    # - name: Create 3 node cluster workflow
+    #   ansible.builtin.import_tasks: ../../awx/workflows/openshift-cluster.yaml
+    #   register: acm_cluster_workflow
+    #   until: not acm_cluster_workflow.failed
+    #   retries: 10
+    #   delay: 10
