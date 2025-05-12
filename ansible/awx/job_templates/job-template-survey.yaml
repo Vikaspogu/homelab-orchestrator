@@ -18,42 +18,6 @@
     survey_spec: "{{ lookup('file', '{{item.survey_file}}') }}"
   loop:
     - {
-        name: 'Proxmox - Create VM',
-        file: ansible/playbooks/proxmox/create-vm.yaml,
-        enable_survey: true,
-        survey_file: '../surveys/create-vm.json',
-      }
-    - {
-        name: 'Proxmox - Attach additional disk to VM',
-        file: ansible/playbooks/proxmox/attach-additional-disk.yaml,
-        enable_survey: true,
-        survey_file: '../surveys/attach-additional-disk.json',
-      }
-    - {
-        name: 'Proxmox - Delete VM',
-        file: ansible/playbooks/proxmox/delete-vm.yaml,
-        enable_survey: true,
-        survey_file: '../surveys/delete-vm.json',
-      }
-    - {
-        name: 'Proxmox - Mount ISO',
-        file: ansible/playbooks/proxmox/mount-iso.yaml,
-        enable_survey: true,
-        survey_file: '../surveys/mount-iso.json',
-      }
-    - {
-        name: 'Proxmox - Start VM',
-        file: ansible/playbooks/proxmox/start-vm.yaml,
-        enable_survey: true,
-        survey_file: '../surveys/start-vm.json',
-      }
-    - {
-        name: 'Proxmox - Upload ISO from URL',
-        file: ansible/playbooks/proxmox/upload-iso.yaml,
-        enable_survey: true,
-        survey_file: '../surveys/upload-iso.json',
-      }
-    - {
         name: 'OpenShift - Prepare Cluster for Installation',
         file: ansible/playbooks/openshift/cluster-prep.yaml,
         enable_survey: true,
