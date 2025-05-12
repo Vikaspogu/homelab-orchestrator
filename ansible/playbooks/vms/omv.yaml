@@ -105,4 +105,10 @@
         name: '{{inventory_hostname}}'
 
     - name: Run OMV Regen install
-      ansible.builtin.command: wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | bash
+      ansible.builtin.get_url:
+        url: https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh
+        dest: /tmp/omv-regen.sh
+        mode: '0755'
+
+    - name: Execute omv-regen.sh script
+      ansible.builtin.command: ./tmp/omv-regen.sh
