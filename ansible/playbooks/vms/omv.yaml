@@ -1,0 +1,99 @@
+---
+- name: Deploy VM on odin controller
+  hosts: pxm-odin
+  gather_facts: false
+  vars_files:
+    - ../../vars/common.vault.yaml
+  tasks:
+    - name: Import Proxmox Role
+      ansible.builtin.include_role:
+        name: ../../roles/proxmox
+      vars:
+        vm_name: omv-odin
+        mac_address: bc:24:11:de:0b:d9
+        cores: 8
+        memory: 30480
+        disk_size: 212
+        storage_name: nvme
+        proxmox_hostname: 'pxm-odin'
+        template_id: 9002
+        template_name: debian-cloudinit-template
+        vm_state: create
+        additional_disks:
+          - /dev/disk/by-id/scsi-35000cca02278736c
+          - /dev/disk/by-id/scsi-35000cca07194d828
+          - /dev/disk/by-id/scsi-35000cca0576b90f0
+          - /dev/disk/by-id/scsi-35000cca0430361b0
+          - /dev/disk/by-id/scsi-35000cca07111a7cc
+          - /dev/disk/by-id/scsi-35000cca0719b81d8
+          - /dev/disk/by-id/scsi-35000cca071478cf0
+          - /dev/disk/by-id/scsi-35000cca07147a3c0
+
+- name: Playbook to Install Post Configuration
+  hosts: omv-odin.vikaspogu.internal
+  gather_facts: true
+  become: true
+  vars_files:
+    - ../../vars/common.vault.yaml
+  pre_tasks:
+    - name: Wait 600 seconds for target connection to become reachable/usable
+      ansible.builtin.wait_for_connection:
+        delay: 5
+        timeout: 600
+    - name: Wait for cloud init to finish
+      community.general.cloud_init_data_facts:
+        filter: status
+      register: res
+      until: 'res.cloud_init_data_facts.status.v1.stage is defined and not res.cloud_init_data_facts.status.v1.stage'
+      retries: 50
+      delay: 5
+
+  tasks:
+    - name: Install gpg
+      ansible.builtin.apt:
+        name: gnupg
+        state: present
+        update_cache: yes
+
+    - name: Add OMV gpg signing key
+      ansible.builtin.apt_key:
+        url: https://packages.openmediavault.org/public/archive.key
+        state: present
+
+    - name: add OMV package repository
+      ansible.builtin.apt_repository:
+        repo: deb https://packages.openmediavault.org/public sandworm main
+        state: present
+        filename: openmediavault
+        update_cache: yes
+
+    - name: Install OMV
+      ansible.builtin.apt:
+        name: openmediavault
+        state: present
+        update_cache: yes
+        dpkg_options: 'force-confdef,force-confold'
+        install_recommends: no
+        allow_downgrade: yes
+        allow_change_held_packages: yes
+
+    - name: OMV Configure Db Admin Populate
+      ansible.builtin.command: omv-confdbadm populate
+      changed_when: false
+
+    - name: OMV Salt Deploy
+      ansible.builtin.command: omv-salt deploy run systemd-networkd
+      changed_when: false
+
+    - name: adding existing user '{{ user }}' to group sudo
+      ansible.builtin.user:
+        name: '{{ user }}'
+        groups: _ssh
+        append: yes
+
+    - name: Set a hostname
+      ansible.builtin.hostname:
+        name: '{{inventory_hostname}}'
+
+    - name: Run OMV Regen install
+      ansible.builtin.command: wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | bash

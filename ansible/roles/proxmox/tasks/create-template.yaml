@@ -1,0 +1,74 @@
+---
+- name: Create cloud-init folder
+  ansible.builtin.file:
+    path: /var/lib/vz/snippets/
+    state: directory
+    mode: '0755'
+
+- name: Copy cloud-init file to proxmox
+  ansible.builtin.template:
+    src: '{{ template_name }}.yaml.j2'
+    dest: /var/lib/vz/snippets/{{ template_name }}.yaml
+    force: true
+    mode: 'u=rw,g=r,o=r'
+
+- name: Retrieve information about specific VM by ID
+  community.general.proxmox_vm_info:
+    api_user: '{{ datacenter.username }}@pve'
+    api_password: '{{ datacenter.password }}'
+    api_host: '{{proxmox_hostname}}.{{domain_internal}}'
+    node: '{{ proxmox_node }}'
+    vmid: '{{ template_id }}'
+  register: vm_info
+  delegate_to: localhost
+
+- name: Execute when template doesn't exist
+  when: vm_info.proxmox_vms | length == 0
+  block:
+    - name: Execute when template is to deploy RHEL VM
+      when: '"rhel" in template_name'
+      block:
+        - name: Import RHEL login and download task
+          ansible.builtin.include_tasks: rhel-image.yaml
+
+        - ansible.builtin.set_fact:
+            filename: '{{ __rhel_down_images[0].filename }}'
+
+    - name: Execute when template is to deploy Debian VM
+      when: '"debian" in template_name'
+      block:
+        - name: Downloading the latest qcow image
+          ansible.builtin.get_url:
+            url: '{{ debian_qcow_url }}'
+            dest: '/tmp/debian-12-generic-amd64.qcow2'
+            mode: 0644
+
+        - ansible.builtin.set_fact:
+            filename: 'debian-12-generic-amd64.qcow2'
+
+    - name: Create a VM to use as a template
+      ansible.builtin.command: 'qm create {{ template_id }} --name {{ template_name }} --memory 4096 --cores 2 --net0 virtio,bridge=vmbr0 --cpu cputype=max'
+
+    - name: Import disk image
+      ansible.builtin.command: 'qm importdisk {{ template_id }} /tmp/{{ filename }} {{storageName}}'
+
+    - name: Configure VM to use imported image
+      ansible.builtin.command: 'qm set {{ template_id }} --scsihw virtio-scsi-pci --scsi0 {{storageName}}:vm-{{ template_id }}-disk-0'
+
+    - name: Add cloud-init image as CDROM
+      ansible.builtin.command: 'qm set {{ template_id }} --ide2 {{storageName}}:cloudinit --ipconfig0 ip=dhcp'
+
+    - name: Configure boot from the image
+      ansible.builtin.command: 'qm set {{ template_id }} --boot c --bootdisk scsi0'
+
+    - name: Attach serial console
+      ansible.builtin.command: 'qm set {{ template_id }} --serial0 socket --vga serial0'
+
+    - name: Enable agent
+      ansible.builtin.command: 'qm set {{ template_id }} --agent enabled=1'
+
+    - name: Set boot to start
+      ansible.builtin.command: qm set {{ template_id }} --onboot 1
+
+    - name: Create template
+      ansible.builtin.command: 'qm template {{ template_id }}'

@@ -1,27 +1,65 @@
-####################################
-# 🦎 KOMODO COMPOSE - PERIPHERY 🦎 #
-####################################
+###################################
+# ߦOMODO COMPOSE - POSTGRES ߦ
+###################################
 
 ## This compose file will deploy:
-##   1. Komodo Periphery
+##   1. Postgres + FerretDB Mongo adapter (https://www.ferretdb.com)
+##   2. Komodo Core
+##   3. Komodo Periphery
 
 services:
+  postgres:
+    image: postgres:17
+    labels:
+      komodo.skip: # Prevent Komodo from stopping with StopAllContainers
+    restart: unless-stopped
+    env_file: ./compose.env
+    logging:
+      driver: ${COMPOSE_LOGGING_DRIVER:-local}
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+  ferretdb:
+    image: ghcr.io/ferretdb/ferretdb:1
+    labels:
+      komodo.skip: # Prevent Komodo from stopping with StopAllContainers
+    restart: unless-stopped
+    env_file: ./compose.env
+    depends_on:
+      - postgres
+    logging:
+      driver: ${COMPOSE_LOGGING_DRIVER:-local}
+
+  core:
+    image: ghcr.io/moghtech/komodo-core:1.17.5@sha256:3294c9317492c65799b45120ccde4def8a054281f91d70293f694b14579b726f
+    labels:
+      komodo.skip: # Prevent Komodo from stopping with StopAllContainers
+    restart: unless-stopped
+    depends_on:
+      - ferretdb
+    logging:
+      driver: ${COMPOSE_LOGGING_DRIVER:-local}
+    ports:
+      - 9120:9120
+    env_file: ./compose.env
+    volumes:
+      - repo-cache:/repo-cache
+
   periphery:
     image: ghcr.io/moghtech/komodo-periphery:1.17.5@sha256:1fb06b443845c4ffe0a86ea8f82a50f71497b501778d6391012dbd0036dd1168
     labels:
       komodo.skip: # Prevent Komodo from stopping with StopAllContainers
     restart: unless-stopped
     logging:
-      driver: ${COMPOSE_LOGGING_DRIVER:-journald}
-    environment:
-      PERIPHERY_ROOT_DIRECTORY: /home/{{ ansible_user }}/komodo
-      PERIPHERY_PASSKEYS: '{{PERIPHERY_PASSKEYS}}'
-      PERIPHERY_SSL_ENABLED: "false"
-      PERIPHERY_DISABLE_TERMINALS: "false"
-      PERIPHERY_INCLUDE_DISK_MOUNTS: /etc/hostname
+      driver: ${COMPOSE_LOGGING_DRIVER:-local}
+    env_file: ./compose.env
     volumes:
+      ## Mount external docker socket
       - /var/run/docker.sock:/var/run/docker.sock
       - /proc:/proc
       - /home/{{ ansible_user }}/komodo:/home/{{ ansible_user }}/komodo
-    ports:
-      - 8120:8120
+
+volumes:
+  # Postgres
+  pg-data:
+  # Core
+  repo-cache:

@@ -1,0 +1,7 @@
+---
+- name: Download ISO from URL as a variable and upload to proxmox as ISO
+  ansible.builtin.get_url:
+    url: '{{ iso_url }}'
+    dest: /var/lib/vz/template/iso
+    mode: '0544'
+  when: iso_url is defined

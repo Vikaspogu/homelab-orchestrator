@@ -1,12 +1,27 @@
 ---
 proxmox:
   hosts:
-    pxm-thor:
+    pxm-loki:
       ansible_user: root
     pxm-odin:
       ansible_user: root
-    komodo-odin.vikaspogu.internal:
+    omv-odin.vikaspogu.internal:
       ansible_user: vikaspogu
+
+omv:
+  hosts:
+    omv-odin.vikaspogu.internal:
+      ansible_user: vikaspogu
+    omv-loki.vikaspogu.internal:
+      ansible_user: vikaspogu
+
+swarm:
+  hosts:
+    swarm-odin.vikaspogu.internal:
+      ansible_user: vikaspogu
+    swarm-loki.vikaspogu.internal:
+      ansible_user: vikaspogu
+
 aap:
   hosts:
     aap-controller:

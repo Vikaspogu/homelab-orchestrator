@@ -1,0 +1,7 @@
+---
+# defaults file for proxmox
+rhel_down_version: '9.5'
+rhel_down_token_url: 'https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token'
+rhel_down_images_url: 'https://api.access.redhat.com/management/v1/images/rhel/{{ rhel_down_version }}/x86_64'
+storageName: 'nvme'
+debian_qcow_url: 'https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2'

@@ -1,0 +1,15 @@
+---
+# tasks file for proxmox
+- ansible.builtin.include_tasks: upload-iso.yaml
+  when: iso_url is defined
+
+- ansible.builtin.include_tasks: create-template.yaml
+  when: template_name is defined
+
+- ansible.builtin.include_tasks: create-vm.yaml
+
+- ansible.builtin.include_tasks: start-vm.yaml
+  when: vm_state == 'create'
+
+- ansible.builtin.include_tasks: delete-vm.yaml
+  when: vm_state == 'absent'

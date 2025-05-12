@@ -1,0 +1,85 @@
+---
+- name: Retrieve information about specific VM by ID
+  community.general.proxmox_vm_info:
+    api_user: '{{ datacenter.username }}@pve'
+    api_password: '{{ datacenter.password }}'
+    api_host: '{{proxmox_hostname}}.{{domain_internal}}'
+    node: '{{ proxmox_node }}'
+    name: '{{ vm_name }}'
+  register: vm_info
+  delegate_to: localhost
+
+- name: Execute when template doesn't exist
+  when: vm_info.proxmox_vms | length == 0
+  block:
+    - name: Create a VM from template
+      community.general.proxmox_kvm:
+        node: '{{ proxmox_node }}'
+        api_user: '{{ datacenter.username }}@pve'
+        api_password: '{{ datacenter.password }}'
+        api_host: '{{proxmox_hostname}}.{{domain_internal}}'
+        name: '{{ vm_name }}'
+        clone: '{{ template_name }}'
+        storage: '{{ storage_name }}'
+        timeout: 120
+      register: vm_details_template
+      delegate_to: localhost
+      when: template_name is defined
+
+    - name: Create a VM
+      community.general.proxmox_kvm:
+        node: '{{ proxmox_node }}'
+        api_user: '{{ datacenter.username }}@pve'
+        api_password: '{{ datacenter.password }}'
+        api_host: '{{proxmox_hostname}}.{{domain_internal}}'
+        name: '{{ vm_name }}'
+        storage: '{{ storage_name }}'
+        timeout: 120
+        scsi:
+          scsi0: '{{ storage_name }}:{{disk_size}},format=raw'
+      register: vm_details_scsi
+      delegate_to: localhost
+      when: template_name is not defined
+
+    - name: Set Variable based on Operating system
+      set_fact:
+        vm_id: >-
+          {% if vm_details_template.vmid is defined %}
+            {{vm_details_template.vmid}}
+          {% else %}
+            {{vm_details_scsi.vmid}}
+          {% endif %}
+
+    - debug:
+        msg: '{{ vm_id }}'
+
+    - name: Set CI file
+      ansible.builtin.command: qm set {{ vm_id }} --cicustom "user=local:snippets/{{ template_name }}.yaml"
+      when: template_name is defined
+
+    - name: Set cores
+      ansible.builtin.command: 'qm set {{ vm_id }} --cores {{cores}}'
+      when: cores is defined
+
+    - name: Set memory
+      ansible.builtin.command: 'qm set {{ vm_id }} --memory {{memory}}'
+      when: memory is defined
+
+    - name: Increase disk size
+      ansible.builtin.command: 'qm disk resize {{ vm_id }} scsi0 {{disk_size}}'
+      when: disk_size is defined
+
+    - name: Set MAC Address
+      ansible.builtin.command: 'qm set {{ vm_id }} --net0 virtio={{ mac_address }},bridge=vmbr0,firewall=1'
+      when: mac_address is defined
+
+    - name: Attach additional disk to VM
+      ansible.builtin.command: 'qm set {{ vm_id }} -scsi{{disk+1}} {{item}}'
+      when: additional_disks is defined
+      loop: '{{ additional_disks }}'
+      loop_control:
+        index_var: disk
+
+    - name: Mount ISO image on CD-ROM (create drive if missing)
+      ansible.builtin.command: qm set {{ vm_id }} --ide2 local:iso/{{ iso_name }},media=cdrom
+      when: iso_name is defined
