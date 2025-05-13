@@ -58,41 +58,49 @@
       setup:
 
   tasks:
-    - name: Install gpg
-      ansible.builtin.apt:
-        name: gnupg
-        state: present
-        update_cache: yes
+    - name: Check OMV status
+      ansible.builtin.command: omv-sysinfo
+      register: omv_status
+      ignore_errors: true
 
-    - name: Add OMV gpg signing key
-      ansible.builtin.apt_key:
-        url: https://packages.openmediavault.org/public/archive.key
-        state: present
+    - name: Run only when omv_status is not failing
+      when: omv_status.rc != 0
+      block:
+        - name: Install gpg
+          ansible.builtin.apt:
+            name: gnupg
+            state: present
+            update_cache: yes
 
-    - name: add OMV package repository
-      ansible.builtin.apt_repository:
-        repo: deb https://packages.openmediavault.org/public sandworm main
-        state: present
-        filename: openmediavault
-        update_cache: yes
+        - name: Add OMV gpg signing key
+          ansible.builtin.apt_key:
+            url: https://packages.openmediavault.org/public/archive.key
+            state: present
 
-    - name: Install OMV
-      ansible.builtin.apt:
-        name: openmediavault
-        state: present
-        update_cache: yes
-        dpkg_options: 'force-confdef,force-confold'
-        install_recommends: no
-        allow_downgrade: yes
-        allow_change_held_packages: yes
+        - name: add OMV package repository
+          ansible.builtin.apt_repository:
+            repo: deb https://packages.openmediavault.org/public sandworm main
+            state: present
+            filename: openmediavault
+            update_cache: yes
 
-    - name: OMV Configure Db Admin Populate
-      ansible.builtin.command: omv-confdbadm populate
-      changed_when: false
+        - name: Install OMV
+          ansible.builtin.apt:
+            name: openmediavault
+            state: present
+            update_cache: yes
+            dpkg_options: 'force-confdef,force-confold'
+            install_recommends: no
+            allow_downgrade: yes
+            allow_change_held_packages: yes
 
-    - name: OMV Salt Deploy
-      ansible.builtin.command: omv-salt deploy run systemd-networkd
-      changed_when: false
+        - name: OMV Configure Db Admin Populate
+          ansible.builtin.command: omv-confdbadm populate
+          changed_when: false
+
+        - name: OMV Salt Deploy
+          ansible.builtin.command: omv-salt deploy run systemd-networkd
+          changed_when: false
 
     - name: adding existing user '{{ user }}' to group sudo
       ansible.builtin.user:
