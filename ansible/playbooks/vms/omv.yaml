@@ -43,7 +43,7 @@
         name: ../../roles/proxmox
       vars:
         vm_name: omv-loki
-        mac_address: bc:24:11:de:0c:d9
+        mac_address: bc:24:11:e8:5f:c1
         cores: 8
         memory: 30480
         disk_size: 212
