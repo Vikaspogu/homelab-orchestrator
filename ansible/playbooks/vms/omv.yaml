@@ -1,6 +1,6 @@
 ---
 - name: Deploy VM on odin controller
-  hosts: pxm-odin
+  hosts: proxmox
   gather_facts: false
   vars_files:
     - ../../vars/common.vault.yaml
@@ -13,6 +13,7 @@
           - requests==2.32.3,botocore,boto3,pyvmomi,urllib3,PyYAML>=3.11,requests-oauthlib,pyVim,vmware-vcenter,vmware-vapi-common-client
   tasks:
     - name: Import Proxmox Role
+      when: inventory_hostname == "pxm-odin"
       ansible.builtin.include_role:
         name: ../../roles/proxmox
       vars:
@@ -25,7 +26,6 @@
         proxmox_hostname: 'pxm-odin'
         template_id: 9002
         template_name: debian-cloudinit-template
-        template_storage: synology-lun01
         vm_state: create
         additional_disks:
           - /dev/disk/by-id/scsi-35000cca02278736c
@@ -37,8 +37,29 @@
           - /dev/disk/by-id/scsi-35000cca071478cf0
           - /dev/disk/by-id/scsi-35000cca07147a3c0
 
+    - name: Import Proxmox Role
+      when: inventory_hostname == "pxm-loki"
+      ansible.builtin.include_role:
+        name: ../../roles/proxmox
+      vars:
+        vm_name: omv-loki
+        mac_address: bc:24:11:de:0c:d9
+        cores: 8
+        memory: 30480
+        disk_size: 212
+        storage_name: ssd
+        proxmox_hostname: 'pxm-loki'
+        template_id: 8002
+        template_name: debian-cloudinit-template
+        vm_state: create
+        additional_disks:
+          - /dev/disk/by-id/scsi-35000cca0bc75f620
+          - /dev/disk/by-id/scsi-35000cca0bc6e0cc0
+          - /dev/disk/by-id/scsi-35000cca097de6224
+          - /dev/disk/by-id/scsi-35000cca0bc767184
+
 - name: Playbook to Install Post Configuration
-  hosts: omv-odin.vikaspogu.internal
+  hosts: omv
   gather_facts: false
   become: true
   vars_files:

@@ -66,7 +66,7 @@
       when: memory is defined
 
     - name: Increase disk size
-      ansible.builtin.command: 'qm disk resize {{ vm_id }} scsi0 {{disk_size}}'
+      ansible.builtin.command: 'qm disk resize {{ vm_id }} scsi0 {{disk_size}}GB'
       when: disk_size is defined
 
     - name: Set MAC Address

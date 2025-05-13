@@ -11,13 +11,14 @@
       vars:
         vm_name: aap-controller
         template_name: rhel-9-cloudinit-template
+        vm_state: create
         mac_address: bc:24:11:a0:6e:7a
+        template_id: 9001
         cores: 8
         memory: 20480
         disk_size: 212G
         storage_name: nvme
         proxmox_hostname: 'pxm-odin'
-        template_storage: synology-lun01
 
 - name: Download and install AAP on the controller
   hosts: aap-controller
