@@ -50,13 +50,13 @@
       ansible.builtin.command: 'qm create {{ template_id }} --name {{ template_name }} --memory 4096 --cores 2 --net0 virtio,bridge=vmbr0 --cpu cputype=max'
 
     - name: Import disk image
-      ansible.builtin.command: 'qm importdisk {{ template_id }} /tmp/{{ filename }} {{storage}}'
+      ansible.builtin.command: 'qm importdisk {{ template_id }} /tmp/{{ filename }} {{storage_name}}'
 
     - name: Configure VM to use imported image
-      ansible.builtin.command: 'qm set {{ template_id }} --scsihw virtio-scsi-pci --scsi0 {{storage}}:vm-{{ template_id }}-disk-0'
+      ansible.builtin.command: 'qm set {{ template_id }} --scsihw virtio-scsi-pci --scsi0 {{storage_name}}:vm-{{ template_id }}-disk-0'
 
     - name: Add cloud-init image as CDROM
-      ansible.builtin.command: 'qm set {{ template_id }} --ide2 {{storage}}:cloudinit --ipconfig0 ip=dhcp'
+      ansible.builtin.command: 'qm set {{ template_id }} --ide2 {{storage_name}}:cloudinit --ipconfig0 ip=dhcp'
 
     - name: Configure boot from the image
       ansible.builtin.command: 'qm set {{ template_id }} --boot c --bootdisk scsi0'
