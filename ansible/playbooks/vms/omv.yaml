@@ -25,6 +25,7 @@
         proxmox_hostname: 'pxm-odin'
         template_id: 9002
         template_name: debian-cloudinit-template
+        template_storage: synology-lun01
         vm_state: create
         additional_disks:
           - /dev/disk/by-id/scsi-35000cca02278736c

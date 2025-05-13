@@ -11,6 +11,7 @@
       vars:
         template_id: 9002
         template_name: debian-cloudinit-template
+        template_storage: synology-lun01
         proxmox_hostname: 'pxm-odin'
         vm_name: node-odin
         mac_address: bc:24:11:de:0b:d6

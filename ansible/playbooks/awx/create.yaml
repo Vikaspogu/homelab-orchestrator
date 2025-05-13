@@ -1,37 +1,23 @@
 ---
-- name: Create RHEL VM template
-  ansible.builtin.import_playbook: '../proxmox/create-vm-template.yaml'
-  vars:
-    id: 9001
-    vm_name: rhel-9-cloudinit-template
-    proxmox_hostname: 'pxm-odin'
-
-- name: Import CloudInit VM
-  ansible.builtin.import_playbook: '../proxmox/create-cloudinit-vm.yaml'
-  vars:
-    vm_name: aap-controller
-    template_name: rhel-9-cloudinit-template
-    mac_address: bc:24:11:a0:6e:7a
-    cores: 8
-    memory: 20480
-    disk_size: 212G
-    storage_name: nvme
-    proxmox_hostname: 'pxm-odin'
-
-- name: Start AAP VM
-  ansible.builtin.import_playbook: '../proxmox/start-vm.yaml'
-  vars:
-    vm_name: aap-controller
-    proxmox_hostname: 'pxm-odin'
-
-- name: Playbook to Install AAP
-  hosts: aap-controller
+- name: Deploy VM on odin controller
+  hosts: pxm-odin
   gather_facts: false
+  vars_files:
+    - ../../vars/common.vault.yaml
   tasks:
-    - name: Wait 600 seconds for target connection to become reachable/usable
-      ansible.builtin.wait_for_connection:
-        delay: 5
-        timeout: 600
+    - name: Import Proxmox Role
+      ansible.builtin.include_role:
+        name: ../../roles/proxmox
+      vars:
+        vm_name: aap-controller
+        template_name: rhel-9-cloudinit-template
+        mac_address: bc:24:11:a0:6e:7a
+        cores: 8
+        memory: 20480
+        disk_size: 212G
+        storage_name: nvme
+        proxmox_hostname: 'pxm-odin'
+        template_storage: synology-lun01
 
 - name: Download and install AAP on the controller
   hosts: aap-controller
@@ -45,6 +31,11 @@
   vars_files:
     - ../../vars/common.vault.yaml
   pre_tasks:
+    - name: Wait 600 seconds for target connection to become reachable/usable
+      ansible.builtin.wait_for_connection:
+        delay: 5
+        timeout: 600
+
     - name: Wait for cloud init to finish
       community.general.cloud_init_data_facts:
         filter: status
@@ -52,6 +43,9 @@
       until: 'res.cloud_init_data_facts.status.v1.stage is defined and not res.cloud_init_data_facts.status.v1.stage'
       retries: 50
       delay: 5
+
+    - name: Gathering facts
+      setup:
 
     - name: Install required packages
       become: true
