@@ -119,4 +119,4 @@
         mode: '0755'
 
     - name: Execute omv-regen.sh script
-      ansible.builtin.command: ./tmp/omv-regen.sh
+      ansible.builtin.command: /tmp/omv-regen.sh
