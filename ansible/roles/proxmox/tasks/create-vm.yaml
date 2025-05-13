@@ -20,6 +20,7 @@
         api_host: '{{proxmox_hostname}}.{{domain_internal}}'
         name: '{{ vm_name }}'
         clone: '{{ template_name }}'
+        vmid: '{{ template_id }}'
         storage: '{{ storage_name }}'
         timeout: 120
       register: vm_details_template
