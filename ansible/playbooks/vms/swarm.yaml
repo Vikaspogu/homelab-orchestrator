@@ -103,7 +103,6 @@
       register: reboot_required_file
       ansible.builtin.stat:
         path: /var/run/reboot-required
-        get_md5: false
 
     - name: Reboot the box if kernel updated
       ansible.builtin.reboot:
