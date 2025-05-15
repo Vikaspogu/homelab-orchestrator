@@ -13,17 +13,16 @@ services:
     labels:
       komodo.skip: # Prevent Komodo from stopping with StopAllContainers
     restart: unless-stopped
-    env_file: ./.compose.env
     logging:
       driver: ${COMPOSE_LOGGING_DRIVER:-local}
     volumes:
       - pg-data:/var/lib/postgresql/data
+
   ferretdb:
     image: ghcr.io/ferretdb/ferretdb:1
     labels:
       komodo.skip: # Prevent Komodo from stopping with StopAllContainers
     restart: unless-stopped
-    env_file: ./.compose.env
     depends_on:
       - postgres
     logging:
@@ -38,15 +37,11 @@ services:
       - ferretdb
     logging:
       driver: ${COMPOSE_LOGGING_DRIVER:-local}
-    environment:
-      KOMODO_MONITORING_INTERVAL: 15-sec
-      KOMODO_RESOURCE_POLL_INTERVAL: 5-min
-      KOMODO_JWT_TTL: 1-day
     ports:
       - 9120:9120
-    env_file: ./.compose.env
     volumes:
       - repo-cache:/repo-cache
+      - ./config.toml:/config/config.toml
 
   periphery:
     image: ghcr.io/moghtech/komodo-periphery:1.17.5@sha256:1fb06b443845c4ffe0a86ea8f82a50f71497b501778d6391012dbd0036dd1168
@@ -55,12 +50,13 @@ services:
     labels:
       komodo.skip: # Prevent Komodo from stopping with StopAllContainers
     environment:
-      PERIPHERY_PASSKEYS: ${KOMODO_PASSKEY}
+      PERIPHERY_ROOT_DIRECTORY: '/home/{{ ansible_user }}/komodo'
     restart: unless-stopped
+    env_file: ./compose.env
     logging:
       driver: ${COMPOSE_LOGGING_DRIVER:-local}
-    env_file: ./.compose.env
     volumes:
+      - ./config.toml:/config/config.toml
       ## Mount external docker socket
       - /var/run/docker.sock:/var/run/docker.sock
       - /proc:/proc

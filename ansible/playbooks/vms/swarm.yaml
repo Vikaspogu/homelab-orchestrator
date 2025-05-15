@@ -153,7 +153,12 @@
         - name: Create env file
           ansible.builtin.copy:
             dest: /home/{{ ansible_user }}/komodo/.compose.env
-            content: '{{komodo_compose}}'
+            content: '{{komodo_compose_env}}'
+
+        - name: Create core config
+          ansible.builtin.copy:
+            dest: /home/{{ ansible_user }}/komodo/config.toml
+            content: '{{komodo_core_config}}'
 
         - name: Docker stack deploy
           ansible.builtin.command: docker stack deploy -c compose.yaml komodo --detach=true
