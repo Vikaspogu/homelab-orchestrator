@@ -14,11 +14,16 @@ omv:
       ansible_user: vikaspogu
 
 swarm:
-  hosts:
-    swarm-odin.vikaspogu.internal:
-      ansible_user: vikaspogu
-    swarm-loki.vikaspogu.internal:
-      ansible_user: vikaspogu
+  children:
+    swarm-master:
+      hosts:
+        swarm-odin.vikaspogu.internal:
+          ansible_user: vikaspogu
+
+    swarm-worker:
+      hosts:
+        swarm-loki.vikaspogu.internal:
+          ansible_user: vikaspogu
 
 aap:
   hosts:

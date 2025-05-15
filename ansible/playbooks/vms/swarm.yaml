@@ -14,10 +14,10 @@
         template_name: debian-cloudinit-template
         proxmox_hostname: 'pxm-odin'
         vm_name: swarm-odin
-        mac_address: bc:24:11:de:1b:c5
+        mac_address: bc:24:11:6d:53:e1
         cores: 14
         memory: 30480
-        disk_size: 212G
+        disk_size: 212
         storage_name: nvme
         vm_state: create
 
@@ -33,13 +33,14 @@
         mac_address: bc:24:11:de:1b:c6
         cores: 14
         memory: 30480
-        disk_size: 212G
+        disk_size: 212
         storage_name: ssd
         vm_state: create
 
 - name: Post Configuration
   hosts: swarm
   gather_facts: false
+  become: true
   vars_files:
     - ../../vars/common.vault.yaml
   pre_tasks:
@@ -47,84 +48,126 @@
       ansible.builtin.wait_for_connection:
         delay: 5
         timeout: 600
+    - name: Wait for cloud init to finish
+      community.general.cloud_init_data_facts:
+        filter: status
+      register: res
+      until: 'res.cloud_init_data_facts.status.v1.stage is defined and not res.cloud_init_data_facts.status.v1.stage'
+      retries: 50
+      delay: 5
+    - name: Gathering facts
+      setup:
   roles:
     - role: ansible-role-docker
   tasks:
-    - name: Run as root user
-      become: true
+    - name: Set a hostname
+      ansible.builtin.hostname:
+        name: '{{inventory_hostname}}'
+
+    - name: Install required packages
+      ansible.builtin.apt:
+        name:
+          - qemu-guest-agent
+          - git
+          - wget
+          - unzip
+          - tar
+          - rsync
+          - python3
+          - python3-pip
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+          - virtualenv
+
+    - name: Update apt repo and cache on all Debian/Ubuntu boxes
+      ansible.builtin.apt:
+        update_cache: true
+        force_apt_get: true
+        cache_valid_time: 3600
+
+    - name: Upgrade all packages on servers
+      ansible.builtin.apt:
+        upgrade: dist
+        force_apt_get: true
+
+    - name: Check if a reboot is needed on all servers
+      register: reboot_required_file
+      ansible.builtin.stat:
+        path: /var/run/reboot-required
+        get_md5: false
+
+    - name: Reboot the box if kernel updated
+      ansible.builtin.reboot:
+        msg: 'Reboot initiated by Ansible for kernel updates'
+        connect_timeout: 5
+        reboot_timeout: 300
+        pre_reboot_delay: 0
+        post_reboot_delay: 30
+        test_command: uptime
+      when: reboot_required_file.stat.exists
+
+    - name: Enable a timer unit for dnf-automatic
+      ansible.builtin.systemd_service:
+        name: qemu-guest-agent
+        state: started
+        enabled: true
+
+    - name: Create a directory to store the komodo files
+      ansible.builtin.file:
+        path: /home/{{ ansible_user }}/komodo
+        state: directory
+      loop: "{{ groups['swarm-master'] + groups['swarm-worker'] }}"
+
+    - name: Install swarm and komodo
+      when: inventory_hostname == 'swarm-odin.vikaspogu.internal'
       block:
-        - name: Set a hostname
-          ansible.builtin.hostname:
-            name: '{{inventory_hostname}}'
+        - name: Initialize Docker Swarm
+          community.docker.docker_swarm:
+            state: present
+          register: swarm_init
 
-        - name: Install required packages
-          ansible.builtin.apt:
-            name:
-              - qemu-guest-agent
-              - git
-              - wget
-              - unzip
-              - tar
-              - rsync
-              - python3
-              - python3-pip
-              - apt-transport-https
-              - ca-certificates
-              - curl
-              - software-properties-common
-              - virtualenv
+        - name: Set fact for worker join token
+          set_fact:
+            worker_join_token: '{{ swarm_init.swarm_facts.JoinTokens.Worker }}'
 
-        - name: Update apt repo and cache on all Debian/Ubuntu boxes
-          ansible.builtin.apt:
-            update_cache: true
-            force_apt_get: true
-            cache_valid_time: 3600
+        - name: Set fact for manager join token
+          set_fact:
+            manager_join_token: '{{ swarm_init.swarm_facts.JoinTokens.Manager }}'
 
-        - name: Upgrade all packages on servers
-          ansible.builtin.apt:
-            upgrade: dist
-            force_apt_get: true
+        - name: Share manager join token, worker join token, and master IP with all hosts
+          add_host:
+            name: '{{ item }}'
+            groups: 'swarm_nodes'
+            manager_join_token: '{{ manager_join_token }}'
+            worker_join_token: '{{ worker_join_token }}'
+            master_node_ip: "{{ hostvars['swarm-odin.vikaspogu.internal'].ansible_default_ipv4.address }}"
+          loop: "{{ groups['swarm-master'] + groups['swarm-worker'] }}"
 
-        - name: Check if a reboot is needed on all servers
-          register: reboot_required_file
-          ansible.builtin.stat:
-            path: /var/run/reboot-required
-            get_md5: false
+        - name: Template a file for the komodo-compose.yaml file
+          ansible.builtin.copy:
+            src: '../../files/komodo-compose.yaml'
+            dest: /home/{{ ansible_user }}/komodo/compose.yaml
 
-        - name: Reboot the box if kernel updated
-          ansible.builtin.reboot:
-            msg: 'Reboot initiated by Ansible for kernel updates'
-            connect_timeout: 5
-            reboot_timeout: 300
-            pre_reboot_delay: 0
-            post_reboot_delay: 30
-            test_command: uptime
-          when: reboot_required_file.stat.exists
+        - name: Create env file
+          ansible.builtin.copy:
+            dest: /home/{{ ansible_user }}/komodo/.compose.env
+            content: '{{komodo_compose}}'
 
-        - name: Enable a timer unit for dnf-automatic
-          ansible.builtin.systemd_service:
-            name: qemu-guest-agent
-            state: started
-            enabled: true
+        - name: Docker stack deploy
+          ansible.builtin.command: docker stack deploy -c compose.yaml komodo --detach=true
+          args:
+            chdir: /home/{{ ansible_user }}/komodo
 
-    - name: Initialize Docker Swarm
+- name: Add worker nodes to Docker Swarm
+  hosts: swarm-worker
+  gather_facts: yes
+  become: true
+  tasks:
+    - name: Join Docker Swarm as a worker
       community.docker.docker_swarm:
-        state: present
-        advertise_addr: '{{ ansible_host }}'
-        listen_addr: '0.0.0.0'
-      register: master_output
-
-    # - name: Create a directory to store the komodo files
-    #   ansible.builtin.file:
-    #     path: /home/{{ ansible_user }}/komodo
-    #     state: directory
-
-    # - name: Template a file for the komodo-compose.yaml file
-    #   ansible.builtin.template:
-    #     src: '../../templates/komodo-compose.yaml.j2'
-    #     dest: /home/{{ ansible_user }}/komodo/compose.yaml
-
-    # - name: Docker compose up
-    #   ansible.builtin.command: docker-compose up -d
-    #   args:
-    #     chdir: /home/{{ ansible_user }}/komodo
+        state: join
+        join_token: "{{ hostvars[inventory_hostname]['worker_join_token'] }}"
+        remote_addrs:
+          - "{{ hostvars[inventory_hostname]['master_node_ip'] }}"

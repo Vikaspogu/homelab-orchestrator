@@ -124,6 +124,10 @@
           ansible.builtin.command: omv-salt deploy run systemd-networkd
           changed_when: false
 
+        - name: OMV upgrade
+          ansible.builtin.command: omv-upgrade
+          changed_when: false
+
     - name: adding existing user '{{ user }}' to group sudo
       ansible.builtin.user:
         name: '{{ ansible_user }}'
