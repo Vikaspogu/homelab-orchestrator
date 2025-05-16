@@ -27,6 +27,8 @@ services:
       - postgres
     logging:
       driver: ${COMPOSE_LOGGING_DRIVER:-local}
+    environment:
+      - FERRETDB_POSTGRESQL_URL=postgres://postgres:5432/komodo
 
   core:
     image: ghcr.io/moghtech/komodo-core:1.17.5@sha256:3294c9317492c65799b45120ccde4def8a054281f91d70293f694b14579b726f
@@ -41,22 +43,19 @@ services:
       - 9120:9120
     volumes:
       - repo-cache:/repo-cache
-      - ./config.toml:/config/config.toml
+      - /home/{{ ansible_user }}/komodo/config.toml:/config/config.toml
 
   periphery:
     image: ghcr.io/moghtech/komodo-periphery:1.17.5@sha256:1fb06b443845c4ffe0a86ea8f82a50f71497b501778d6391012dbd0036dd1168
-    deploy:
-      mode: global
+    env_file: ./compose.env
     labels:
       komodo.skip: # Prevent Komodo from stopping with StopAllContainers
     environment:
       PERIPHERY_ROOT_DIRECTORY: '/home/{{ ansible_user }}/komodo'
     restart: unless-stopped
-    env_file: ./compose.env
     logging:
       driver: ${COMPOSE_LOGGING_DRIVER:-local}
     volumes:
-      - ./config.toml:/config/config.toml
       ## Mount external docker socket
       - /var/run/docker.sock:/var/run/docker.sock
       - /proc:/proc

@@ -17,3 +17,6 @@ roles:
   - src: https://github.com/geerlingguy/ansible-role-docker.git
     scm: git
     version: master
+  - src: https://github.com/geerlingguy/ansible-role-pip.git
+    scm: git
+    version: master
