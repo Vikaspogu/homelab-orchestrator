@@ -42,8 +42,5 @@
         dest: /home/{{ ansible_user }}/openshift-multicluster/.bootstrap/kustomization.yaml
 
     - name: Update openshift-gitops instance
-      environment: CLUSTER_NAME=vsphere
-        CLUSTER_BASE_DOMAIN=v3socp.boo
-        PLATFORM_BASE_DOMAIN=vsphere.v3socp.boo
       ansible.builtin.command:
-        cmd: envsubst < /home/{{ ansible_user }}/openshift-multicluster/.bootstrap | oc apply -k -
+        cmd: oc apply -k -
