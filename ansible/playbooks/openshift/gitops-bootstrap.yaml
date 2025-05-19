@@ -43,4 +43,4 @@
 
     - name: Update openshift-gitops instance
       ansible.builtin.command:
-        cmd: oc apply -k -
+        cmd: oc apply -k /home/{{ ansible_user }}/openshift-multicluster/.bootstrap
