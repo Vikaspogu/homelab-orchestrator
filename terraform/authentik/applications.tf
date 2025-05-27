@@ -9,7 +9,11 @@ locals {
     "karakeep",
     "mealie",
     "argocd-workflows",
-    "aap-controller"
+    "aap-controller",
+    "komodo",
+    "bytestash",
+    "memos",
+    "reactive-resume"
   ]
 }
 
@@ -119,6 +123,38 @@ locals {
       icon_url      = "https://repository-images.githubusercontent.com/177642958/95e2ed0f-953b-4348-b452-54c229136b15"
       redirect_uri  = "https://aap-controller.vikaspogu.internal/api/gateway/social/complete/authentik/"
       launch_url    = "https://aap-controller.vikaspogu.internal"
+    },
+    komodo = {
+      client_id     = module.onepassword_application["komodo"].fields["CLIENT_ID"]
+      client_secret = module.onepassword_application["komodo"].fields["CLIENT_SECRET"]
+      group         = authentik_group.admins.id
+      icon_url      = "https://avatars.githubusercontent.com/u/93411308?s=200&v=4"
+      redirect_uri  = "http://omv-odin.vikaspogu.internal:9120/auth/oidc/callback"
+      launch_url    = "http://omv-odin.vikaspogu.internal:9120"
+    },
+    bytestash = {
+      client_id     = module.onepassword_application["bytestash"].fields["CLIENT_ID"]
+      client_secret = module.onepassword_application["bytestash"].fields["CLIENT_SECRET"]
+      group         = authentik_group.admins.id
+      icon_url      = "https://raw.githubusercontent.com/jordan-dalby/ByteStash/refs/heads/main/client/public/logo192.png"
+      redirect_uri  = "https://bytestash.synlo.duckdns.org/api/auth/oidc/callback"
+      launch_url    = "https://bytestash.synlo.duckdns.org"
+    },
+    memos = {
+      client_id     = module.onepassword_application["memos"].fields["CLIENT_ID"]
+      client_secret = module.onepassword_application["memos"].fields["CLIENT_SECRET"]
+      group         = authentik_group.admins.id
+      icon_url      = "https://avatars.githubusercontent.com/u/95764151?s=200&v=4"
+      redirect_uri  = "https://memos.synlo.duckdns.org/auth/callback"
+      launch_url    = "https://memos.synlo.duckdns.org"
+    },
+    reactive-resume = {
+      client_id     = module.onepassword_application["reactive-resume"].fields["CLIENT_ID"]
+      client_secret = module.onepassword_application["reactive-resume"].fields["CLIENT_SECRET"]
+      group         = authentik_group.admins.id
+      icon_url      = "https://docs.rxresu.me/~gitbook/image?url=https%3A%2F%2F2546827940-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-x-prod.appspot.com%2Fo%2Fspaces%252FZiwItwaQlAySJOpoiYqg%252Ficon%252FAT9ao8E59WpNsnqltfO7%252FProperty%25201%253DLight.png%3Falt%3Dmedia%26token%3D7109dec3-f9ee-468c-91b7-744335795b2a&width=32&dpr=1&quality=100&sign=a184993e&sv=2"
+      redirect_uri  = "https://reactive-resume.${var.cluster_domain}/api/auth/openid/callback"
+      launch_url    = "https://reactive-resume.${var.cluster_domain}"
     }
   }
 }

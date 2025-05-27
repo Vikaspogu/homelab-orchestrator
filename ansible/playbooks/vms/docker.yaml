@@ -93,7 +93,20 @@
         dest: /home/{{ ansible_user }}/komodo/compose.env
         content: '{{komodo_compose_env}}'
 
+    - name: Docker compose check status
+      ansible.builtin.command: docker compose ps
+      args:
+        chdir: /home/{{ ansible_user }}/komodo
+      register: komodo_status
+
     - name: Docker compose deploy
       ansible.builtin.command: docker compose -p komodo -f compose.yaml --env-file compose.env up -d
+      when: komodo_status.rc != 0
+      args:
+        chdir: /home/{{ ansible_user }}/komodo
+
+    - name: Docker compose redeploy
+      ansible.builtin.command: docker compose restart
+      when: komodo_status.rc == 0
       args:
         chdir: /home/{{ ansible_user }}/komodo
