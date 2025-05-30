@@ -129,8 +129,8 @@ locals {
       client_secret = module.onepassword_application["komodo"].fields["CLIENT_SECRET"]
       group         = authentik_group.admins.id
       icon_url      = "https://avatars.githubusercontent.com/u/93411308?s=200&v=4"
-      redirect_uri  = "http://omv-odin.vikaspogu.internal:9120/auth/oidc/callback"
-      launch_url    = "http://omv-odin.vikaspogu.internal:9120"
+      redirect_uri  = "https://komodo.${var.cluster_domain}/auth/oidc/callback"
+      launch_url    = "https://komodo.${var.cluster_domain}"
     },
     bytestash = {
       client_id     = module.onepassword_application["bytestash"].fields["CLIENT_ID"]
