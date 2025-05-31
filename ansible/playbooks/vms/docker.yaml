@@ -24,6 +24,24 @@
       vars:
         docker_install_compose: true
   tasks:
+    - name: Download installer clients
+      become: true
+      ansible.builtin.get_url:
+        url: '{{ item }}'
+        dest: /tmp
+        mode: '0755'
+      loop:
+        - https://github.com/getsops/sops/releases/download/v3.10.2/sops-v3.10.2.linux.amd64
+
+    - name: Copy local file to remote with new name
+      ansible.builtin.copy:
+        src: /tmp/{{item.src}}
+        dest: /usr/local/bin/{{item.dest}}
+        mode: a+x
+        remote_src: true
+      loop:
+        - { src: sops-v3.10.2.linux.amd64, dest: sops }
+
     - name: Install required packages
       ansible.builtin.apt:
         name:

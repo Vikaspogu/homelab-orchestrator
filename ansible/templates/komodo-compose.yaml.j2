@@ -68,6 +68,8 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /proc:/proc
       - /home/{{ ansible_user }}/komodo:/home/{{ ansible_user }}/komodo
+      - /usr/local/bin/sops:/usr/local/bin/sops:ro
+      - /home/{{ ansible_user }}/.sops:/home/{{ ansible_user }}/.sops:ro
 
 volumes:
   # Postgres
