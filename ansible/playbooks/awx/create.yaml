@@ -1,6 +1,6 @@
 ---
 - name: Deploy VM on odin controller
-  hosts: pxm-odin
+  hosts: pxm-loki
   gather_facts: false
   vars_files:
     - ../../vars/common.vault.yaml
@@ -16,9 +16,9 @@
         template_id: 9001
         cores: 8
         memory: 20480
-        disk_size: 212G
+        disk_size: 212
         storage_name: nvme
-        proxmox_hostname: 'pxm-odin'
+        proxmox_hostname: 'pxm-loki'
 
 - name: Download and install AAP on the controller
   hosts: aap-controller

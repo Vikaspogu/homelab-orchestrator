@@ -36,6 +36,21 @@
             state: present
             template: '../../templates/sops-secret.yaml.j2'
 
+    - name: Create configmap for environment-variables
+      kubernetes.core.k8s:
+        namespace: openshift-gitops
+        definition:
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: environment-variables
+          data:
+            KUSTOMIZE_PLUGIN_HOME: /etc/kustomize/plugin
+            CLUSTER_NAME: { { cluster_name } }
+            CLUSTER_BASE_DOMAIN: v3socp.boo
+            PLATFORM_BASE_DOMAIN: '{{cluster_name}}.v3socp.boo'
+            INFRA_GITOPS_REPO: 'https://github.com/Vikaspogu/openshift-multicluster.git'
+
     - name: Template a file for the kustomization.yaml file
       ansible.builtin.template:
         src: '../../templates/kustomization.yaml.j2'

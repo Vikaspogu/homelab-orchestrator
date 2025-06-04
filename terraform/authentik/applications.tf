@@ -13,7 +13,8 @@ locals {
     "komodo",
     "bytestash",
     "memos",
-    "reactive-resume"
+    "reactive-resume",
+    "immich"
   ]
 }
 
@@ -33,7 +34,7 @@ locals {
       client_secret = module.onepassword_application["grafana"].fields["GRAFANA_CLIENT_SECRET"]
       group         = authentik_group.admins.id
       icon_url      = "https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/grafana.png"
-      redirect_uri  = "https://grafana.${var.cluster_domain}/login/generic_oauth"
+      redirect_uris = ["https://grafana.${var.cluster_domain}/login/generic_oauth"]
       launch_url    = "https://grafana.${var.cluster_domain}/login/generic_oauth"
     },
     freshrss = {
@@ -41,7 +42,7 @@ locals {
       client_secret = module.onepassword_application["freshrss"].fields["CLIENT_SECRET"]
       group         = authentik_group.admins.id
       icon_url      = "https://avatars.githubusercontent.com/u/9414285?s=280&v=4"
-      redirect_uri  = "https://rss.${var.cluster_domain}:443/i/oidc/"
+      redirect_uris = ["https://rss.${var.cluster_domain}:443/i/oidc/"]
       launch_url    = "https://rss.${var.cluster_domain}:443/i/oidc/"
     },
     paperless = {
@@ -49,7 +50,7 @@ locals {
       client_secret = module.onepassword_application["paperless"].fields["CLIENT_SECRET"]
       group         = authentik_group.admins.id
       icon_url      = "https://avatars.githubusercontent.com/u/99562962?s=280&v=4"
-      redirect_uri  = "https://paperless.${var.cluster_domain}/accounts/oidc/authentik/login/callback/"
+      redirect_uris = ["https://paperless.${var.cluster_domain}/accounts/oidc/authentik/login/callback/"]
       launch_url    = "https://paperless.${var.cluster_domain}/accounts/oidc/authentik/login/callback/"
     },
     pgadmin = {
@@ -57,7 +58,7 @@ locals {
       client_secret = module.onepassword_application["pgadmin"].fields["CLIENT_SECRET"]
       group         = authentik_group.admins.id
       icon_url      = "https://www.pgadmin.org/static/docs/pgadmin4-dev/docs/en_US/_build/html/_images/logo-right-128.png"
-      redirect_uri  = "https://pgadmin4.${var.cluster_domain}/oauth2/authorize"
+      redirect_uris = ["https://pgadmin4.${var.cluster_domain}/oauth2/authorize"]
       launch_url    = "https://pgadmin4.${var.cluster_domain}/oauth2/authorize"
     },
     jellyfin = {
@@ -65,7 +66,7 @@ locals {
       client_secret = module.onepassword_application["jellyfin"].fields["CLIENT_SECRET"]
       group         = authentik_group.admins.id
       icon_url      = "https://avatars.githubusercontent.com/u/45698031?s=200&v=4"
-      redirect_uri  = "https://jellyfin.${var.cluster_domain}/sso/OID/redirect/authentik"
+      redirect_uris = ["https://jellyfin.${var.cluster_domain}/sso/OID/redirect/authentik"]
       launch_url    = "https://jellyfin.${var.cluster_domain}/sso/OID/start/authentik"
     },
     mealie = {
@@ -73,7 +74,7 @@ locals {
       client_secret = module.onepassword_application["mealie"].fields["CLIENT_SECRET"]
       group         = authentik_group.admins.id
       icon_url      = "https://avatars.githubusercontent.com/u/92342333?s=200&v=4"
-      redirect_uri  = "https://mealie.${var.cluster_domain}/login"
+      redirect_uris = ["https://mealie.${var.cluster_domain}/login"]
       launch_url    = "https://mealie.${var.cluster_domain}/login"
     },
     karakeep = {
@@ -81,7 +82,7 @@ locals {
       client_secret = module.onepassword_application["karakeep"].fields["CLIENT_SECRET"]
       group         = authentik_group.admins.id
       icon_url      = "https://avatars.githubusercontent.com/u/92342333?s=200&v=4"
-      redirect_uri  = "https://karakeep.${var.cluster_domain}/api/auth/callback/custom"
+      redirect_uris = ["https://karakeep.${var.cluster_domain}/api/auth/callback/custom"]
       launch_url    = "https://karakeep.${var.cluster_domain}/login"
     },
     openshift-proxmox = {
@@ -89,7 +90,7 @@ locals {
       client_secret = module.onepassword_application["openshift"].fields["CLIENT_SECRET_PROXMOX"]
       group         = authentik_group.admins.id
       icon_url      = "https://austindewey.com/wp-content/uploads/2018/10/Logotype_RH_OpenShift_StackedLogo_RGB_Black.png"
-      redirect_uri  = "https://oauth-openshift.${var.openshift_proxmox_cluster_domain}/oauth2callback/authentik"
+      redirect_uris = ["https://oauth-openshift.${var.openshift_proxmox_cluster_domain}/oauth2callback/authentik"]
       launch_url    = "https://console-openshift-console.${var.openshift_proxmox_cluster_domain}/"
     },
     openshift-vsphere = {
@@ -97,7 +98,7 @@ locals {
       client_secret = module.onepassword_application["openshift"].fields["CLIENT_SECRET_VSPHERE"]
       group         = authentik_group.admins.id
       icon_url      = "https://austindewey.com/wp-content/uploads/2018/10/Logotype_RH_OpenShift_StackedLogo_RGB_Black.png"
-      redirect_uri  = "https://oauth-openshift.${var.openshift_vsphere_cluster_domain}/oauth2callback/authentik"
+      redirect_uris = ["https://oauth-openshift.${var.openshift_vsphere_cluster_domain}/oauth2callback/authentik"]
       launch_url    = "https://console-openshift-console.${var.openshift_vsphere_cluster_domain}/"
     },
     argocd-workflows-proxmox = {
@@ -105,7 +106,7 @@ locals {
       client_secret = module.onepassword_application["argocd-workflows"].fields["CLIENT_SECRET_PROXMOX"]
       group         = authentik_group.admins.id
       icon_url      = "https://avatars.githubusercontent.com/u/30269780?s=200&v=4"
-      redirect_uri  = "https://argo-workflows-openshift-gitops.${var.openshift_proxmox_cluster_domain}/oauth2/callback"
+      redirect_uris = ["https://argo-workflows-openshift-gitops.${var.openshift_proxmox_cluster_domain}/oauth2/callback"]
       launch_url    = "https://argo-workflows-openshift-gitops.${var.openshift_proxmox_cluster_domain}/oauth2/callback"
     },
     argocd-workflows-vsphere = {
@@ -113,7 +114,7 @@ locals {
       client_secret = module.onepassword_application["argocd-workflows"].fields["CLIENT_SECRET_VSPHERE"]
       group         = authentik_group.admins.id
       icon_url      = "https://avatars.githubusercontent.com/u/30269780?s=200&v=4"
-      redirect_uri  = "https://argo-workflows-openshift-gitops.${var.openshift_vsphere_cluster_domain}/oauth2/callback"
+      redirect_uris = ["https://argo-workflows-openshift-gitops.${var.openshift_vsphere_cluster_domain}/oauth2/callback"]
       launch_url    = "https://argo-workflows-openshift-gitops.${var.openshift_vsphere_cluster_domain}/oauth2/callback"
     },
     aap-controller = {
@@ -121,7 +122,7 @@ locals {
       client_secret = module.onepassword_application["aap-controller"].fields["CLIENT_SECRET"]
       group         = authentik_group.admins.id
       icon_url      = "https://repository-images.githubusercontent.com/177642958/95e2ed0f-953b-4348-b452-54c229136b15"
-      redirect_uri  = "https://aap-controller.vikaspogu.internal/api/gateway/social/complete/authentik/"
+      redirect_uris = ["https://aap-controller.vikaspogu.internal/api/gateway/social/complete/authentik/"]
       launch_url    = "https://aap-controller.vikaspogu.internal"
     },
     komodo = {
@@ -129,7 +130,7 @@ locals {
       client_secret = module.onepassword_application["komodo"].fields["CLIENT_SECRET"]
       group         = authentik_group.admins.id
       icon_url      = "https://avatars.githubusercontent.com/u/93411308?s=200&v=4"
-      redirect_uri  = "https://komodo.${var.cluster_domain}/auth/oidc/callback"
+      redirect_uris = ["https://komodo.${var.cluster_domain}/auth/oidc/callback"]
       launch_url    = "https://komodo.${var.cluster_domain}"
     },
     bytestash = {
@@ -137,7 +138,7 @@ locals {
       client_secret = module.onepassword_application["bytestash"].fields["CLIENT_SECRET"]
       group         = authentik_group.admins.id
       icon_url      = "https://raw.githubusercontent.com/jordan-dalby/ByteStash/refs/heads/main/client/public/logo192.png"
-      redirect_uri  = "https://bytestash.synlo.duckdns.org/api/auth/oidc/callback"
+      redirect_uris = ["https://bytestash.synlo.duckdns.org/api/auth/oidc/callback"]
       launch_url    = "https://bytestash.synlo.duckdns.org"
     },
     memos = {
@@ -145,7 +146,7 @@ locals {
       client_secret = module.onepassword_application["memos"].fields["CLIENT_SECRET"]
       group         = authentik_group.admins.id
       icon_url      = "https://avatars.githubusercontent.com/u/95764151?s=200&v=4"
-      redirect_uri  = "https://memos.synlo.duckdns.org/auth/callback"
+      redirect_uris = ["https://memos.synlo.duckdns.org/auth/callback"]
       launch_url    = "https://memos.synlo.duckdns.org"
     },
     reactive-resume = {
@@ -153,8 +154,16 @@ locals {
       client_secret = module.onepassword_application["reactive-resume"].fields["CLIENT_SECRET"]
       group         = authentik_group.admins.id
       icon_url      = "https://docs.rxresu.me/~gitbook/image?url=https%3A%2F%2F2546827940-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-x-prod.appspot.com%2Fo%2Fspaces%252FZiwItwaQlAySJOpoiYqg%252Ficon%252FAT9ao8E59WpNsnqltfO7%252FProperty%25201%253DLight.png%3Falt%3Dmedia%26token%3D7109dec3-f9ee-468c-91b7-744335795b2a&width=32&dpr=1&quality=100&sign=a184993e&sv=2"
-      redirect_uri  = "https://reactive-resume.${var.cluster_domain}/api/auth/openid/callback"
+      redirect_uris = ["https://reactive-resume.${var.cluster_domain}/api/auth/openid/callback"]
       launch_url    = "https://reactive-resume.${var.cluster_domain}"
+    },
+    immich = {
+      client_id     = module.onepassword_application["immich"].fields["CLIENT_ID"]
+      client_secret = module.onepassword_application["immich"].fields["CLIENT_SECRET"]
+      group         = authentik_group.admins.id
+      icon_url      = "https://avatars.githubusercontent.com/u/109746326?s=200&v=4"
+      redirect_uris = ["https://immich.synlo.duckdns.org/auth/login", "https://immich.synlo.duckdns.org/user-settings", "app.immich:///oauth-callback"]
+      launch_url    = "https://immich.synlo.duckdns.org"
     }
   }
 }
@@ -171,9 +180,9 @@ resource "authentik_provider_oauth2" "oauth2" {
   access_token_validity = "hours=4"
   signing_key           = data.authentik_certificate_key_pair.generated.id
   allowed_redirect_uris = [
-    {
-      matching_mode = "strict",
-      url           = each.value.redirect_uri,
+    for uri in each.value.redirect_uris : {
+      matching_mode = "strict"
+      url           = uri
     }
   ]
 }
