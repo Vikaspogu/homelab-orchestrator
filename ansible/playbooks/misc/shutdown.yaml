@@ -1,20 +1,17 @@
 ---
 - name: Playbook to check if host is running and shutdown
   hosts: esxi.vikaspogu.internal
-  gather_facts: false
+  become: true
+  gather_facts: true
+  ignore_unreachable: true
   vars_files:
     - ../../vars/common.vault.yaml
   tasks:
     - name: Ping database server with retries
       ansible.builtin.ping:
       register: ping_result
-      until: ping_result is succeeded
-      retries: 3
-      delay: 5
-      ignore_errors: yes
+
     - name: Shutdown host if its running
-      become: true
       community.general.shutdown:
       when:
-        - ping_result is not failed
-        - ping_result.ping == 'pong'
+        - ping_result.ping is defined and ping_result.ping == 'pong'

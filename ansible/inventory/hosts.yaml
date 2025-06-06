@@ -5,7 +5,10 @@ proxmox:
       ansible_user: root
     pxm-odin:
       ansible_user: root
-
+esxi:
+  hosts:
+    esxi.vikaspogu.internal:
+      ansible_user: root
 omv:
   hosts:
     omv-odin.vikaspogu.internal:
