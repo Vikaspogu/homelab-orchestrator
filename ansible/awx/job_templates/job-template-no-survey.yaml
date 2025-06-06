@@ -25,3 +25,8 @@
         file: ansible/playbooks/vms/docker.yaml,
         enable_survey: false,
       }
+    - {
+        name: 'Adhoc - Shutdown Hosts',
+        file: ansible/playbooks/misc/shutdown.yaml,
+        enable_survey: false,
+      }

@@ -202,6 +202,14 @@
       retries: 10
       delay: 10
 
+    - name: Create a Job Template with survey
+      ansible.controller.schedule:
+        name: 'Shutdown Hosts'
+        state: present
+        unified_job_template: 'Adhoc - Shutdown Hosts'
+        rrule: 'DTSTART:20250601T133500Z RRULE:FREQ=DAILY;INTERVAL=1;WKST=SU;BYHOUR=19;BYMINUTE=30'
+      register: result
+
     # - name: Create 3 node cluster workflow
     #   ansible.builtin.import_tasks: ../../awx/workflows/openshift-cluster.yaml
     #   register: acm_cluster_workflow
