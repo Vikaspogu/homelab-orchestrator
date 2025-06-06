@@ -162,8 +162,8 @@ locals {
       client_secret = module.onepassword_application["immich"].fields["CLIENT_SECRET"]
       group         = authentik_group.admins.id
       icon_url      = "https://avatars.githubusercontent.com/u/109746326?s=200&v=4"
-      redirect_uris = ["https://immich.synlo.duckdns.org/auth/login", "https://immich.synlo.duckdns.org/user-settings", "app.immich:///oauth-callback"]
-      launch_url    = "https://immich.synlo.duckdns.org"
+      redirect_uris = ["https://immich.${var.cluster_domain}/auth/login", "https://immich.${var.cluster_domain}/user-settings", "app.immich:///oauth-callback"]
+      launch_url    = "https://immich.${var.cluster_domain}"
     }
   }
 }
