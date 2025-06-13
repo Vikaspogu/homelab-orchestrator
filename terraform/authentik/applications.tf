@@ -14,7 +14,8 @@ locals {
     "bytestash",
     "memos",
     "reactive-resume",
-    "immich"
+    "immich",
+    "gitea"
   ]
 }
 
@@ -164,7 +165,15 @@ locals {
       icon_url      = "https://avatars.githubusercontent.com/u/109746326?s=200&v=4"
       redirect_uris = ["https://photos.${var.cluster_domain}/auth/login", "https://photos.${var.cluster_domain}/user-settings", "app.immich:///oauth-callback"]
       launch_url    = "https://photos.${var.cluster_domain}"
-    }
+    },
+    gitea = {
+      client_id     = module.onepassword_application["gitea"].fields["CLIENT_ID"]
+      client_secret = module.onepassword_application["gitea"].fields["CLIENT_SECRET"]
+      group         = authentik_group.admins.id
+      icon_url      = "https://about.gitea.com/gitea-text.svg"
+      redirect_uris = ["https://gitea.${var.cluster_domain}/user/oauth2/authentik/callback"]
+      launch_url    = "https://gitea.${var.cluster_domain}"
+    },
   }
 }
 
