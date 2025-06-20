@@ -15,7 +15,8 @@ locals {
     "memos",
     "reactive-resume",
     "immich",
-    "gitea"
+    "gitea",
+    "gitlab"
   ]
 }
 
@@ -173,6 +174,14 @@ locals {
       icon_url      = "https://about.gitea.com/gitea-text.svg"
       redirect_uris = ["https://gitea.${var.cluster_domain}/user/oauth2/authentik/callback"]
       launch_url    = "https://gitea.${var.cluster_domain}"
+    },
+    gitlab = {
+      client_id     = module.onepassword_application["gitlab"].fields["CLIENT_ID"]
+      client_secret = module.onepassword_application["gitlab"].fields["CLIENT_SECRET"]
+      group         = authentik_group.admins.id
+      icon_url      = "https://gitlab.com/uploads/-/system/group/avatar/9970/project_avatar.png?width=48"
+      redirect_uris = ["https://gitlab.${var.cluster_domain}/users/auth/openid_connect/callback"]
+      launch_url    = "https://gitlab.${var.cluster_domain}"
     },
   }
 }
