@@ -53,7 +53,7 @@ services:
       - /home/{{ ansible_user }}/komodo/config.toml:/config/config.toml
 
   periphery:
-    image: ghcr.io/moghtech/komodo-periphery:1.18.3sha256:805e65369b3aa2796009f983cca10fd63e17989bd0de579da9d8f5a9d1b3433d
+    image: ghcr.io/moghtech/komodo-periphery:1.18.3@sha256:805e65369b3aa2796009f983cca10fd63e17989bd0de579da9d8f5a9d1b3433d
     env_file: ./compose.env
     labels:
       komodo.skip: # Prevent Komodo from stopping with StopAllContainers
