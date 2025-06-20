@@ -33,7 +33,7 @@ services:
       FERRETDB_POSTGRESQL_URL: postgres://${KOMODO_DB_USERNAME}:${KOMODO_DB_PASSWORD}@postgres:5432/postgres
 
   core:
-    image: ghcr.io/moghtech/komodo-core:1.18@sha256:b65ee6d2af592841e610aee19951995ac89fd2046db451b77ccbf82506f19f41
+    image: ghcr.io/moghtech/komodo-core:1.18.3@sha256:4d8690fd9c7a75445fd04fac492c81b8c3d2a0ebb35bd40aa1c9e75ea43d7f20
     labels:
       komodo.skip: # Prevent Komodo from stopping with StopAllContainers
     restart: unless-stopped
@@ -53,7 +53,7 @@ services:
       - /home/{{ ansible_user }}/komodo/config.toml:/config/config.toml
 
   periphery:
-    image: ghcr.io/moghtech/komodo-periphery:1.18@sha256:fb12dd26fcb964ac95c0c669cca6efd4dc8c9e3a147f7873835f23727058292f
+    image: ghcr.io/moghtech/komodo-periphery:1.18.3sha256:805e65369b3aa2796009f983cca10fd63e17989bd0de579da9d8f5a9d1b3433d
     env_file: ./compose.env
     labels:
       komodo.skip: # Prevent Komodo from stopping with StopAllContainers
