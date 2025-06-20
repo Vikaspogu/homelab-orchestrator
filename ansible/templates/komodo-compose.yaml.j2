@@ -8,7 +8,7 @@
 ##   3. Komodo Periphery
 
 services:
-  postgres2:
+  postgres:
     image: ghcr.io/ferretdb/postgres-documentdb:16-0.103.0-ferretdb-2.2.0
     labels:
       komodo.skip: # Prevent Komodo from stopping with StopAllContainers
@@ -20,17 +20,17 @@ services:
       POSTGRES_PASSWORD: ${KOMODO_DB_PASSWORD}
       POSTGRES_DB: postgres
 
-  ferretdb2:
+  ferretdb:
     image: ghcr.io/ferretdb/ferretdb:1.24.2
     labels:
       komodo.skip: # Prevent Komodo from stopping with StopAllContainers
     restart: unless-stopped
     depends_on:
-      - postgres2
+      - postgres
     volumes:
       - ferretdb-state:/state
     environment:
-      FERRETDB_POSTGRESQL_URL: postgres://${KOMODO_DB_USERNAME}:${KOMODO_DB_PASSWORD}@postgres2:5432/postgres
+      FERRETDB_POSTGRESQL_URL: postgres://${KOMODO_DB_USERNAME}:${KOMODO_DB_PASSWORD}@postgres:5432/postgres
 
   core:
     image: ghcr.io/moghtech/komodo-core:1.18@sha256:b65ee6d2af592841e610aee19951995ac89fd2046db451b77ccbf82506f19f41
@@ -38,14 +38,14 @@ services:
       komodo.skip: # Prevent Komodo from stopping with StopAllContainers
     restart: unless-stopped
     depends_on:
-      - ferretdb2
+      - ferretdb
     logging:
       driver: ${COMPOSE_LOGGING_DRIVER:-local}
     ports:
       - 9120:9120
     env_file: ./compose.env
     environment:
-      KOMODO_DATABASE_ADDRESS: ferretdb2:27017
+      KOMODO_DATABASE_ADDRESS: ferretdb:27017
       KOMODO_DATABASE_USERNAME: ${KOMODO_DB_USERNAME}
       KOMODO_DATABASE_PASSWORD: ${KOMODO_DB_PASSWORD}
     volumes:
