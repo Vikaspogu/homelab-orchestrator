@@ -16,7 +16,8 @@ locals {
     "reactive-resume",
     "immich",
     "gitea",
-    "gitlab"
+    "gitlab",
+    "papra"
   ]
 }
 
@@ -182,6 +183,14 @@ locals {
       icon_url      = "https://gitlab.com/uploads/-/system/group/avatar/9970/project_avatar.png?width=48"
       redirect_uris = ["https://gitlab.${var.cluster_domain}/users/auth/openid_connect/callback"]
       launch_url    = "https://gitlab.${var.cluster_domain}"
+    },
+    papra = {
+      client_id     = module.onepassword_application["papra"].fields["CLIENT_ID"]
+      client_secret = module.onepassword_application["papra"].fields["CLIENT_SECRET"]
+      group         = authentik_group.admins.id
+      icon_url      = "https://cdn.jsdelivr.net/gh/selfhst/icons/png/papra.png"
+      redirect_uris = ["https://papra.${var.cluster_domain}/api/auth/oauth2/callback/authentik"]
+      launch_url    = "https://papra.${var.cluster_domain}"
     },
   }
 }
