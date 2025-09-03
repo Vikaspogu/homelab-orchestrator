@@ -16,8 +16,8 @@
         template_id: 9001
         cores: 8
         memory: 20480
-        disk_size: 212
-        storage_name: nvme
+        disk_size: 190
+        storage_name: ssd
         proxmox_hostname: 'pxm-loki'
 
 - name: Download and install AAP on the controller
@@ -43,7 +43,7 @@
       register: res
       until: 'res.cloud_init_data_facts.status.v1.stage is defined and not res.cloud_init_data_facts.status.v1.stage'
       retries: 50
-      delay: 5
+      delay: 30
 
     - name: Gathering facts
       setup:

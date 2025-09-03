@@ -2,16 +2,16 @@
 collections:
   - name: ansible.posix
   - name: ansible.utils
-  - name: community.general
-  - name: community.sops
-  - name: kubernetes.core
   - name: ansible.controller
   - name: ansible.platform
   - name: ansible.hub
+  - name: redhat.satellite
+  - name: community.general
+  - name: community.sops
+  - name: kubernetes.core
   - name: infra.controller_configuration
   - name: infra.aap_utilities
   - name: community.vmware
-  - name: redhat.satellite
   - name: community.docker
 roles:
   - src: https://github.com/geerlingguy/ansible-role-docker.git

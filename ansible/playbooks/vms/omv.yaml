@@ -138,6 +138,57 @@
       ansible.builtin.hostname:
         name: '{{inventory_hostname}}'
 
+    - name: System Configuration | Disable apparmor
+      ansible.builtin.systemd:
+        name: apparmor
+        state: stopped
+        masked: true
+
+    - name: System Configuration | Disable swap
+      ansible.posix.mount:
+        name: '{{ item }}'
+        fstype: swap
+        state: absent
+      loop: ['none', 'swap']
+    - name: System Configuration | Create Kernel modules
+      ansible.builtin.copy:
+        dest: '/etc/modules-load.d/{{ item }}.conf'
+        mode: '0644'
+        content: '{{ item }}'
+      loop:
+        [
+          'br_netfilter',
+          'ceph',
+          'ip_vs',
+          'ip_vs_rr',
+          'iptable_mangle',
+          'iptable_raw',
+          'nbd',
+          'overlay',
+          'rbd',
+          'xt_socket',
+        ]
+      register: modules_status
+    - name: System Configuration | Reload Kernel modules # noqa: no-changed-when no-handler
+      when: modules_status.changed
+      ansible.builtin.systemd:
+        name: systemd-modules-load
+        state: restarted
+    - name: System Configuration | Sysctl
+      ansible.posix.sysctl:
+        name: '{{ item.key }}'
+        value: '{{ item.value }}'
+        sysctl_file: /etc/sysctl.d/99-kubernetes.conf
+        reload: true
+      with_dict: '{{ sysctl_config }}'
+      vars:
+        sysctl_config:
+          fs.inotify.max_queued_events: 65536
+          fs.inotify.max_user_watches: 524288
+          fs.inotify.max_user_instances: 8192
+          net.core.rmem_max: 2500000
+          net.core.wmem_max: 2500000
+
     - name: Run OMV Regen install
       ansible.builtin.get_url:
         url: https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh
