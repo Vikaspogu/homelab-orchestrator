@@ -37,7 +37,7 @@
         storage: '{{ storage_name }}'
         timeout: 120
         scsi:
-          scsi0: '{{ storage_name }}:{{disk_size}}G,format=raw'
+          scsi0: '{{ storage_name }}:{{disk_size}},format=raw'
       register: vm_details_scsi
       delegate_to: localhost
       when: template_name is not defined

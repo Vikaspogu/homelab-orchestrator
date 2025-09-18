@@ -3,21 +3,13 @@ locals {
     "grafana",
     "openshift",
     "freshrss",
-    "paperless",
     "pgadmin",
     "jellyfin",
-    "karakeep",
-    "mealie",
-    "argocd-workflows",
     "aap-controller",
-    "komodo",
     "bytestash",
-    "memos",
     "reactive-resume",
-    "immich",
-    "gitea",
-    "gitlab",
-    "papra"
+    "papra",
+    "planka"
   ]
 }
 
@@ -48,14 +40,6 @@ locals {
       redirect_uris = ["https://rss.${var.cluster_domain}:443/i/oidc/"]
       launch_url    = "https://rss.${var.cluster_domain}:443/i/oidc/"
     },
-    paperless = {
-      client_id     = module.onepassword_application["paperless"].fields["CLIENT_ID"]
-      client_secret = module.onepassword_application["paperless"].fields["CLIENT_SECRET"]
-      group         = authentik_group.admins.id
-      icon_url      = "https://avatars.githubusercontent.com/u/99562962?s=280&v=4"
-      redirect_uris = ["https://paperless.${var.cluster_domain}/accounts/oidc/authentik/login/callback/"]
-      launch_url    = "https://paperless.${var.cluster_domain}/accounts/oidc/authentik/login/callback/"
-    },
     pgadmin = {
       client_id     = module.onepassword_application["pgadmin"].fields["CLIENT_ID"]
       client_secret = module.onepassword_application["pgadmin"].fields["CLIENT_SECRET"]
@@ -72,30 +56,6 @@ locals {
       redirect_uris = ["https://jellyfin.${var.cluster_domain}/sso/OID/redirect/authentik"]
       launch_url    = "https://jellyfin.${var.cluster_domain}/sso/OID/start/authentik"
     },
-    mealie = {
-      client_id     = module.onepassword_application["mealie"].fields["CLIENT_ID"]
-      client_secret = module.onepassword_application["mealie"].fields["CLIENT_SECRET"]
-      group         = authentik_group.admins.id
-      icon_url      = "https://avatars.githubusercontent.com/u/92342333?s=200&v=4"
-      redirect_uris = ["https://mealie.${var.cluster_domain}/login"]
-      launch_url    = "https://mealie.${var.cluster_domain}/login"
-    },
-    karakeep = {
-      client_id     = module.onepassword_application["karakeep"].fields["CLIENT_ID"]
-      client_secret = module.onepassword_application["karakeep"].fields["CLIENT_SECRET"]
-      group         = authentik_group.admins.id
-      icon_url      = "https://avatars.githubusercontent.com/u/92342333?s=200&v=4"
-      redirect_uris = ["https://karakeep.${var.cluster_domain}/api/auth/callback/custom"]
-      launch_url    = "https://karakeep.${var.cluster_domain}/login"
-    },
-    openshift-proxmox = {
-      client_id     = module.onepassword_application["openshift"].fields["CLIENT_ID_PROXMOX"]
-      client_secret = module.onepassword_application["openshift"].fields["CLIENT_SECRET_PROXMOX"]
-      group         = authentik_group.admins.id
-      icon_url      = "https://austindewey.com/wp-content/uploads/2018/10/Logotype_RH_OpenShift_StackedLogo_RGB_Black.png"
-      redirect_uris = ["https://oauth-openshift.${var.openshift_proxmox_cluster_domain}/oauth2callback/authentik"]
-      launch_url    = "https://console-openshift-console.${var.openshift_proxmox_cluster_domain}/"
-    },
     openshift-vsphere = {
       client_id     = module.onepassword_application["openshift"].fields["CLIENT_ID_VSPHERE"]
       client_secret = module.onepassword_application["openshift"].fields["CLIENT_SECRET_VSPHERE"]
@@ -103,22 +63,6 @@ locals {
       icon_url      = "https://austindewey.com/wp-content/uploads/2018/10/Logotype_RH_OpenShift_StackedLogo_RGB_Black.png"
       redirect_uris = ["https://oauth-openshift.${var.openshift_vsphere_cluster_domain}/oauth2callback/authentik"]
       launch_url    = "https://console-openshift-console.${var.openshift_vsphere_cluster_domain}/"
-    },
-    argocd-workflows-proxmox = {
-      client_id     = module.onepassword_application["argocd-workflows"].fields["CLIENT_ID_PROXMOX"]
-      client_secret = module.onepassword_application["argocd-workflows"].fields["CLIENT_SECRET_PROXMOX"]
-      group         = authentik_group.admins.id
-      icon_url      = "https://avatars.githubusercontent.com/u/30269780?s=200&v=4"
-      redirect_uris = ["https://argo-workflows-openshift-gitops.${var.openshift_proxmox_cluster_domain}/oauth2/callback"]
-      launch_url    = "https://argo-workflows-openshift-gitops.${var.openshift_proxmox_cluster_domain}/oauth2/callback"
-    },
-    argocd-workflows-vsphere = {
-      client_id     = module.onepassword_application["argocd-workflows"].fields["CLIENT_ID_VSPHERE"]
-      client_secret = module.onepassword_application["argocd-workflows"].fields["CLIENT_SECRET_VSPHERE"]
-      group         = authentik_group.admins.id
-      icon_url      = "https://avatars.githubusercontent.com/u/30269780?s=200&v=4"
-      redirect_uris = ["https://argo-workflows-openshift-gitops.${var.openshift_vsphere_cluster_domain}/oauth2/callback"]
-      launch_url    = "https://argo-workflows-openshift-gitops.${var.openshift_vsphere_cluster_domain}/oauth2/callback"
     },
     aap-controller = {
       client_id     = module.onepassword_application["aap-controller"].fields["CLIENT_ID"]
@@ -128,14 +72,6 @@ locals {
       redirect_uris = ["https://aap-controller.vikaspogu.internal/api/gateway/social/complete/authentik/"]
       launch_url    = "https://aap-controller.vikaspogu.internal"
     },
-    komodo = {
-      client_id     = module.onepassword_application["komodo"].fields["CLIENT_ID"]
-      client_secret = module.onepassword_application["komodo"].fields["CLIENT_SECRET"]
-      group         = authentik_group.admins.id
-      icon_url      = "https://avatars.githubusercontent.com/u/93411308?s=200&v=4"
-      redirect_uris = ["https://komodo.${var.cluster_domain}/auth/oidc/callback"]
-      launch_url    = "https://komodo.${var.cluster_domain}"
-    },
     bytestash = {
       client_id     = module.onepassword_application["bytestash"].fields["CLIENT_ID"]
       client_secret = module.onepassword_application["bytestash"].fields["CLIENT_SECRET"]
@@ -143,14 +79,6 @@ locals {
       icon_url      = "https://raw.githubusercontent.com/jordan-dalby/ByteStash/refs/heads/main/client/public/logo192.png"
       redirect_uris = ["https://bytestash.synlo.duckdns.org/api/auth/oidc/callback"]
       launch_url    = "https://bytestash.synlo.duckdns.org"
-    },
-    memos = {
-      client_id     = module.onepassword_application["memos"].fields["CLIENT_ID"]
-      client_secret = module.onepassword_application["memos"].fields["CLIENT_SECRET"]
-      group         = authentik_group.admins.id
-      icon_url      = "https://avatars.githubusercontent.com/u/95764151?s=200&v=4"
-      redirect_uris = ["https://memos.synlo.duckdns.org/auth/callback"]
-      launch_url    = "https://memos.synlo.duckdns.org"
     },
     reactive-resume = {
       client_id     = module.onepassword_application["reactive-resume"].fields["CLIENT_ID"]
@@ -160,30 +88,6 @@ locals {
       redirect_uris = ["https://reactive-resume.${var.cluster_domain}/api/auth/openid/callback"]
       launch_url    = "https://reactive-resume.${var.cluster_domain}"
     },
-    immich = {
-      client_id     = module.onepassword_application["immich"].fields["CLIENT_ID"]
-      client_secret = module.onepassword_application["immich"].fields["CLIENT_SECRET"]
-      group         = authentik_group.admins.id
-      icon_url      = "https://avatars.githubusercontent.com/u/109746326?s=200&v=4"
-      redirect_uris = ["https://photos.${var.cluster_domain}/auth/login", "https://photos.${var.cluster_domain}/user-settings", "app.immich:///oauth-callback"]
-      launch_url    = "https://photos.${var.cluster_domain}"
-    },
-    gitea = {
-      client_id     = module.onepassword_application["gitea"].fields["CLIENT_ID"]
-      client_secret = module.onepassword_application["gitea"].fields["CLIENT_SECRET"]
-      group         = authentik_group.admins.id
-      icon_url      = "https://about.gitea.com/gitea-text.svg"
-      redirect_uris = ["https://gitea.${var.cluster_domain}/user/oauth2/authentik/callback"]
-      launch_url    = "https://gitea.${var.cluster_domain}"
-    },
-    gitlab = {
-      client_id     = module.onepassword_application["gitlab"].fields["CLIENT_ID"]
-      client_secret = module.onepassword_application["gitlab"].fields["CLIENT_SECRET"]
-      group         = authentik_group.admins.id
-      icon_url      = "https://gitlab.com/uploads/-/system/group/avatar/9970/project_avatar.png?width=48"
-      redirect_uris = ["https://gitlab.${var.cluster_domain}/users/auth/openid_connect/callback"]
-      launch_url    = "https://gitlab.${var.cluster_domain}"
-    },
     papra = {
       client_id     = module.onepassword_application["papra"].fields["CLIENT_ID"]
       client_secret = module.onepassword_application["papra"].fields["CLIENT_SECRET"]
@@ -191,6 +95,14 @@ locals {
       icon_url      = "https://cdn.jsdelivr.net/gh/selfhst/icons/png/papra.png"
       redirect_uris = ["https://papra.${var.cluster_domain}/api/auth/oauth2/callback/authentik"]
       launch_url    = "https://papra.${var.cluster_domain}"
+    },
+    planka = {
+      client_id     = module.onepassword_application["planka"].fields["CLIENT_ID"]
+      client_secret = module.onepassword_application["planka"].fields["CLIENT_SECRET"]
+      group         = authentik_group.admins.id
+      icon_url      = "https://cdn.jsdelivr.net/gh/selfhst/icons/png/planka.png"
+      redirect_uris = ["https://planka.${var.cluster_domain}/oidc-callback"]
+      launch_url    = "https://planka.${var.cluster_domain}"
     },
   }
 }
