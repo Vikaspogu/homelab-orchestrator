@@ -77,8 +77,8 @@ locals {
       client_secret = module.onepassword_application["bytestash"].fields["CLIENT_SECRET"]
       group         = authentik_group.admins.id
       icon_url      = "https://raw.githubusercontent.com/jordan-dalby/ByteStash/refs/heads/main/client/public/logo192.png"
-      redirect_uris = ["https://bytestash.synlo.duckdns.org/api/auth/oidc/callback"]
-      launch_url    = "https://bytestash.synlo.duckdns.org"
+      redirect_uris = ["https://bytestash.omv.v3socp.boo/api/auth/oidc/callback"]
+      launch_url    = "https://bytestash.omv.v3socp.boo"
     },
     reactive-resume = {
       client_id     = module.onepassword_application["reactive-resume"].fields["CLIENT_ID"]
