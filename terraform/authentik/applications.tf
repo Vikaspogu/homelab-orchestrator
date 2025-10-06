@@ -9,7 +9,8 @@ locals {
     "bytestash",
     "reactive-resume",
     "papra",
-    "planka"
+    "planka",
+    "donetick"
   ]
 }
 
@@ -103,6 +104,14 @@ locals {
       icon_url      = "https://cdn.jsdelivr.net/gh/selfhst/icons/png/planka.png"
       redirect_uris = ["https://planka.${var.cluster_domain}/oidc-callback"]
       launch_url    = "https://planka.${var.cluster_domain}"
+    },
+    donetick = {
+      client_id     = module.onepassword_application["donetick"].fields["CLIENT_ID"]
+      client_secret = module.onepassword_application["donetick"].fields["CLIENT_SECRET"]
+      group         = authentik_group.admins.id
+      icon_url      = "https://cdn.jsdelivr.net/gh/selfhst/icons/png/donetick.png"
+      redirect_uris = ["https://donetick.${var.cluster_domain}/auth/oauth2"]
+      launch_url    = "https://donetick.${var.cluster_domain}"
     },
   }
 }
