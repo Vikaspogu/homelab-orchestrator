@@ -70,16 +70,16 @@ locals {
       client_secret = module.onepassword_application["aap-controller"].fields["CLIENT_SECRET"]
       group         = authentik_group.admins.id
       icon_url      = "https://repository-images.githubusercontent.com/177642958/95e2ed0f-953b-4348-b452-54c229136b15"
-      redirect_uris = ["https://aap-controller.vikaspogu.internal/api/gateway/social/complete/authentik/"]
-      launch_url    = "https://aap-controller.vikaspogu.internal"
+      redirect_uris = ["https://aap-controller.a113.internal/api/gateway/social/complete/authentik/"]
+      launch_url    = "https://aap-controller.a113.internal"
     },
     bytestash = {
       client_id     = module.onepassword_application["bytestash"].fields["CLIENT_ID"]
       client_secret = module.onepassword_application["bytestash"].fields["CLIENT_SECRET"]
       group         = authentik_group.admins.id
       icon_url      = "https://raw.githubusercontent.com/jordan-dalby/ByteStash/refs/heads/main/client/public/logo192.png"
-      redirect_uris = ["https://bytestash.omv.v3socp.boo/api/auth/oidc/callback"]
-      launch_url    = "https://bytestash.omv.v3socp.boo"
+      redirect_uris = ["https://bytestash.omv.a113.casa/api/auth/oidc/callback"]
+      launch_url    = "https://bytestash.omv.a113.casa"
     },
     reactive-resume = {
       client_id     = module.onepassword_application["reactive-resume"].fields["CLIENT_ID"]

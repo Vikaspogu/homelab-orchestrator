@@ -13,19 +13,20 @@
           - requests==2.32.3,botocore,boto3,pyvmomi,urllib3,PyYAML>=3.11,requests-oauthlib,pyVim,vmware-vcenter,vmware-vapi-common-client
   tasks:
     - name: Import Proxmox Role
-      when: inventory_hostname == "pxm-loki"
+      when: inventory_hostname == "pxm-baymx"
       ansible.builtin.include_role:
         name: ../../roles/proxmox
       vars:
-        vm_name: omv-loki
+        vm_name: omv-baymx
         mac_address: bc:24:11:e8:5f:c1
         cores: 16
         memory: 90480
         disk_size: 200
-        storage_name: ssd
-        proxmox_hostname: 'pxm-loki'
+        storage_name: ssd-500
+        proxmox_hostname: 'pxm-baymx'
         additional_disks:
           - /dev/disk/by-id/scsi-35000cca0bc75f620
           - /dev/disk/by-id/scsi-35000cca0bc6e0cc0
           - /dev/disk/by-id/scsi-35000cca097de6224
           - /dev/disk/by-id/scsi-35000cca0bc767184
+          - /dev/disk/by-id/ata-CT500MX500SSD1_2325E6E669FD

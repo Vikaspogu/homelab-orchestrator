@@ -1,19 +1,12 @@
 ---
 proxmox:
   hosts:
-    pxm-loki:
+    pxm-baymx:
       ansible_user: root
-    pxm-odin:
-      ansible_user: root
-esxi:
-  hosts:
-    esxi.vikaspogu.internal:
-      ansible_user: root
+
 omv:
   hosts:
-    omv-odin.vikaspogu.internal:
-      ansible_user: vikaspogu
-    omv-loki.vikaspogu.internal:
+    omv-baymx.a113.internal:
       ansible_user: vikaspogu
 
 aap:
