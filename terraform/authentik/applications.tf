@@ -1,11 +1,8 @@
 locals {
   oauth_apps = [
     "grafana",
-    "openshift",
     "freshrss",
     "pgadmin",
-    "jellyfin",
-    "aap-controller",
     "bytestash",
     "reactive-resume",
     "papra",
@@ -48,30 +45,6 @@ locals {
       icon_url      = "https://www.pgadmin.org/static/docs/pgadmin4-dev/docs/en_US/_build/html/_images/logo-right-128.png"
       redirect_uris = ["https://pgadmin4.${var.cluster_domain}/oauth2/authorize"]
       launch_url    = "https://pgadmin4.${var.cluster_domain}/oauth2/authorize"
-    },
-    jellyfin = {
-      client_id     = module.onepassword_application["jellyfin"].fields["CLIENT_ID"]
-      client_secret = module.onepassword_application["jellyfin"].fields["CLIENT_SECRET"]
-      group         = authentik_group.admins.id
-      icon_url      = "https://avatars.githubusercontent.com/u/45698031?s=200&v=4"
-      redirect_uris = ["https://jellyfin.${var.cluster_domain}/sso/OID/redirect/authentik"]
-      launch_url    = "https://jellyfin.${var.cluster_domain}/sso/OID/start/authentik"
-    },
-    openshift-vsphere = {
-      client_id     = module.onepassword_application["openshift"].fields["CLIENT_ID_VSPHERE"]
-      client_secret = module.onepassword_application["openshift"].fields["CLIENT_SECRET_VSPHERE"]
-      group         = authentik_group.admins.id
-      icon_url      = "https://austindewey.com/wp-content/uploads/2018/10/Logotype_RH_OpenShift_StackedLogo_RGB_Black.png"
-      redirect_uris = ["https://oauth-openshift.${var.openshift_vsphere_cluster_domain}/oauth2callback/authentik"]
-      launch_url    = "https://console-openshift-console.${var.openshift_vsphere_cluster_domain}/"
-    },
-    aap-controller = {
-      client_id     = module.onepassword_application["aap-controller"].fields["CLIENT_ID"]
-      client_secret = module.onepassword_application["aap-controller"].fields["CLIENT_SECRET"]
-      group         = authentik_group.admins.id
-      icon_url      = "https://repository-images.githubusercontent.com/177642958/95e2ed0f-953b-4348-b452-54c229136b15"
-      redirect_uris = ["https://aap-controller.a113.internal/api/gateway/social/complete/authentik/"]
-      launch_url    = "https://aap-controller.a113.internal"
     },
     bytestash = {
       client_id     = module.onepassword_application["bytestash"].fields["CLIENT_ID"]

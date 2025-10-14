@@ -3,9 +3,3 @@ variable "cluster_domain" {
   description = "Domain for Authentik"
   default     = ""
 }
-
-variable "openshift_vsphere_cluster_domain" {
-  type        = string
-  description = "OpenShift cluster Domain for Authentik"
-  default     = ""
-}
