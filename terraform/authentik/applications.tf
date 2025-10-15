@@ -43,8 +43,8 @@ locals {
       client_secret = module.onepassword_application["pgadmin"].fields["CLIENT_SECRET"]
       group         = authentik_group.admins.id
       icon_url      = "https://www.pgadmin.org/static/docs/pgadmin4-dev/docs/en_US/_build/html/_images/logo-right-128.png"
-      redirect_uris = ["https://pgadmin4.${var.cluster_domain}/oauth2/authorize"]
-      launch_url    = "https://pgadmin4.${var.cluster_domain}/oauth2/authorize"
+      redirect_uris = ["https://pgadmin.${var.cluster_domain}/oauth2/authorize"]
+      launch_url    = "https://pgadmin.${var.cluster_domain}/oauth2/authorize"
     },
     bytestash = {
       client_id     = module.onepassword_application["bytestash"].fields["CLIENT_ID"]
