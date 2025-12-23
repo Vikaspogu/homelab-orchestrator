@@ -1,13 +1,11 @@
 locals {
   oauth_apps = [
     "grafana",
-    "freshrss",
     "pgadmin",
     "bytestash",
     "reactive-resume",
     "papra",
-    "planka",
-    "donetick"
+    "airflow"
   ]
 }
 
@@ -29,14 +27,6 @@ locals {
       icon_url      = "https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/grafana.png"
       redirect_uris = ["https://grafana.${var.cluster_domain}/login/generic_oauth"]
       launch_url    = "https://grafana.${var.cluster_domain}/login/generic_oauth"
-    },
-    freshrss = {
-      client_id     = module.onepassword_application["freshrss"].fields["CLIENT_ID"]
-      client_secret = module.onepassword_application["freshrss"].fields["CLIENT_SECRET"]
-      group         = authentik_group.admins.id
-      icon_url      = "https://avatars.githubusercontent.com/u/9414285?s=280&v=4"
-      redirect_uris = ["https://rss.${var.cluster_domain}:443/i/oidc/"]
-      launch_url    = "https://rss.${var.cluster_domain}:443/i/oidc/"
     },
     pgadmin = {
       client_id     = module.onepassword_application["pgadmin"].fields["CLIENT_ID"]
@@ -70,21 +60,13 @@ locals {
       redirect_uris = ["https://papra.${var.cluster_domain}/api/auth/oauth2/callback/authentik"]
       launch_url    = "https://papra.${var.cluster_domain}"
     },
-    planka = {
-      client_id     = module.onepassword_application["planka"].fields["CLIENT_ID"]
-      client_secret = module.onepassword_application["planka"].fields["CLIENT_SECRET"]
+    airflow = {
+      client_id     = module.onepassword_application["airflow"].fields["CLIENT_ID"]
+      client_secret = module.onepassword_application["airflow"].fields["CLIENT_SECRET"]
       group         = authentik_group.admins.id
-      icon_url      = "https://cdn.jsdelivr.net/gh/selfhst/icons/png/planka.png"
-      redirect_uris = ["https://planka.${var.cluster_domain}/oidc-callback"]
-      launch_url    = "https://planka.${var.cluster_domain}"
-    },
-    donetick = {
-      client_id     = module.onepassword_application["donetick"].fields["CLIENT_ID"]
-      client_secret = module.onepassword_application["donetick"].fields["CLIENT_SECRET"]
-      group         = authentik_group.admins.id
-      icon_url      = "https://cdn.jsdelivr.net/gh/selfhst/icons/png/donetick.png"
-      redirect_uris = ["https://donetick.${var.cluster_domain}/auth/oauth2"]
-      launch_url    = "https://donetick.${var.cluster_domain}"
+      icon_url      = "https://avatars.githubusercontent.com/u/47359?s=48&v=4"
+      redirect_uris = ["https://airflow.omv.a113.casa/auth/oauth-authorized/authentik"]
+      launch_url    = "https://airflow.omv.a113.casa"
     },
   }
 }
