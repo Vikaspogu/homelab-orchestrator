@@ -41,11 +41,6 @@
         enable_survey: true,
       }
     - {
-        name: 'CloudStack - Instances',
-        file: ansible/playbooks/cloudstack/05-instances.yaml,
-        enable_survey: true,
-      }
-    - {
         name: 'CloudStack - Kubernetes Cluster',
         file: ansible/playbooks/cloudstack/06-kubernetes-cluster.yaml,
         enable_survey: true,

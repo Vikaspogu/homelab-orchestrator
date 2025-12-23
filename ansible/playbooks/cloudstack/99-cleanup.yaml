@@ -28,7 +28,7 @@
 
   vars:
     # Cleanup options
-    cloudstack_cleanup_confirm: true # Must set to true to run!
+    cleanup_confirm: true # Must set to true to run!
 
   tasks:
     - name: Include cleanup role main tasks
@@ -53,13 +53,13 @@
 
   vars:
     # Cleanup options
-    cloudstack_cleanup_confirm: true # Must set to true to run!
-    cloudstack_cleanup_storage: true # Set to true to remove VM data!
-    cloudstack_cleanup_libvirt: true # Set to true to remove libvirt
-    cloudstack_cleanup_repo: true
+    cleanup_confirm: true # Must set to true to run!
+    cleanup_storage: true # Set to true to remove VM data!
+    cleanup_libvirt: true # Set to true to remove libvirt
+    cleanup_repo: true
 
     # Bridges to remove
-    cloudstack_bridges_to_remove:
+    bridges_to_remove:
       - cloudbr0
       - cloudbr1
 
