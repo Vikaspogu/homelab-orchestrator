@@ -8,7 +8,7 @@
     playbook: '{{ item.file }}'
     project: '{{ awx_project_name }}'
     credentials:
-      - 'Host Credentials'
+      # - 'Host Credentials'
       - 'Vault Credentials'
     controller_host: '{{ awx.hostname }}'
     controller_username: '{{ awx.username }}'
@@ -24,41 +24,34 @@
         name: 'CloudStack - Prepare Management',
         file: ansible/playbooks/cloudstack/01-prepare-management.yml,
         enable_survey: true,
-        survey_file: '../surveys/cluster-prep.json',
       }
     - {
         name: 'CloudStack - Prepare KVM',
         file: ansible/playbooks/cloudstack/02-prepare-kvm.yml,
         enable_survey: true,
-        survey_file: '../surveys/cluster-prep.json',
       }
     - {
         name: 'CloudStack - Configure',
         file: ansible/playbooks/cloudstack/03-configure.yml,
         enable_survey: true,
-        survey_file: '../surveys/cluster-prep.json',
       }
     - {
         name: 'CloudStack - Kubernetes Setup',
         file: ansible/playbooks/cloudstack/04-kubernetes-setup.yml,
         enable_survey: true,
-        survey_file: '../surveys/cluster-prep.json',
       }
     - {
         name: 'CloudStack - Instances',
         file: ansible/playbooks/cloudstack/05-instances.yml,
         enable_survey: true,
-        survey_file: '../surveys/cluster-prep.json',
       }
     - {
         name: 'CloudStack - Kubernetes Cluster',
         file: ansible/playbooks/cloudstack/06-kubernetes-cluster.yml,
         enable_survey: true,
-        survey_file: '../surveys/cluster-prep.json',
       }
     - {
         name: 'CloudStack - Cleanup',
         file: ansible/playbooks/cloudstack/99-cleanup.yml,
         enable_survey: true,
-        survey_file: '../surveys/cluster-prep.json',
       }

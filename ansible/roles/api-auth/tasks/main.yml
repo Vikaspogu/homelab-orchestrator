@@ -15,7 +15,7 @@
     return_content: true
     status_code: [200]
   register: login_response
-  no_log: true
+  no_log: false
 
 - name: Extract session key and cookies
   ansible.builtin.set_fact:

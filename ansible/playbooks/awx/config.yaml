@@ -97,4 +97,3 @@
     #     unified_job_template: 'Adhoc - Shutdown Hosts'
     #     rrule: 'DTSTART:20250601T133500Z RRULE:FREQ=DAILY;INTERVAL=1;WKST=SU;BYHOUR=19;BYMINUTE=30'
     #   register: result
-a
