@@ -8,7 +8,7 @@
   vars_files:
     - ../../vars/common.vault.yaml
   roles:
-    - role: instance
+    - role: homelab.cloudstack.instance
 
   post_tasks:
     - name: Display next steps

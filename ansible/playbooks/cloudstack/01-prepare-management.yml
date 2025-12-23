@@ -9,4 +9,4 @@
   vars:
     cloudstack_nfs_enabled: true
   roles:
-    - role: prepare-management
+    - role: homelab.cloudstack.prepare_management

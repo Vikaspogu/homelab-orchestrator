@@ -4,7 +4,7 @@ packages/
 .vscode
 manifest*
 kube*
-!kubernetes-cluster
+!kubernetes_cluster
 .envrc
 .terraform
 .terraform.tfstate*

@@ -35,7 +35,7 @@
     kubernetes_wait_timeout: 1800 # 30 minutes
 
   roles:
-    - role: kubernetes-cluster
+    - role: homelab.cloudstack.kubernetes_cluster
 
   post_tasks:
     - name: Display next steps

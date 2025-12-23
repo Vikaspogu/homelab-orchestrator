@@ -1,0 +1,68 @@
+# Configure AppArmor Security Policies for CloudStack KVM Host
+---
+- name: Check if AppArmor is installed
+  ansible.builtin.command: dpkg --list apparmor
+  register: apparmor_installed
+  changed_when: false
+  failed_when: false
+
+- name: Configure AppArmor for libvirt
+  when:
+    - apparmor_installed.rc == 0
+    - cloudstack_disable_apparmor_libvirt
+  block:
+    - name: Check if libvirtd AppArmor profile exists
+      ansible.builtin.stat:
+        path: "{{ apparmor_libvirtd_profile }}"
+      register: libvirtd_profile
+
+    - name: Create AppArmor disable directory
+      ansible.builtin.file:
+        path: "{{ apparmor_disable_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Disable AppArmor profile for libvirtd
+      ansible.builtin.file:
+        src: "{{ apparmor_libvirtd_profile }}"
+        dest: "{{ apparmor_disable_dir }}/usr.sbin.libvirtd"
+        state: link
+      when: libvirtd_profile.stat.exists
+      register: libvirtd_disabled
+
+    - name: Check if virt-aa-helper AppArmor profile exists
+      ansible.builtin.stat:
+        path: "{{ apparmor_virt_aa_helper_profile }}"
+      register: virt_aa_helper_profile
+
+    - name: Disable AppArmor profile for virt-aa-helper
+      ansible.builtin.file:
+        src: "{{ apparmor_virt_aa_helper_profile }}"
+        dest: "{{ apparmor_disable_dir }}/usr.lib.libvirt.virt-aa-helper"
+        state: link
+      when: virt_aa_helper_profile.stat.exists
+      register: virt_aa_helper_disabled
+
+    - name: Unload libvirtd AppArmor profile
+      ansible.builtin.command: apparmor_parser -R {{ apparmor_libvirtd_profile }}
+      when:
+        - libvirtd_profile.stat.exists
+        - libvirtd_disabled.changed
+      failed_when: false
+      changed_when: true
+
+    - name: Unload virt-aa-helper AppArmor profile
+      ansible.builtin.command: apparmor_parser -R {{ apparmor_virt_aa_helper_profile }}
+      when:
+        - virt_aa_helper_profile.stat.exists
+        - virt_aa_helper_disabled.changed
+      failed_when: false
+      changed_when: true
+
+- name: Display AppArmor configuration status
+  ansible.builtin.debug:
+    msg: "AppArmor profiles for libvirt have been disabled"
+  when:
+    - apparmor_installed.rc == 0
+    - cloudstack_disable_apparmor_libvirt
+

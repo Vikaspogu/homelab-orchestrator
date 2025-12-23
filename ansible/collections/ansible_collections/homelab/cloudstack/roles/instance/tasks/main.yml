@@ -1,0 +1,82 @@
+# CloudStack Instance Role - Main Tasks
+---
+- name: Get CloudStack API authentication
+  ansible.builtin.include_role:
+    name: homelab.cloudstack.api_auth
+  when: cloudstack_session_key is not defined
+
+- name: Create affinity groups
+  ansible.builtin.include_tasks: create_affinity_groups.yml
+  when: cloudstack_instance_affinity_groups | length > 0
+
+- name: Create instances
+  ansible.builtin.include_tasks: create_instance.yml
+  loop: "{{ cloudstack_instances }}"
+  loop_control:
+    loop_var: instance
+
+- name: Wait for instances to get IP addresses
+  ansible.builtin.uri:
+    url: "{{ cloudstack_api_url }}"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      command: listVirtualMachines
+      name: "{{ instance.name }}"
+      response: json
+      sessionkey: "{{ cloudstack_session_key }}"
+    headers:
+      Cookie: "{{ cloudstack_cookies }}"
+    return_content: true
+  register: instance_info_response
+  until: >
+    instance_info_response.json.listvirtualmachinesresponse.virtualmachine is defined and
+    instance_info_response.json.listvirtualmachinesresponse.virtualmachine | length > 0 and
+    instance_info_response.json.listvirtualmachinesresponse.virtualmachine[0].nic is defined and
+    instance_info_response.json.listvirtualmachinesresponse.virtualmachine[0].nic | length > 0 and
+    instance_info_response.json.listvirtualmachinesresponse.virtualmachine[0].nic[0].ipaddress is defined
+  retries: "{{ (cloudstack_instance_wait_timeout / 10) | int }}"
+  delay: 10
+  loop: "{{ cloudstack_instances }}"
+  loop_control:
+    loop_var: instance
+  when: cloudstack_instance_wait_for_ip
+  failed_when: false
+
+- name: Gather instance information
+  ansible.builtin.uri:
+    url: "{{ cloudstack_api_url }}"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      command: listVirtualMachines
+      name: "{{ instance.name }}"
+      response: json
+      sessionkey: "{{ cloudstack_session_key }}"
+    headers:
+      Cookie: "{{ cloudstack_cookies }}"
+    return_content: true
+  register: all_instances_info_response
+  loop: "{{ cloudstack_instances }}"
+  loop_control:
+    loop_var: instance
+  failed_when: false
+
+- name: Display instance information
+  ansible.builtin.debug:
+    msg: |
+      ============================================
+      CloudStack Instances Created
+      ============================================
+      {% for result in all_instances_info_response.results %}
+      {% set vms = result.json.listvirtualmachinesresponse.virtualmachine | default([]) %}
+      {% if vms | length > 0 %}
+      {{ result.instance.name }}:
+        ID: {{ vms[0].id }}
+        State: {{ vms[0].state }}
+        IP: {{ vms[0].nic[0].ipaddress | default('Pending') }}
+        Zone: {{ vms[0].zonename }}
+        Host: {{ vms[0].hostname | default('Not assigned') }}
+      {% endif %}
+      {% endfor %}
+

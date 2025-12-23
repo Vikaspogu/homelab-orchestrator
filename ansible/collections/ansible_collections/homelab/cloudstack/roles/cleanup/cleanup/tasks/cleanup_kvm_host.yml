@@ -1,0 +1,157 @@
+# Cleanup CloudStack KVM Host
+---
+- name: Stop CloudStack agent service
+  ansible.builtin.systemd:
+    name: cloudstack-agent
+    state: stopped
+  failed_when: false
+  tags:
+    - services
+
+- name: Stop libvirtd service
+  ansible.builtin.systemd:
+    name: libvirtd
+    state: stopped
+  failed_when: false
+  when: cloudstack_cleanup_libvirt
+  tags:
+    - services
+    - libvirt
+
+- name: Remove CloudStack agent packages
+  ansible.builtin.apt:
+    name:
+      - cloudstack-agent
+      - cloudstack-common
+    state: absent
+    purge: true
+  when: cloudstack_cleanup_packages
+  tags:
+    - packages
+
+- name: Remove libvirt packages
+  ansible.builtin.apt:
+    name:
+      - qemu-kvm
+      - libvirt-daemon-system
+      - libvirt-clients
+      - bridge-utils
+    state: absent
+    purge: true
+  when: cloudstack_cleanup_packages and cloudstack_cleanup_libvirt
+  tags:
+    - packages
+    - libvirt
+
+- name: Remove CloudStack configuration directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/cloudstack
+    - /var/log/cloudstack
+  when: cloudstack_cleanup_config
+  tags:
+    - config
+
+- name: Remove libvirt directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/libvirt
+    - /var/lib/libvirt
+    - /var/log/libvirt
+  when: cloudstack_cleanup_libvirt
+  tags:
+    - libvirt
+
+- name: Remove local storage data
+  ansible.builtin.file:
+    path: "{{ cloudstack_local_storage_path }}"
+    state: absent
+  when: cloudstack_cleanup_storage
+  tags:
+    - storage
+
+- name: Remove CloudStack log files
+  ansible.builtin.file:
+    path: /var/log/cloudstack
+    state: absent
+  when: cloudstack_cleanup_logs
+  tags:
+    - logs
+
+- name: Remove network bridges
+  when: cloudstack_cleanup_network
+  tags:
+    - network
+  block:
+    - name: Get list of bridges
+      ansible.builtin.command: brctl show
+      register: bridge_list
+      changed_when: false
+      failed_when: false
+
+    - name: Bring down bridges
+      ansible.builtin.command: ip link set {{ item }} down
+      loop: "{{ cloudstack_bridges_to_remove }}"
+      when: item in bridge_list.stdout
+      failed_when: false
+
+    - name: Delete bridges
+      ansible.builtin.command: brctl delbr {{ item }}
+      loop: "{{ cloudstack_bridges_to_remove }}"
+      when: item in bridge_list.stdout
+      failed_when: false
+
+- name: Remove netplan configuration
+  ansible.builtin.file:
+    path: /etc/netplan/60-cloudstack-bridges.yaml
+    state: absent
+  when: cloudstack_cleanup_network
+  tags:
+    - network
+
+- name: Remove CloudStack APT repository
+  ansible.builtin.file:
+    path: /etc/apt/sources.list.d/cloudstack.list
+    state: absent
+  when: cloudstack_cleanup_repo
+  tags:
+    - repo
+
+- name: Remove CloudStack GPG key
+  ansible.builtin.file:
+    path: /etc/apt/keyrings/cloudstack.gpg
+    state: absent
+  when: cloudstack_cleanup_repo
+  tags:
+    - repo
+
+- name: Update APT cache
+  ansible.builtin.apt:
+    update_cache: true
+  tags:
+    - repo
+
+- name: Autoremove unused packages
+  ansible.builtin.apt:
+    autoremove: true
+    purge: true
+  tags:
+    - packages
+
+- name: Re-enable AppArmor profiles
+  ansible.builtin.command: aa-enforce {{ item }}
+  loop:
+    - /usr/sbin/libvirtd
+    - /usr/lib/libvirt/virt-aa-helper
+  failed_when: false
+  when: cloudstack_cleanup_libvirt
+  tags:
+    - apparmor
+
+- name: Display KVM host cleanup complete
+  ansible.builtin.debug:
+    msg: "CloudStack KVM Host cleanup completed on {{ inventory_hostname }}"

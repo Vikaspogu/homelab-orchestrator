@@ -1,0 +1,99 @@
+# Setup NFS Storage on Management Server
+# For primary and secondary storage
+---
+- name: Install NFS packages
+  ansible.builtin.apt:
+    name:
+      - nfs-kernel-server
+      - nfs-common
+    state: present
+    update_cache: true
+
+- name: Create primary storage directory
+  ansible.builtin.file:
+    path: "{{ cloudstack_nfs_primary_path }}"
+    state: directory
+    mode: "0755"
+    owner: nobody
+    group: nogroup
+
+- name: Create secondary storage directory
+  ansible.builtin.file:
+    path: "{{ cloudstack_nfs_secondary_path }}"
+    state: directory
+    mode: "0755"
+    owner: nobody
+    group: nogroup
+
+- name: Configure NFS exports for primary storage
+  ansible.builtin.lineinfile:
+    path: /etc/exports
+    regexp: "^{{ cloudstack_nfs_primary_path | regex_escape }}\\s"
+    line: "{{ cloudstack_nfs_primary_path }} *({{ cloudstack_nfs_export_options }})"
+    create: true
+    mode: "0644"
+  notify: reload nfs exports
+
+- name: Configure NFS exports for secondary storage
+  ansible.builtin.lineinfile:
+    path: /etc/exports
+    regexp: "^{{ cloudstack_nfs_secondary_path | regex_escape }}\\s"
+    line: "{{ cloudstack_nfs_secondary_path }} *({{ cloudstack_nfs_export_options }})"
+    create: true
+    mode: "0644"
+  notify: reload nfs exports
+
+- name: Configure idmapd domain
+  ansible.builtin.lineinfile:
+    path: /etc/idmapd.conf
+    regexp: "^#?Domain\\s*="
+    line: "Domain = {{ cloudstack_nfs_domain }}"
+    mode: "0644"
+  when: cloudstack_nfs_domain | length > 0
+  notify: restart nfs
+
+- name: Configure UFW firewall for NFS
+  community.general.ufw:
+    rule: allow
+    port: "{{ item.port | string }}"
+    proto: "{{ item.proto }}"
+    from_ip: "{{ cloudstack_nfs_allowed_network }}"
+  loop:
+    - { port: 111, proto: "tcp" }
+    - { port: 111, proto: "udp" }
+    - { port: 2049, proto: "tcp" }
+    - { port: 2049, proto: "udp" }
+    - { port: 32803, proto: "tcp" }
+    - { port: 32769, proto: "udp" }
+    - { port: 892, proto: "tcp" }
+    - { port: 892, proto: "udp" }
+    - { port: 875, proto: "tcp" }
+    - { port: 875, proto: "udp" }
+    - { port: 662, proto: "tcp" }
+    - { port: 662, proto: "udp" }
+  failed_when: false
+
+- name: Enable and start rpcbind
+  ansible.builtin.service:
+    name: rpcbind
+    state: started
+    enabled: true
+
+- name: Enable and start NFS server
+  ansible.builtin.service:
+    name: nfs-kernel-server
+    state: started
+    enabled: true
+
+- name: Export NFS shares
+  ansible.builtin.command: exportfs -ra
+  changed_when: true
+
+- name: Display NFS configuration
+  ansible.builtin.debug:
+    msg: |
+      NFS Storage configured successfully!
+      
+      Primary Storage:   nfs://{{ ansible_default_ipv4.address | default(inventory_hostname) }}{{ cloudstack_nfs_primary_path }}
+      Secondary Storage: nfs://{{ ansible_default_ipv4.address | default(inventory_hostname) }}{{ cloudstack_nfs_secondary_path }}
+

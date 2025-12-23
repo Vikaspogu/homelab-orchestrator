@@ -1,0 +1,39 @@
+# Debian/Ubuntu specific variables for KVM Host
+---
+cloudstack_agent_packages:
+  - cloudstack-agent
+
+libvirt_packages:
+  - qemu-kvm
+  - libvirt-daemon-system
+  - libvirt-clients
+  - bridge-utils
+
+chrony_packages:
+  - chrony
+
+uefi_packages:
+  - ovmf
+
+aria2_packages:
+  - aria2
+
+libvirt_service: "libvirtd"
+chrony_service: "chrony"
+
+libvirtd_config_file: "/etc/libvirt/libvirtd.conf"
+libvirt_config_file: "/etc/libvirt/libvirt.conf"
+libvirtd_default_file: "/etc/default/libvirtd"
+agent_properties_file: "/etc/cloudstack/agent/agent.properties"
+
+cloudstack_repo_file: "/etc/apt/sources.list.d/cloudstack.list"
+cloudstack_gpg_key_file: "/etc/apt/keyrings/cloudstack.gpg"
+
+# Network configuration files
+netplan_config_file: "/etc/netplan/60-cloudstack-bridges.yaml"
+interfaces_config_file: "/etc/network/interfaces"
+
+# AppArmor paths
+apparmor_libvirtd_profile: "/etc/apparmor.d/usr.sbin.libvirtd"
+apparmor_virt_aa_helper_profile: "/etc/apparmor.d/usr.lib.libvirt.virt-aa-helper"
+apparmor_disable_dir: "/etc/apparmor.d/disable"

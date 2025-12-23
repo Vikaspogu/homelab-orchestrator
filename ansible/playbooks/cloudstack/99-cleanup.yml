@@ -33,12 +33,12 @@
   tasks:
     - name: Include cleanup role main tasks
       ansible.builtin.include_role:
-        name: cleanup
+        name: homelab.cloudstack.cleanup
         tasks_from: main.yml
 
     - name: Run management server cleanup
       ansible.builtin.include_role:
-        name: cleanup
+        name: homelab.cloudstack.cleanup
         tasks_from: cleanup_management.yml
       tags:
         - always
@@ -66,12 +66,12 @@
   tasks:
     - name: Include cleanup role main tasks
       ansible.builtin.include_role:
-        name: cleanup
+        name: homelab.cloudstack.cleanup
         tasks_from: main.yml
 
     - name: Run KVM host cleanup
       ansible.builtin.include_role:
-        name: cleanup
+        name: homelab.cloudstack.cleanup
         tasks_from: cleanup_kvm_host.yml
       tags:
         - always

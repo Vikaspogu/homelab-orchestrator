@@ -29,7 +29,7 @@
     cloudstack_kubernetes_experimental_features: false
 
   roles:
-    - role: configure-kubernetes
+    - role: homelab.cloudstack.configure_kubernetes
 
   post_tasks:
     - name: Reminder to restart management server

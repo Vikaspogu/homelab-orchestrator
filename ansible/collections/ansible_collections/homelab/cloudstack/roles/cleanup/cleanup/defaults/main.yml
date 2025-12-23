@@ -1,0 +1,25 @@
+# CloudStack Cleanup Role - Default Variables
+---
+# Cleanup options
+cloudstack_cleanup_packages: true # Remove CloudStack packages
+cloudstack_cleanup_database: true # Remove MySQL database (management only)
+cloudstack_cleanup_config: true # Remove configuration files
+cloudstack_cleanup_logs: true # Remove log files
+cloudstack_cleanup_storage: false # Remove local storage data (DANGEROUS!)
+cloudstack_cleanup_network: true # Remove network bridges
+cloudstack_cleanup_libvirt: false # Remove libvirt (KVM hosts only)
+cloudstack_cleanup_repo: true # Remove CloudStack repository
+
+# Database settings (for management server cleanup)
+mysql_root_password: "" # MySQL root password for dropping databases
+
+# Network bridges to remove
+cloudstack_bridges_to_remove:
+  - cloudbr0
+  - cloudbr1
+
+# Local storage path (only removed if cloudstack_cleanup_storage is true)
+cloudstack_local_storage_path: "/var/lib/libvirt/images"
+
+# Confirmation required for destructive operations
+cloudstack_cleanup_confirm: false # Set to true to actually run cleanup

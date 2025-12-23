@@ -1,0 +1,24 @@
+---
+namespace: homelab
+name: cloudstack
+version: 1.0.0
+readme: README.md
+authors:
+  - Vikas Pogu
+description: Ansible collection for CloudStack infrastructure management
+license_file: LICENSE
+tags:
+  - cloudstack
+  - infrastructure
+  - cloud
+  - kubernetes
+  - virtualization
+dependencies: {}
+repository: https://github.com/Vikaspogu/homelab-orchestrator
+documentation: https://github.com/Vikaspogu/homelab-orchestrator
+homepage: https://github.com/Vikaspogu/homelab-orchestrator
+issues: https://github.com/Vikaspogu/homelab-orchestrator/issues
+build_ignore:
+  - .git
+  - .gitignore
+  - "*.tar.gz"

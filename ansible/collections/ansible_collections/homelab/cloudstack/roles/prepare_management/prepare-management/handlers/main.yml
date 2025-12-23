@@ -1,0 +1,27 @@
+# Prepare Management Role - Handlers
+---
+- name: Restart MySQL
+  ansible.builtin.systemd:
+    name: "{{ mysql_service }}"
+    state: restarted
+    daemon_reload: true
+
+- name: Restart chrony
+  ansible.builtin.systemd:
+    name: "{{ chrony_service }}"
+    state: restarted
+
+- name: Restart CloudStack Management
+  ansible.builtin.systemd:
+    name: cloudstack-management
+    state: restarted
+    daemon_reload: true
+
+- name: reload nfs exports
+  ansible.builtin.command: exportfs -ra
+  changed_when: true
+
+- name: restart nfs
+  ansible.builtin.service:
+    name: nfs-kernel-server
+    state: restarted

@@ -1,0 +1,10 @@
+# MySQL Configuration for CloudStack
+# Managed by Ansible - Do not edit manually
+[mysqld]
+# Server ID required for binary logging on Ubuntu 16.04+
+server_id={{ mysql_server_id }}
+innodb_rollback_on_timeout=1
+innodb_lock_wait_timeout=600
+max_connections={{ mysql_max_connections }}
+log_bin=mysql-bin
+binlog_format=ROW

@@ -1,0 +1,153 @@
+# Create a single CloudStack instance
+---
+- name: "{{ instance.name }} - Set template name"
+  ansible.builtin.set_fact:
+    _template_name: "{{ instance.template | default(cloudstack_instance_defaults.template) }}"
+    _zone_name: "{{ instance.zone | default(cloudstack_instance_defaults.zone) }}"
+
+- name: "{{ instance.name }} - Check if template exists"
+  ngine_io.cloudstack.template:
+    api_url: "{{ cloudstack_api_url }}"
+    api_key: "{{ cloudstack_api_key }}"
+    api_secret: "{{ cloudstack_api_secret }}"
+    api_timeout: 300
+    name: "{{ _template_name }}"
+    zone: "{{ _zone_name }}"
+  register: template_info
+  failed_when: false
+
+- name: "{{ instance.name }} - Register template if not found"
+  ngine_io.cloudstack.template:
+    api_url: "{{ cloudstack_api_url }}"
+    api_key: "{{ cloudstack_api_key }}"
+    api_secret: "{{ cloudstack_api_secret }}"
+    api_timeout: 600
+    name: "{{ _template_name }}"
+    display_text: "{{ _template_name }}"
+    url: "{{ cloudstack_instance_templates[_template_name].url }}"
+    format: "{{ cloudstack_instance_templates[_template_name].format }}"
+    os_type: "{{ cloudstack_instance_templates[_template_name].os_type }}"
+    hypervisor: "{{ cloudstack_instance_templates[_template_name].hypervisor }}"
+    zone: "{{ _zone_name }}"
+    is_public: "{{ cloudstack_instance_templates[_template_name].is_public | default(true) }}"
+    is_featured: "{{ cloudstack_instance_templates[_template_name].is_featured | default(false) }}"
+    password_enabled: "{{ cloudstack_instance_templates[_template_name].passwordenabled | default(false) }}"
+    sshkey_enabled: "{{ cloudstack_instance_templates[_template_name].sshkeyenabled | default(true) }}"
+    details:
+      directdownload: true
+    state: present
+  register: template_registered
+  when:
+    - (template_info.templates | default([]) | length) == 0
+    - _template_name in cloudstack_instance_templates
+
+- name: "{{ instance.name }} - Wait for template to be ready"
+  ngine_io.cloudstack.template:
+    api_url: "{{ cloudstack_api_url }}"
+    api_key: "{{ cloudstack_api_key }}"
+    api_secret: "{{ cloudstack_api_secret }}"
+    api_timeout: 300
+    name: "{{ _template_name }}"
+    zone: "{{ _zone_name }}"
+  register: template_ready
+  until: (template_ready.templates | default([]) | length) > 0 and (template_ready.templates[0].status | default('')) == 'Download Complete'
+  retries: 60
+  delay: 30
+  when: template_registered.changed | default(false)
+
+- name: "{{ instance.name }} - Check if instance exists"
+  ansible.builtin.uri:
+    url: "{{ cloudstack_api_url }}"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      command: listVirtualMachines
+      name: "{{ instance.name }}"
+      response: json
+      sessionkey: "{{ cloudstack_session_key }}"
+    headers:
+      Cookie: "{{ cloudstack_cookies }}"
+    return_content: true
+  register: instance_exists_response
+  failed_when: false
+
+- name: "{{ instance.name }} - Set instance exists fact"
+  ansible.builtin.set_fact:
+    instance_exists:
+      instances: "{{ instance_exists_response.json.listvirtualmachinesresponse.virtualmachine | default([]) }}"
+
+- name: "{{ instance.name }} - Create instance"
+  ngine_io.cloudstack.instance:
+    api_url: "{{ cloudstack_api_url }}"
+    api_key: "{{ cloudstack_api_key }}"
+    api_secret: "{{ cloudstack_api_secret }}"
+    api_timeout: 300
+    name: "{{ instance.name }}"
+    display_name: "{{ instance.display_name | default(instance.name) }}"
+    service_offering: "{{ instance.service_offering | default(cloudstack_instance_defaults.service_offering) }}"
+    template: "{{ instance.template | default(cloudstack_instance_defaults.template) }}"
+    zone: "{{ instance.zone | default(cloudstack_instance_defaults.zone) }}"
+    network: "{{ instance.network | default(cloudstack_instance_network) | default(omit) }}"
+    ip_address: "{{ instance.ip_address | default(omit) }}"
+    ssh_key: "{{ instance.ssh_key | default(cloudstack_ssh_key_name) | default(omit) }}"
+    user_data: "{{ instance.user_data | default(omit) }}"
+    affinity_groups: "{{ instance.affinity_groups | default(omit) }}"
+    state: "{{ 'started' if cloudstack_instance_start else 'present' }}"
+  register: instance_created
+  when: (instance_exists.instances | default([]) | length) == 0
+
+- name: "{{ instance.name }} - Add data disk"
+  ngine_io.cloudstack.volume:
+    api_url: "{{ cloudstack_api_url }}"
+    api_key: "{{ cloudstack_api_key }}"
+    api_secret: "{{ cloudstack_api_secret }}"
+    api_timeout: 300
+    name: "{{ instance.name }}-data"
+    disk_offering: "{{ instance.disk_offering | default(cloudstack_instance_defaults.disk_offering) }}"
+    size: "{{ instance.disk_size | default(cloudstack_instance_defaults.disk_size) }}"
+    zone: "{{ instance.zone | default(cloudstack_instance_defaults.zone) }}"
+    vm: "{{ instance.name }}"
+    state: attached
+  when:
+    - (instance_exists.instances | default([]) | length) == 0
+    - (instance.disk_size | default(cloudstack_instance_defaults.disk_size) | int) > 0
+    - (instance.disk_offering | default(cloudstack_instance_defaults.disk_offering)) | length > 0
+
+- name: "{{ instance.name }} - Ensure instance is running"
+  ngine_io.cloudstack.instance:
+    api_url: "{{ cloudstack_api_url }}"
+    api_key: "{{ cloudstack_api_key }}"
+    api_secret: "{{ cloudstack_api_secret }}"
+    api_timeout: 300
+    name: "{{ instance.name }}"
+    zone: "{{instance.zone}}"
+    state: started
+  when: cloudstack_instance_start
+
+- name: "{{ instance.name }} - Get instance details"
+  ansible.builtin.uri:
+    url: "{{ cloudstack_api_url }}"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      command: listVirtualMachines
+      name: "{{ instance.name }}"
+      response: json
+      sessionkey: "{{ cloudstack_session_key }}"
+    headers:
+      Cookie: "{{ cloudstack_cookies }}"
+    return_content: true
+  register: instance_details_response
+
+- name: "{{ instance.name }} - Set instance details fact"
+  ansible.builtin.set_fact:
+    instance_details:
+      instances: "{{ instance_details_response.json.listvirtualmachinesresponse.virtualmachine | default([]) }}"
+
+- name: "{{ instance.name }} - Display instance info"
+  ansible.builtin.debug:
+    msg: |
+      Instance: {{ instance.name }}
+      State: {{ instance_details.instances[0].state | default('Unknown') }}
+      IP: {{ instance_details.instances[0].nic[0].ipaddress | default('Pending') }}
+  when: instance_details.instances | length > 0

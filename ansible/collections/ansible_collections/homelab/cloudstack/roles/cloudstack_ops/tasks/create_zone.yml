@@ -1,0 +1,50 @@
+# Create CloudStack Zone
+---
+- name: Check if zone already exists
+  ansible.builtin.uri:
+    url: "{{ cloudstack_api_url }}"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      command: listZones
+      name: "{{ cloudstack_zone.name }}"
+      response: json
+      sessionkey: "{{ cloudstack_session_key }}"
+    headers:
+      Cookie: "{{ cloudstack_cookies }}"
+    return_content: true
+  register: zone_info_response
+  failed_when: false
+
+- name: Set zone info
+  ansible.builtin.set_fact:
+    zone_info:
+      zones: "{{ zone_info_response.json.listzonesresponse.zone | default([]) }}"
+
+- name: Create zone
+  ngine_io.cloudstack.zone:
+    api_url: "{{ cloudstack_api_url }}"
+    api_key: "{{ cloudstack_api_key }}"
+    api_secret: "{{ cloudstack_api_secret }}"
+    name: "{{ cloudstack_zone.name }}"
+    dns1: "{{ cloudstack_zone.dns1 }}"
+    dns2: "{{ cloudstack_zone.dns2 | default(omit) }}"
+    internal_dns1: "{{ cloudstack_zone.internal_dns1 }}"
+    internal_dns2: "{{ cloudstack_zone.internal_dns2 | default(omit) }}"
+    network_type: "{{ cloudstack_zone.network_type }}"
+    guest_cidr_address: "{{ cloudstack_zone.guest_cidr | default(omit) }}"
+    domain: "{{ cloudstack_zone.domain | default(omit) }}"
+    local_storage_enabled: "{{ cloudstack_zone.local_storage_enabled | default(false) }}"
+    securitygroups_enabled: "{{ cloudstack_zone.security_groups_enabled | default(false) }}"
+    state: present
+    api_timeout: 300
+  register: zone_result
+  when: zone_info.zones is not defined or zone_info.zones | length == 0
+
+- name: Get zone ID
+  ansible.builtin.set_fact:
+    cloudstack_zone_id: "{{ zone_result.id | default(zone_info.zones[0].id) }}"
+
+- name: Display zone information
+  ansible.builtin.debug:
+    msg: "Zone '{{ cloudstack_zone.name }}' {{ 'created' if zone_result.changed | default(false) else 'already exists' }} with ID: {{ cloudstack_zone_id }}"

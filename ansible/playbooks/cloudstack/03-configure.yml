@@ -8,4 +8,4 @@
   vars_files:
     - ../../vars/common.vault.yaml
   roles:
-    - role: cloudstack-ops
+    - role: homelab.cloudstack.cloudstack_ops
