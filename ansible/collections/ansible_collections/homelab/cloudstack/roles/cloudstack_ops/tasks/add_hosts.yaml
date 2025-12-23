@@ -26,3 +26,61 @@
     msg: "Host '{{ item.host.hostname }}' {{ 'added' if item.changed else 'already exists' }}"
   loop: "{{ cloudstack_ops_hosts_result.results }}"
   when: cloudstack_ops_hosts_result.results is defined
+
+# Get host IDs for tagging
+- name: Get host details for tagging
+  ansible.builtin.uri:
+    url: "{{ cloudstack_api_url }}"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      command: listHosts
+      name: "{{ host.hostname }}"
+      type: Routing
+      response: json
+      sessionkey: "{{ cloudstack_session_key }}"
+    headers:
+      Cookie: "{{ cloudstack_cookies }}"
+    return_content: true
+    timeout: "{{ cloudstack_ops_async_timeout }}"
+  loop: "{{ cloudstack_ops_hosts }}"
+  loop_control:
+    loop_var: host
+  register: cloudstack_ops_host_details
+  when: host.host_tags is defined and host.host_tags | length > 0
+
+- name: Update host tags
+  ansible.builtin.uri:
+    url: "{{ cloudstack_api_url }}"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      command: updateHost
+      id: "{{ item.json.listhostsresponse.host[0].id }}"
+      hosttags: "{{ item.host.host_tags }}"
+      response: json
+      sessionkey: "{{ cloudstack_session_key }}"
+    headers:
+      Cookie: "{{ cloudstack_cookies }}"
+    return_content: true
+    timeout: "{{ cloudstack_ops_async_timeout }}"
+  loop: "{{ cloudstack_ops_host_details.results | default([]) }}"
+  loop_control:
+    label: "{{ item.host.hostname | default('N/A') }}"
+  register: cloudstack_ops_host_tags_result
+  when:
+    - item.json is defined
+    - item.json.listhostsresponse.host is defined
+    - item.json.listhostsresponse.host | length > 0
+    - item.host.host_tags is defined
+
+- name: Display host tag update results
+  ansible.builtin.debug:
+    msg: |
+      Host tags updated:
+      {% for result in cloudstack_ops_host_tags_result.results | default([]) %}
+      {% if result.json is defined %}
+        - {{ result.item.host.hostname }}: {{ result.item.host.host_tags }}
+      {% endif %}
+      {% endfor %}
+  when: cloudstack_ops_host_tags_result.results is defined

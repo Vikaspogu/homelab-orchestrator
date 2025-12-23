@@ -27,6 +27,7 @@ configure_kubernetes_compute_offering:
   memory: 8192
   storage_type: "local"  # shared or local
   offer_ha: false
+  # host_tags: "kubernetes"  # Optional: restrict to hosts with matching tags
 
 # Recreate compute offering if it already exists (delete and create new)
 configure_kubernetes_compute_offering_recreate: true

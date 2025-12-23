@@ -71,12 +71,9 @@
     - configure_kubernetes_existing_offering_list | length > 0
     - configure_kubernetes_delete_offering_results.results is defined
 
-- name: Create Kubernetes compute offering
-  ansible.builtin.uri:
-    url: "{{ cloudstack_api_url }}"
-    method: POST
-    body_format: form-urlencoded
-    body:
+- name: Build compute offering parameters
+  ansible.builtin.set_fact:
+    configure_kubernetes_offering_params:
       command: createServiceOffering
       name: "{{ configure_kubernetes_compute_offering.name }}"
       displaytext: "{{ configure_kubernetes_compute_offering.display_text | default(configure_kubernetes_compute_offering.name) }}"
@@ -87,6 +84,19 @@
       offerha: "{{ configure_kubernetes_compute_offering.offer_ha | default(false) | lower }}"
       response: json
       sessionkey: "{{ cloudstack_session_key }}"
+
+- name: Add host tags to offering parameters
+  ansible.builtin.set_fact:
+    configure_kubernetes_offering_params: >-
+      {{ configure_kubernetes_offering_params | combine({'hosttags': configure_kubernetes_compute_offering.host_tags}) }}
+  when: configure_kubernetes_compute_offering.host_tags is defined and configure_kubernetes_compute_offering.host_tags | length > 0
+
+- name: Create Kubernetes compute offering
+  ansible.builtin.uri:
+    url: "{{ cloudstack_api_url }}"
+    method: POST
+    body_format: form-urlencoded
+    body: "{{ configure_kubernetes_offering_params }}"
     headers:
       Cookie: "{{ cloudstack_cookies }}"
     return_content: true
@@ -99,4 +109,6 @@
         Name: {{ configure_kubernetes_compute_offering.name }}
         CPU: {{ configure_kubernetes_compute_offering.cpu }} cores @ {{ configure_kubernetes_compute_offering.cpu_speed }} MHz
         Memory: {{ configure_kubernetes_compute_offering.memory }} MB
+        Storage: {{ configure_kubernetes_compute_offering.storage_type | default('shared') }}
+        Host Tags: {{ configure_kubernetes_compute_offering.host_tags | default('none') }}
         Status: {{ 'Recreated' if (configure_kubernetes_offering_exists and configure_kubernetes_compute_offering_recreate | default(true)) else 'Created' }}

@@ -75,6 +75,10 @@ cloudstack_ops_primary_storages: []
 cloudstack_ops_secondary_storages: []
 
 # Hosts to add
+# Example:
+#   - hostname: "10.30.30.56"
+#     cluster_name: "Cluster1"
+#     host_tags: "kubernetes,gpu"  # Optional: comma-separated tags
 cloudstack_ops_hosts: []
 
 # SSH key pair (optional)
