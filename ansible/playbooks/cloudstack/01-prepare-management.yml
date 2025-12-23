@@ -5,7 +5,7 @@
   become: true
   gather_facts: true
   vars_files:
-    - ../../vars/common.vault.yml
+    - ../../vars/common.vault.yaml
   vars:
     cloudstack_nfs_enabled: true
   roles:

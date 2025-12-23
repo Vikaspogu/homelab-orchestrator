@@ -6,7 +6,7 @@
   connection: local
   gather_facts: false
   vars_files:
-    - ../../vars/common.vault.yml
+    - ../../vars/common.vault.yaml
   vars:
     # Network offering for Kubernetes clusters
     cloudstack_kubernetes_network_offering: "DefaultNetworkOfferingforKubernetesService"
