@@ -27,6 +27,15 @@
     loop_var: cluster
   when: kubernetes_cluster_wait_for_cluster
 
+- name: Upgrade Kubernetes clusters
+  ansible.builtin.include_tasks: upgrade_cluster.yaml
+  loop: "{{ kubernetes_cluster_upgrade_list }}"
+  loop_control:
+    loop_var: cluster
+  when: kubernetes_cluster_upgrade_list | length > 0
+  tags:
+    - upgrade
+
 - name: Get cluster information
   ansible.builtin.include_tasks: get_cluster_info.yaml
 

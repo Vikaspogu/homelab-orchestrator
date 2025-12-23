@@ -9,7 +9,7 @@ kubernetes_cluster_api_secret: ""
 kubernetes_cluster_admin_username: "admin"
 kubernetes_cluster_admin_password: ""
 
-# Kubernetes clusters to create
+# Kubernetes clusters to create/manage
 kubernetes_cluster_list: []
 # Example:
 #   - name: "k8s-prod"
@@ -27,6 +27,12 @@ kubernetes_cluster_list: []
 #     docker_registry_username: ""     # Private registry username (optional)
 #     docker_registry_password: ""     # Private registry password (optional)
 #     docker_registry_url: ""          # Private registry URL (optional)
+
+# Clusters to upgrade (set upgrade_to_version for each cluster)
+kubernetes_cluster_upgrade_list: []
+# Example:
+#   - name: "k8s-prod"
+#     upgrade_to_version: "v1.34.0"   # Target version to upgrade to
 
 # CKS-ready template configuration (OPTIONAL)
 # Leave name empty to use CKS default SystemVM template (recommended)
@@ -57,6 +63,10 @@ kubernetes_cluster_defaults:
 # Wait for cluster to be ready
 kubernetes_cluster_wait_for_cluster: true
 kubernetes_cluster_wait_timeout: 1800  # 30 minutes
+
+# Upgrade settings
+kubernetes_cluster_wait_for_upgrade: true
+kubernetes_cluster_upgrade_timeout: 3600  # 60 minutes
 
 # API timeout
 kubernetes_cluster_api_timeout: 300

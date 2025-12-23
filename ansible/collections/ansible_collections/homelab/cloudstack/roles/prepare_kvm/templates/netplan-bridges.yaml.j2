@@ -4,54 +4,53 @@
 network:
   version: 2
   ethernets:
-    {{ cloudstack_mgmt_interface }}:
+    {{ prepare_kvm_mgmt_interface }}:
       dhcp4: false
       dhcp6: false
-{% if cloudstack_network_mode == 'advanced' and cloudstack_guest_interface != cloudstack_mgmt_interface %}
-    {{ cloudstack_guest_interface }}:
+{% if prepare_kvm_network_mode == 'advanced' and prepare_kvm_guest_interface != prepare_kvm_mgmt_interface %}
+    {{ prepare_kvm_guest_interface }}:
       dhcp4: false
       dhcp6: false
 {% endif %}
-{% if cloudstack_network_mode == 'basic' and cloudstack_guest_vlan %}
+{% if prepare_kvm_network_mode == 'basic' and prepare_kvm_guest_vlan %}
   vlans:
-    {{ cloudstack_mgmt_interface }}.{{ cloudstack_guest_vlan }}:
-      id: {{ cloudstack_guest_vlan }}
-      link: {{ cloudstack_mgmt_interface }}
+    {{ prepare_kvm_mgmt_interface }}.{{ prepare_kvm_guest_vlan }}:
+      id: {{ prepare_kvm_guest_vlan }}
+      link: {{ prepare_kvm_mgmt_interface }}
 {% endif %}
   bridges:
-    {{ cloudstack_mgmt_bridge }}:
+    {{ prepare_kvm_mgmt_bridge }}:
       addresses:
-        - {{ cloudstack_mgmt_ip }}/{{ cloudstack_mgmt_prefix | default('24') }}
+        - {{ prepare_kvm_mgmt_ip }}/{{ prepare_kvm_mgmt_prefix | default('24') }}
       routes:
         - to: default
-          via: {{ cloudstack_mgmt_gateway }}
+          via: {{ prepare_kvm_mgmt_gateway }}
       nameservers:
         addresses:
-{% for dns in cloudstack_mgmt_dns %}
+{% for dns in prepare_kvm_mgmt_dns %}
           - {{ dns }}
 {% endfor %}
-{% if cloudstack_mgmt_domain %}
+{% if prepare_kvm_mgmt_domain %}
         search:
-          - {{ cloudstack_mgmt_domain }}
+          - {{ prepare_kvm_mgmt_domain }}
 {% endif %}
       interfaces:
-        - {{ cloudstack_mgmt_interface }}
+        - {{ prepare_kvm_mgmt_interface }}
       parameters:
-        stp: {{ 'true' if cloudstack_bridge_stp in ['on', 'yes', true, 'true'] else 'false' }}
-        forward-delay: {{ cloudstack_bridge_fd }}
-{% if cloudstack_guest_bridge != cloudstack_mgmt_bridge %}
+        stp: {{ 'true' if prepare_kvm_bridge_stp in ['on', 'yes', true, 'true'] else 'false' }}
+        forward-delay: {{ prepare_kvm_bridge_fd }}
+{% if prepare_kvm_guest_bridge != prepare_kvm_mgmt_bridge %}
 {# Only create separate guest bridge if it differs from management bridge #}
-    {{ cloudstack_guest_bridge }}:
+    {{ prepare_kvm_guest_bridge }}:
       dhcp4: false
-{% if cloudstack_network_mode == 'advanced' %}
+{% if prepare_kvm_network_mode == 'advanced' %}
       interfaces:
-        - {{ cloudstack_guest_interface }}
-{% elif cloudstack_network_mode == 'basic' and cloudstack_guest_vlan %}
+        - {{ prepare_kvm_guest_interface }}
+{% elif prepare_kvm_network_mode == 'basic' and prepare_kvm_guest_vlan %}
       interfaces:
-        - {{ cloudstack_mgmt_interface }}.{{ cloudstack_guest_vlan }}
+        - {{ prepare_kvm_mgmt_interface }}.{{ prepare_kvm_guest_vlan }}
 {% endif %}
       parameters:
-        stp: {{ 'true' if cloudstack_bridge_stp in ['on', 'yes', true, 'true'] else 'false' }}
-        forward-delay: {{ cloudstack_bridge_fd }}
+        stp: {{ 'true' if prepare_kvm_bridge_stp in ['on', 'yes', true, 'true'] else 'false' }}
+        forward-delay: {{ prepare_kvm_bridge_fd }}
 {% endif %}
-
