@@ -26,15 +26,15 @@
         name: '{{ awx_inventory_name }}'
         organization: Default
 
-    # - name: Machine Credentials
-    #   awx.awx.credential:
-    #     name: Host Credentials
-    #     credential_type: Machine
-    #     organization: Default
-    #     inputs:
-    #       username: '{{ host_user }}'
-    #       password: '{{ host_password }}'
-    #       ssh_key_data: "{{ lookup('file', '/Users/vikaspogu/.ssh/id_rsa') }}"
+    - name: Machine Credentials
+      awx.awx.credential:
+        name: Host Credentials
+        credential_type: Machine
+        organization: Default
+        inputs:
+          username: '{{ host_user }}'
+          password: '{{ host_password }}'
+          ssh_key_data: "{{ lookup('file', '/Users/vikaspogu/.ssh/id_ed25519') }}"
 
     - name: Ansible Vault Credentials
       awx.awx.credential:
