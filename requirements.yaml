@@ -12,6 +12,5 @@ collections:
     version: ">=1.5.0"
   - name: ngine_io.cloudstack
     version: ">=2.3.0"
-  - name: community.general
   - name: community.sops
   - name: kubernetes.core
