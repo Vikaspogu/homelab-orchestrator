@@ -8,7 +8,7 @@
     playbook: '{{ item.file }}'
     project: '{{ awx_project_name }}'
     credentials:
-      # - 'Host Credentials'
+      - 'Host Credentials'
       - 'Vault Credentials'
     controller_host: '{{ awx.hostname }}'
     controller_username: '{{ awx.username }}'
