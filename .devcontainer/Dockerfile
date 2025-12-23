@@ -1,5 +1,5 @@
 # Homelab Orchestrator Development Container
-FROM mcr.microsoft.com/devcontainers/python:1-3.11-bookworm
+FROM mcr.microsoft.com/devcontainers/python:3-3.11-bookworm
 
 # Avoid prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
