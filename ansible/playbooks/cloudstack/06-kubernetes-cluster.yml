@@ -1,0 +1,66 @@
+# Create Kubernetes Clusters via CloudStack CKS
+# Uses CloudStack Kubernetes Service to create managed clusters
+---
+- name: Create CloudStack Kubernetes Clusters
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files:
+    - ../vars/common.vault.yml
+  vars:
+    # Kubernetes clusters to create
+    kubernetes_clusters:
+      - name: "k8s-prod"
+        description: "Production Kubernetes Cluster"
+        zone: "Zone1" # Zone name
+        kubernetes_version: "v1.33.1-x86_64" # Kubernetes version name
+        service_offering: "CKS Instance"   # Service offering name
+        network: "guest-network" # Optional: existing network name
+        size: 2 # Number of worker nodes
+        control_nodes: 1 # Control plane nodes (3 for HA)
+        node_root_disk_size: 20 # Root disk size in GB
+
+      # Additional cluster example:
+      # - name: "k8s-dev"
+      #   description: "Development Kubernetes Cluster"
+      #   zone: "Zone1"
+      #   kubernetes_version: "v1.33.1"
+      #   service_offering: "CKS Instance"
+      #   size: 1
+      #   control_nodes: 1
+      #   node_root_disk_size: 10
+
+    # Wait for clusters to be ready
+    kubernetes_wait_for_cluster: true
+    kubernetes_wait_timeout: 1800 # 30 minutes
+
+  roles:
+    - role: kubernetes-cluster
+
+  post_tasks:
+    - name: Display next steps
+      ansible.builtin.debug:
+        msg: |
+          ============================================
+          CloudStack Kubernetes Clusters Created!
+          ============================================
+
+          Kubeconfig files saved to:
+          {% for cluster in kubernetes_clusters %}
+            - kubeconfig-{{ cluster.name }}.yaml
+          {% endfor %}
+
+          To use a cluster:
+            export KUBECONFIG=kubeconfig-{{ kubernetes_clusters[0].name }}.yaml
+            kubectl get nodes
+            kubectl get pods -A
+
+          To access cluster via CloudStack:
+            cloudmonkey list kubernetesclusters
+            cloudmonkey get kubernetesclusterconfig id=<cluster-id>
+
+          To scale cluster:
+            cloudmonkey scale kubernetescluster id=<id> size=<new-size>
+
+          To delete cluster:
+            cloudmonkey delete kubernetescluster id=<id>

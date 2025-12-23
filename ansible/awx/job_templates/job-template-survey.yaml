@@ -1,6 +1,6 @@
 ---
 - name: Create a Job Template with Survey
-  ansible.controller.job_template:
+  awx.awx.job_template:
     name: '{{ item.name }}'
     organization: Default
     state: present
@@ -10,9 +10,9 @@
     credentials:
       - 'Host Credentials'
       - 'Vault Credentials'
-    controller_host: '{{ controller_hostname }}'
-    controller_username: '{{ controller_username }}'
-    controller_password: '{{ controller_password }}'
+    controller_host: '{{ awx.hostname }}'
+    controller_username: '{{ awx.username }}'
+    controller_password: '{{ awx.password }}'
     validate_certs: false
     survey_enabled: '{{ item.enable_survey }}'
     survey_spec: "{{ lookup('file', '{{item.survey_file}}') }}"

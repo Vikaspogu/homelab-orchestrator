@@ -1,0 +1,35 @@
+# Create Virtual Machine Instances via CloudStack
+# Run to create instances using CloudStack API
+---
+- name: Create CloudStack Virtual Machine Instances
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files:
+    - ../vars/common.vault.yml
+  roles:
+    - role: instance
+
+  post_tasks:
+    - name: Display next steps
+      ansible.builtin.debug:
+        msg: |
+          ============================================
+          Instances Created Successfully!
+          ============================================
+
+          Next steps:
+
+          1. Get instance IP addresses from CloudStack UI or:
+             ansible-playbook playbooks/cloudstack-instances.yml --tags info
+
+          2. SSH into instances (if SSH key configured):
+             ssh ubuntu@<instance-ip>
+
+          3. Deploy Kubernetes cluster:
+             ansible-playbook playbooks/kubernetes-cluster.yml
+
+          For GPU workloads, ensure:
+          - GPU compute offering is used
+          - NVIDIA drivers are installed in template
+          - Or use GPU Operator in Kubernetes

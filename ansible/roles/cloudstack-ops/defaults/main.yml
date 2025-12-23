@@ -1,0 +1,85 @@
+# CloudStack Ops Role - Default Variables
+---
+# CloudStack API connection
+cloudstack_api_url: ""
+cloudstack_api_key: ""
+cloudstack_api_secret: ""
+
+# Use admin credentials if API keys not set
+cloudstack_admin_username: "admin"
+cloudstack_admin_password: ""
+
+# Zone configuration
+cloudstack_zone:
+  name: ""
+  dns1: ""
+  dns2: ""
+  internal_dns1: ""
+  internal_dns2: ""
+  network_type: "" # Basic or Advanced
+  guest_cidr: "" # Large CIDR for many tenant networks
+  domain: "" # Optional domain for the zone
+  local_storage_enabled: true # Enable to use local disk on hosts for primary storage
+  security_groups_enabled: true # Enable for flat network without VLAN isolation
+
+# Physical network configuration (required for both Basic and Advanced zones)
+# At minimum, you need Management traffic type configured
+# For single NIC/untagged setup: all traffic types use the same bridge (cloudbr0)
+cloudstack_physical_networks:
+  - name: "Physical Network 1"
+    isolation_method: "VLAN" # Required but unused with Security Groups
+    vlan_range: "" # Empty for untagged/flat network
+    traffic_types:
+      - type: "Management"
+        label: "cloudbr0"
+      - type: "Guest"
+        label: "cloudbr0" # Same bridge for single NIC
+      - type: "Public"
+        label: "cloudbr0"
+
+# Pod configuration
+cloudstack_pods: []
+  # - name: "Pod1"
+  #   gateway: "10.30.30.1"
+  #   netmask: "255.255.255.0"
+  #   start_ip: "10.30.30.100"
+  #   end_ip: "10.30.30.150"
+
+# Cluster configuration
+cloudstack_clusters:
+  - name: "Cluster1"
+    pod_name: "Pod1"
+    hypervisor: "KVM"
+    cluster_type: "CloudManaged"
+
+# Public IP range (for Advanced zones)
+cloudstack_public_ip_ranges: []
+  # - gateway: "10.30.30.1"
+  #   netmask: "255.255.255.0"
+  #   start_ip: "10.30.30.200"
+  #   end_ip: "10.30.30.250"
+  #   vlan: ""  # Leave empty for untagged
+
+# Guest network VLAN range (for Advanced zones with VLAN isolation)
+cloudstack_guest_vlan_range: ""
+
+# Guest networks to create
+cloudstack_networks: []
+
+# Primary storage
+cloudstack_primary_storages: []
+
+# Secondary storage
+cloudstack_secondary_storages: []
+
+# Hosts to add
+cloudstack_hosts: []
+
+# SSH key pair (optional)
+cloudstack_ssh_key_name: ""
+
+# Enable zone after setup
+cloudstack_enable_zone: true
+
+# Wait for async jobs timeout (seconds)
+cloudstack_async_timeout: 300

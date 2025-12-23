@@ -1,0 +1,12 @@
+# CloudStack Management Server Deployment Playbook
+---
+- name: Deploy CloudStack Management Server with Database
+  hosts: cloudstack_management
+  become: true
+  gather_facts: true
+  vars_files:
+    - ../vars/common.vault.yml
+  vars:
+    cloudstack_nfs_enabled: true
+  roles:
+    - role: prepare-management

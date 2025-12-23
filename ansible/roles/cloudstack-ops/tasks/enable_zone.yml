@@ -1,0 +1,33 @@
+# Enable CloudStack Zone
+---
+- name: Enable the zone
+  ngine_io.cloudstack.zone:
+    api_url: "{{ cloudstack_api_url }}"
+    api_key: "{{ cloudstack_api_key }}"
+    api_secret: "{{ cloudstack_api_secret }}"
+    name: "{{ cloudstack_zone.name }}"
+    state: enabled
+    api_timeout: 300
+  register: zone_enabled
+
+- name: Display zone status
+  ansible.builtin.debug:
+    msg: |
+      Zone '{{ cloudstack_zone.name }}' has been enabled.
+
+      CloudStack Infrastructure Summary:
+      - Zone: {{ cloudstack_zone.name }}
+      - Network Type: {{ cloudstack_zone.network_type }}
+      - Pods: {{ cloudstack_pods | map(attribute='name') | list | join(', ') }}
+      - Clusters: {{ cloudstack_clusters | map(attribute='name') | list | join(', ') }}
+      {% if cloudstack_primary_storages | length > 0 %}
+      - Primary Storage: {{ cloudstack_primary_storages | map(attribute='name') | list | join(', ') }}
+      {% endif %}
+      {% if cloudstack_secondary_storages | length > 0 %}
+      - Secondary Storage: {{ cloudstack_secondary_storages | map(attribute='name') | list | join(', ') }}
+      {% endif %}
+      {% if cloudstack_hosts | length > 0 %}
+      - Hosts: {{ cloudstack_hosts | map(attribute='hostname') | list | join(', ') }}
+      {% endif %}
+
+      Access CloudStack UI at: {{ cloudstack_api_url | replace('/client/api', '/client') }}

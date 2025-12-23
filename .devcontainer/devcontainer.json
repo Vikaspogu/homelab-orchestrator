@@ -1,0 +1,63 @@
+{
+  "name": "CloudStack Ops",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "configureZshAsDefaultShell": true,
+      "installOhMyZsh": true,
+      "username": "vscode",
+      "userUid": "1000",
+      "userGid": "1000"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "redhat.ansible",
+        "redhat.vscode-yaml",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "wholroyd.jinja",
+        "esbenp.prettier-vscode"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "python.defaultInterpreterPath": "/workspace/.venv/bin/python",
+        "ansible.python.interpreterPath": "/workspace/.venv/bin/python",
+        "ansible.ansible.path": "/workspace/.venv/bin/ansible",
+        "ansible.ansibleLint.enabled": true,
+        "ansible.validation.enabled": true,
+        "files.associations": {
+          "*.yml": "ansible",
+          "*.yaml": "ansible"
+        },
+        "[ansible]": {
+          "editor.tabSize": 2,
+          "editor.insertSpaces": true
+        },
+        "[yaml]": {
+          "editor.tabSize": 2,
+          "editor.insertSpaces": true
+        }
+      }
+    }
+  },
+  "onCreateCommand": "/bin/bash /workspace/.devcontainer/setup.sh",
+  "postCreateCommand": "/bin/bash -c 'echo \"source /workspace/.devcontainer/activate.sh\" >> ~/.bashrc && echo \"source /workspace/.devcontainer/activate.sh\" >> ~/.zshrc'",
+  "postStartCommand": "/bin/bash -c 'source /workspace/.devcontainer/activate.sh && ansible --version'",
+  "remoteUser": "vscode",
+  "workspaceFolder": "/workspace",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
+  "mounts": [
+    "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,readonly"
+  ],
+  "containerEnv": {
+    "ANSIBLE_CONFIG": "/workspace/ansible.cfg",
+    "VIRTUAL_ENV": "/workspace/.venv",
+    "PATH": "/workspace/.venv/bin:/usr/local/bin:/usr/bin:/bin"
+  }
+}

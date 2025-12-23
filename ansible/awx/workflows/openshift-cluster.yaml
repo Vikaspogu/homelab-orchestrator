@@ -1,11 +1,11 @@
 ---
 - name: Create OpenShift cluster Workflow Template
-  ansible.controller.workflow_job_template:
+  awx.awx.workflow_job_template:
     name: 'OpenShift - Create 3 Node Cluster'
     inventory: '{{ awx_inventory_name }}'
-    controller_host: '{{ controller_hostname }}'
-    controller_username: '{{ controller_username }}'
-    controller_password: '{{ controller_password }}'
+    controller_host: '{{ awx.hostname }}'
+    controller_username: '{{ awx.username }}'
+    controller_password: '{{ awx.password }}'
     validate_certs: false
     workflow_nodes:
       - identifier: Prepare ISO

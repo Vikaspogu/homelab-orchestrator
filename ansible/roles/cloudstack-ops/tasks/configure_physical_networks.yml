@@ -1,0 +1,28 @@
+# Configure Physical Networks for Advanced Zone
+---
+- name: List existing physical networks
+  ansible.builtin.uri:
+    url: "{{ cloudstack_api_url }}"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      command: listPhysicalNetworks
+      zoneid: "{{ cloudstack_zone_id }}"
+      response: json
+      sessionkey: "{{ cloudstack_session_key }}"
+    headers:
+      Cookie: "{{ cloudstack_cookies }}"
+    return_content: true
+  register: physical_networks_response
+
+- name: Parse physical networks list
+  ansible.builtin.set_fact:
+    physical_networks_list: "{{ physical_networks_response.json.listphysicalnetworksresponse.physicalnetwork | default([]) }}"
+
+- name: Create physical networks
+  ansible.builtin.include_tasks: create_physical_network.yml
+  loop: "{{ cloudstack_physical_networks }}"
+  loop_control:
+    loop_var: physical_network
+  vars:
+    existing_networks: "{{ physical_networks_list }}"

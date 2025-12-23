@@ -1,0 +1,26 @@
+# Configure Public IP Ranges for Advanced Zone
+---
+- name: Add public IP ranges
+  ngine_io.cloudstack.vlan_ip_range:
+    api_url: "{{ cloudstack_api_url }}"
+    api_key: "{{ cloudstack_api_key }}"
+    api_secret: "{{ cloudstack_api_secret }}"
+    zone: "{{ cloudstack_zone.name }}"
+    start_ip: "{{ ip_range.start_ip }}"
+    end_ip: "{{ ip_range.end_ip }}"
+    gateway: "{{ ip_range.gateway }}"
+    netmask: "{{ ip_range.netmask }}"
+    vlan: "{{ ip_range.vlan | default('untagged') }}"
+    for_virtual_network: true
+    state: present
+    api_timeout: 300
+  loop: "{{ cloudstack_public_ip_ranges }}"
+  loop_control:
+    loop_var: ip_range
+  register: public_ip_result
+
+- name: Display public IP range information
+  ansible.builtin.debug:
+    msg: "Public IP range {{ item.ip_range.start_ip }} - {{ item.ip_range.end_ip }} configured"
+  loop: "{{ public_ip_result.results }}"
+  when: public_ip_result.results is defined

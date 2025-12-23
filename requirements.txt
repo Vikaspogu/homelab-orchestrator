@@ -15,3 +15,6 @@ requests-oauthlib
 pyVim
 vmware-vcenter
 vmware-vapi-common-client
+cs>=3.0.0
+sshpubkeys>=3.3.0
+PyMySQL>=1.0.0

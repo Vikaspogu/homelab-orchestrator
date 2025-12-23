@@ -1,0 +1,95 @@
+# Register CKS-ready template for Kubernetes clusters
+---
+- name: List all zones
+  ngine_io.cloudstack.zone_info:
+    api_url: "{{ cloudstack_api_url }}"
+    api_key: "{{ cloudstack_api_key }}"
+    api_secret: "{{ cloudstack_api_secret }}"
+    api_timeout: 300
+  register: zones_info
+
+- name: Build zone name to ID mapping
+  ansible.builtin.set_fact:
+    zone_id_map: "{{ zone_id_map | default({}) | combine({item.name: item.id}) }}"
+  loop: "{{ zones_info.zones | default([]) }}"
+
+- name: Check if CKS template already exists
+  ngine_io.cloudstack.template_info:
+    api_url: "{{ cloudstack_api_url }}"
+    api_key: "{{ cloudstack_api_key }}"
+    api_secret: "{{ cloudstack_api_secret }}"
+    api_timeout: 300
+    name: "{{ kubernetes_cks_template.name }}"
+    zone: "{{ kubernetes_cks_template.zone }}"
+  register: template_info
+  failed_when: false
+
+- name: Register CKS-ready template
+  ansible.builtin.uri:
+    url: "{{ cloudstack_api_url }}"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      command: registerTemplate
+      name: "{{ kubernetes_cks_template.name }}"
+      displaytext: "{{ kubernetes_cks_template.display_text | default(kubernetes_cks_template.name) }}"
+      url: "{{ kubernetes_cks_template.url }}"
+      format: "{{ kubernetes_cks_template.format | default('QCOW2') }}"
+      hypervisor: "{{ kubernetes_cks_template.hypervisor | default('KVM') }}"
+      ostypeid: "{{ _ostype_id }}"
+      zoneid: "{{ zone_id_map[kubernetes_cks_template.zone] }}"
+      ispublic: "{{ kubernetes_cks_template.is_public | default(true) | lower }}"
+      isfeatured: "true"
+      passwordenabled: "{{ kubernetes_cks_template.password_enabled | default(false) | lower }}"
+      sshkeyenabled: "{{ kubernetes_cks_template.sshkey_enabled | default(true) | lower }}"
+      isdynamicallyscalable: "true"
+      directdownload: "true"
+      hvm: "true"
+      requireshvm: "true"
+      response: json
+      sessionkey: "{{ cloudstack_session_key }}"
+    headers:
+      Cookie: "{{ cloudstack_cookies }}"
+    return_content: true
+  register: register_template_result
+  when: (template_info.templates | default([]) | length) == 0
+  failed_when: >
+    register_template_result is failed and
+    'already exists' not in (register_template_result.content | default(''))
+
+- name: Wait for template to be ready
+  ansible.builtin.uri:
+    url: "{{ cloudstack_api_url }}"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      command: listTemplates
+      templatefilter: all
+      name: "{{ kubernetes_cks_template.name }}"
+      zoneid: "{{ zone_id_map[kubernetes_cks_template.zone] }}"
+      response: json
+      sessionkey: "{{ cloudstack_session_key }}"
+    headers:
+      Cookie: "{{ cloudstack_cookies }}"
+    return_content: true
+  register: template_status
+  until: >
+    (template_status.json.listtemplatesresponse.template | default([]) | length) > 0 and
+    (template_status.json.listtemplatesresponse.template[0].isready | default(false))
+  retries: 60
+  delay: 30
+  when: register_template_result.changed | default(false)
+
+- name: Display template registration status
+  ansible.builtin.debug:
+    msg: |
+      CKS Template Registration:
+        Name: {{ kubernetes_cks_template.name }}
+        Zone: {{ kubernetes_cks_template.zone }}
+        Status: {{ 'Registered and Ready' if register_template_result.changed | default(false) else 'Already exists' }}
+        Features:
+          - Direct Download: enabled
+          - Featured: enabled
+          - Dynamically Scalable: enabled
+          - HVM: enabled
+

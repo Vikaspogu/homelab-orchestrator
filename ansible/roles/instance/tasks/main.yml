@@ -1,0 +1,69 @@
+# CloudStack Instance Role - Main Tasks
+---
+- name: Get CloudStack API authentication
+  ansible.builtin.include_role:
+    name: api-auth
+  when: cloudstack_session_key is not defined
+
+- name: Create affinity groups
+  ansible.builtin.include_tasks: create_affinity_groups.yml
+  when: cloudstack_instance_affinity_groups | length > 0
+
+- name: Create instances
+  ansible.builtin.include_tasks: create_instance.yml
+  loop: "{{ cloudstack_instances }}"
+  loop_control:
+    loop_var: instance
+
+- name: Wait for instances to get IP addresses
+  ngine_io.cloudstack.instance_info:
+    api_url: "{{ cloudstack_api_url }}"
+    api_key: "{{ cloudstack_api_key }}"
+    api_secret: "{{ cloudstack_api_secret }}"
+    api_timeout: 300
+    name: "{{ instance.name }}"
+  register: instance_info
+  until: >
+    instance_info.instances is defined and
+    instance_info.instances | length > 0 and
+    instance_info.instances[0].nic is defined and
+    instance_info.instances[0].nic | length > 0 and
+    instance_info.instances[0].nic[0].ip_address is defined
+  retries: "{{ (cloudstack_instance_wait_timeout / 10) | int }}"
+  delay: 10
+  loop: "{{ cloudstack_instances }}"
+  loop_control:
+    loop_var: instance
+  when: cloudstack_instance_wait_for_ip
+  failed_when: false
+
+- name: Gather instance information
+  ngine_io.cloudstack.instance_info:
+    api_url: "{{ cloudstack_api_url }}"
+    api_key: "{{ cloudstack_api_key }}"
+    api_secret: "{{ cloudstack_api_secret }}"
+    api_timeout: 300
+    name: "{{ instance.name }}"
+  register: all_instances_info
+  loop: "{{ cloudstack_instances }}"
+  loop_control:
+    loop_var: instance
+  failed_when: false
+
+- name: Display instance information
+  ansible.builtin.debug:
+    msg: |
+      ============================================
+      CloudStack Instances Created
+      ============================================
+      {% for result in all_instances_info.results %}
+      {% if result.instances is defined and result.instances | length > 0 %}
+      {{ result.instance.name }}:
+        ID: {{ result.instances[0].id }}
+        State: {{ result.instances[0].state }}
+        IP: {{ result.instances[0].nic[0].ip_address | default('Pending') }}
+        Zone: {{ result.instances[0].zone }}
+        Host: {{ result.instances[0].host | default('Not assigned') }}
+      {% endif %}
+      {% endfor %}
+

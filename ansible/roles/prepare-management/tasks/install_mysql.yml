@@ -1,0 +1,36 @@
+# Install and Configure MySQL Database Server for Debian/Ubuntu
+---
+# Install MySQL server
+- name: Install MySQL server
+  ansible.builtin.apt:
+    name: "{{ mysql_packages }}"
+    state: present
+    update_cache: true
+
+# Configure MySQL for CloudStack
+- name: Create CloudStack MySQL configuration file
+  ansible.builtin.template:
+    src: mysql_cloudstack.cnf.j2
+    dest: "{{ mysql_config_dir }}/cloudstack.cnf"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart MySQL
+
+# Ensure MySQL is started
+- name: Start and enable MySQL service
+  ansible.builtin.systemd:
+    name: "{{ mysql_service }}"
+    enabled: "{{ cloudstack_enable_services }}"
+    state: started
+
+# Flush handlers to ensure MySQL is restarted with new config before proceeding
+- name: Flush handlers to restart MySQL
+  ansible.builtin.meta: flush_handlers
+
+# Wait for MySQL to be ready
+- name: Wait for MySQL to be ready
+  ansible.builtin.wait_for:
+    port: 3306
+    delay: 5
+    timeout: 60

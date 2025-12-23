@@ -16,66 +16,118 @@ components:
         - name: VSCODE_DEFAULT_WORKSPACE
           value: '/projects/homelab-orchestrator/code-workspace'
         - name: 'ANSIBLE_COLLECTIONS_PATH'
-          value: '~/.ansible/collections:/usr/share/ansible/collections:/projects/ansible-devspaces-demo/collections'
+          value: '~/.ansible/collections:/usr/share/ansible/collections'
+        - name: 'ANSIBLE_CONFIG'
+          value: '/projects/homelab-orchestrator/ansible.cfg'
 commands:
-  - id: molecule-create
+  - id: install-collections
     exec:
-      label: '1.Molecule: start a test pod for the automation'
-      commandLine: 'source $HOME/.bashrc && molecule create'
-      workingDir: ${PROJECTS_ROOT}/ansible-devspaces-demo/collections/ansible_collections/sample_namespace/sample_collection/extensions
+      label: '1. Install Ansible Collections'
+      commandLine: 'source $HOME/.bashrc && ansible-galaxy collection install -r requirements.yaml --force'
+      workingDir: ${PROJECTS_ROOT}/homelab-orchestrator
       group:
-        kind: run
+        kind: build
         isDefault: true
       component: tooling-container
 
-  - id: molecule-list
+  - id: cloudstack-prepare-management
     exec:
-      label: '2.Molecule: view the test instance that was created'
-      commandLine: 'source $HOME/.bashrc && molecule list'
-      workingDir: ${PROJECTS_ROOT}/ansible-devspaces-demo/collections/ansible_collections/sample_namespace/sample_collection/extensions
+      label: '2. CloudStack: Prepare Management'
+      commandLine: 'source $HOME/.bashrc && ansible-playbook ansible/playbooks/cloudstack/01-prepare-management.yml'
+      workingDir: ${PROJECTS_ROOT}/homelab-orchestrator
       group:
         kind: run
-        isDefault: true
+        isDefault: false
       component: tooling-container
 
-  - id: molecule-verify
+  - id: cloudstack-prepare-kvm
     exec:
-      label: '3.Molecule: run the verification against the test pod'
-      commandLine: 'source $HOME/.bashrc && molecule verify'
-      workingDir: ${PROJECTS_ROOT}/ansible-devspaces-demo/collections/ansible_collections/sample_namespace/sample_collection/extensions
+      label: '3. CloudStack: Prepare KVM'
+      commandLine: 'source $HOME/.bashrc && ansible-playbook ansible/playbooks/cloudstack/02-prepare-kvm.yml'
+      workingDir: ${PROJECTS_ROOT}/homelab-orchestrator
       group:
         kind: run
-        isDefault: true
+        isDefault: false
       component: tooling-container
 
-  - id: molecule-converge
+  - id: cloudstack-configure
     exec:
-      label: '4.Molecule: apply the role to the pod'
-      commandLine: 'source $HOME/.bashrc && molecule converge'
-      workingDir: ${PROJECTS_ROOT}/ansible-devspaces-demo/collections/ansible_collections/sample_namespace/sample_collection/extensions
+      label: '4. CloudStack: Configure'
+      commandLine: 'source $HOME/.bashrc && ansible-playbook ansible/playbooks/cloudstack/03-configure.yml'
+      workingDir: ${PROJECTS_ROOT}/homelab-orchestrator
       group:
         kind: run
-        isDefault: true
+        isDefault: false
       component: tooling-container
 
-  - id: molecule-test
+  - id: cloudstack-kubernetes-setup
     exec:
-      label: '5.Molecule: run the full molecule test'
-      commandLine: 'source $HOME/.bashrc && molecule test'
-      workingDir: ${PROJECTS_ROOT}/ansible-devspaces-demo/collections/ansible_collections/sample_namespace/sample_collection/extensions
+      label: '5. CloudStack: Kubernetes Setup'
+      commandLine: 'source $HOME/.bashrc && ansible-playbook ansible/playbooks/cloudstack/04-kubernetes-setup.yml'
+      workingDir: ${PROJECTS_ROOT}/homelab-orchestrator
       group:
         kind: run
-        isDefault: true
+        isDefault: false
       component: tooling-container
 
-  - id: molecule-destroy
+  - id: cloudstack-instances
     exec:
-      label: '6.Molecule: reset the test pod back to a fresh instance'
-      commandLine: 'source $HOME/.bashrc && molecule destroy'
-      workingDir: ${PROJECTS_ROOT}/ansible-devspaces-demo/collections/ansible_collections/sample_namespace/sample_collection/extensions
+      label: '6. CloudStack: Instances'
+      commandLine: 'source $HOME/.bashrc && ansible-playbook ansible/playbooks/cloudstack/05-instances.yml'
+      workingDir: ${PROJECTS_ROOT}/homelab-orchestrator
       group:
         kind: run
-        isDefault: true
+        isDefault: false
+      component: tooling-container
+
+  - id: cloudstack-kubernetes-cluster
+    exec:
+      label: '7. CloudStack: Kubernetes Cluster'
+      commandLine: 'source $HOME/.bashrc && ansible-playbook ansible/playbooks/cloudstack/06-kubernetes-cluster.yml'
+      workingDir: ${PROJECTS_ROOT}/homelab-orchestrator
+      group:
+        kind: run
+        isDefault: false
+      component: tooling-container
+
+  - id: cloudstack-cleanup
+    exec:
+      label: '8. CloudStack: Cleanup'
+      commandLine: 'source $HOME/.bashrc && ansible-playbook ansible/playbooks/cloudstack/99-cleanup.yml'
+      workingDir: ${PROJECTS_ROOT}/homelab-orchestrator
+      group:
+        kind: run
+        isDefault: false
+      component: tooling-container
+
+  - id: openshift-cluster-prep
+    exec:
+      label: '9. OpenShift: Cluster Prep'
+      commandLine: 'source $HOME/.bashrc && ansible-playbook ansible/playbooks/openshift/cluster-prep.yaml'
+      workingDir: ${PROJECTS_ROOT}/homelab-orchestrator
+      group:
+        kind: run
+        isDefault: false
+      component: tooling-container
+
+  - id: openshift-gitops-bootstrap
+    exec:
+      label: '10. OpenShift: GitOps Bootstrap'
+      commandLine: 'source $HOME/.bashrc && ansible-playbook ansible/playbooks/openshift/gitops-bootstrap.yaml'
+      workingDir: ${PROJECTS_ROOT}/homelab-orchestrator
+      group:
+        kind: run
+        isDefault: false
+      component: tooling-container
+
+  - id: awx-config
+    exec:
+      label: '11. AWX: Configure'
+      commandLine: 'source $HOME/.bashrc && ansible-playbook ansible/playbooks/awx/config.yaml'
+      workingDir: ${PROJECTS_ROOT}/homelab-orchestrator
+      group:
+        kind: run
+        isDefault: false
       component: tooling-container
 
   - id: ansible-navigator
@@ -87,9 +139,5 @@ commands:
         fi
         cp /usr/local/lib/python3.11/site-packages/ansible_navigator/data/catalog_collections.py $HOME/.cache/ansible-navigator
         ansible-navigator --ee false
-      workingDir: ${PROJECTS_ROOT}/ansible-devspaces-demo
+      workingDir: ${PROJECTS_ROOT}/homelab-orchestrator
       component: tooling-container
-
-events:
-  preStop:
-    - 'molecule-destroy'

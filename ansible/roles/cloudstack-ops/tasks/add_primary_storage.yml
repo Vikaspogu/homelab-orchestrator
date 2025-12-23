@@ -1,0 +1,26 @@
+# Add Primary Storage to CloudStack
+---
+- name: Add primary storage pools
+  ngine_io.cloudstack.storage_pool:
+    api_url: "{{ cloudstack_api_url }}"
+    api_key: "{{ cloudstack_api_key }}"
+    api_secret: "{{ cloudstack_api_secret }}"
+    name: "{{ storage.name }}"
+    zone: "{{ cloudstack_zone.name }}"
+    pod: "{{ storage.pod_name | default(cloudstack_pods[0].name) }}"
+    cluster: "{{ storage.cluster_name }}"
+    storage_url: "{{ storage.url }}"
+    scope: "{{ storage.scope | default('cluster') }}"
+    hypervisor: "{{ storage.hypervisor | default('KVM') }}"
+    state: present
+    api_timeout: 300
+  loop: "{{ cloudstack_primary_storages }}"
+  loop_control:
+    loop_var: storage
+  register: primary_storage_result
+
+- name: Display primary storage information
+  ansible.builtin.debug:
+    msg: "Primary storage '{{ item.storage.name }}' {{ 'created' if item.changed else 'already exists' }}"
+  loop: "{{ primary_storage_result.results }}"
+  when: primary_storage_result.results is defined

@@ -1,0 +1,52 @@
+# CloudStack Network Bridge Configuration
+# Managed by Ansible - Do not edit manually
+
+auto lo
+iface lo inet loopback
+
+# Primary network interface
+auto {{ cloudstack_mgmt_interface }}
+iface {{ cloudstack_mgmt_interface }} inet manual
+
+{% if cloudstack_network_mode == 'advanced' and cloudstack_guest_interface != cloudstack_mgmt_interface %}
+# Secondary network interface for guest traffic
+auto {{ cloudstack_guest_interface }}
+iface {{ cloudstack_guest_interface }} inet manual
+{% endif %}
+
+{% if cloudstack_network_mode == 'basic' and cloudstack_guest_vlan %}
+# VLAN interface for guest traffic (Basic Network)
+auto {{ cloudstack_mgmt_interface }}.{{ cloudstack_guest_vlan }}
+iface {{ cloudstack_mgmt_interface }}.{{ cloudstack_guest_vlan }} inet manual
+    vlan-raw-device {{ cloudstack_mgmt_interface }}
+{% endif %}
+
+# Management network bridge (cloudbr0)
+auto {{ cloudstack_mgmt_bridge }}
+iface {{ cloudstack_mgmt_bridge }} inet static
+    bridge_ports {{ cloudstack_mgmt_interface }}
+    bridge_fd {{ cloudstack_bridge_fd }}
+    bridge_stp {{ cloudstack_bridge_stp }}
+    bridge_maxwait {{ cloudstack_bridge_maxwait }}
+    address {{ cloudstack_mgmt_ip }}
+    netmask {{ cloudstack_mgmt_netmask }}
+    gateway {{ cloudstack_mgmt_gateway }}
+    dns-nameservers {{ cloudstack_mgmt_dns | join(' ') }}
+{% if cloudstack_mgmt_domain %}
+    dns-domain {{ cloudstack_mgmt_domain }}
+{% endif %}
+
+# Guest network bridge (cloudbr1)
+auto {{ cloudstack_guest_bridge }}
+iface {{ cloudstack_guest_bridge }} inet manual
+{% if cloudstack_network_mode == 'advanced' %}
+    bridge_ports {{ cloudstack_guest_interface }}
+{% elif cloudstack_network_mode == 'basic' and cloudstack_guest_vlan %}
+    bridge_ports {{ cloudstack_mgmt_interface }}.{{ cloudstack_guest_vlan }}
+{% else %}
+    bridge_ports none
+{% endif %}
+    bridge_fd {{ cloudstack_bridge_fd }}
+    bridge_stp {{ cloudstack_bridge_stp }}
+    bridge_maxwait {{ cloudstack_bridge_maxwait }}
+

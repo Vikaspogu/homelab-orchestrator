@@ -1,0 +1,10 @@
+# Setup KVM hosts for CloudStack
+---
+- name: Setup CloudStack KVM Hypervisor Hosts
+  hosts: cloudstack_kvm_hosts
+  become: true
+  gather_facts: true
+  vars_files:
+    - ../vars/common.vault.yml
+  roles:
+    - role: prepare-kvm

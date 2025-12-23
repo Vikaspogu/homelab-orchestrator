@@ -1,0 +1,11 @@
+# CloudStack Zone Setup Playbook
+# Run this after management server is installed and running
+---
+- name: Configure CloudStack Zone, Pods, and Clusters
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files:
+    - ../vars/common.vault.yml
+  roles:
+    - role: cloudstack-ops

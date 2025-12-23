@@ -1,0 +1,70 @@
+# Configure Network Bridges for CloudStack KVM Host (Native Linux Bridges)
+---
+- name: Check if netplan is available
+  ansible.builtin.stat:
+    path: /usr/sbin/netplan
+  register: netplan_check
+
+- name: Set netplan usage fact
+  ansible.builtin.set_fact:
+    use_netplan: "{{ netplan_check.stat.exists and cloudstack_use_netplan }}"
+
+# Configure using Netplan (Ubuntu 20.04+)
+- name: Configure network bridges using Netplan
+  when: use_netplan
+  block:
+    - name: Create Netplan configuration for CloudStack bridges
+      ansible.builtin.template:
+        src: netplan-bridges.yaml.j2
+        dest: "{{ netplan_config_file }}"
+        owner: root
+        group: root
+        mode: "0600"
+        backup: true
+      register: netplan_config
+
+    - name: Apply Netplan configuration
+      ansible.builtin.command: netplan apply
+      when: netplan_config.changed
+      changed_when: true
+
+# Configure using /etc/network/interfaces (older Ubuntu/Debian)
+- name: Configure network bridges using interfaces file
+  when: not use_netplan
+  block:
+    - name: Backup existing interfaces file
+      ansible.builtin.copy:
+        src: "{{ interfaces_config_file }}"
+        dest: "{{ interfaces_config_file }}.backup.{{ ansible_date_time.epoch }}"
+        remote_src: true
+        mode: "0644"
+      failed_when: false
+
+    - name: Configure network interfaces for CloudStack bridges
+      ansible.builtin.template:
+        src: interfaces.j2
+        dest: "{{ interfaces_config_file }}"
+        owner: root
+        group: root
+        mode: "0644"
+        backup: true
+      register: interfaces_config
+
+    - name: Display network restart warning
+      ansible.builtin.debug:
+        msg: >
+          Network configuration has been updated. A network restart or reboot
+          is required to apply the changes. Run 'systemctl restart networking'
+          or reboot the system.
+      when: interfaces_config.changed
+
+- name: Display network configuration info
+  ansible.builtin.debug:
+    msg: |
+      Network bridges configured:
+        Management bridge: {{ cloudstack_mgmt_bridge }} ({{ cloudstack_mgmt_interface }})
+        Guest bridge: {{ cloudstack_guest_bridge }} ({{ cloudstack_guest_interface }})
+        Single NIC mode: {{ cloudstack_mgmt_bridge == cloudstack_guest_bridge }}
+        Network mode: {{ cloudstack_network_mode }}
+        Using Netplan: {{ use_netplan }}
+

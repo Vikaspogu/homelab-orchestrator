@@ -1,0 +1,46 @@
+# Configure Kubernetes Role - Default Variables
+---
+# CloudStack API connection
+cloudstack_api_url: ""
+cloudstack_api_key: ""
+cloudstack_api_secret: ""
+
+# Use admin credentials if API keys not set
+cloudstack_admin_username: "admin"
+cloudstack_admin_password: ""
+
+# Management server endpoint URL
+cloudstack_endpoint_url: "http://localhost:8080/client/api"
+
+# Network offering for Kubernetes clusters
+cloudstack_kubernetes_network_offering: "DefaultNetworkOfferingforKubernetesService"
+
+# Compute offering for Kubernetes nodes
+cloudstack_kubernetes_compute_offering:
+  name: "CKS Instance"
+  display_text: "Compute offering for CloudStack Kubernetes Service nodes"
+  cpu: 2
+  cpu_speed: 2000
+  memory: 4096
+  storage_type: "shared"  # shared or local
+  offer_ha: false
+
+# Kubernetes supported versions to add
+# ISOs available at: http://download.cloudstack.org/cks/
+cloudstack_kubernetes_versions: []
+# Example (register both architectures):
+#   - name: "v1.33.1-x86_64"
+#     semantic_version: "1.33.1"
+#     url: "http://download.cloudstack.org/cks/setup-v1.33.1-calico-x86_64.iso"
+#     zone_name: "Zone1"
+#     min_cpu: 2
+#     min_memory: 2048
+#   - name: "v1.33.1-aarch64"
+#     semantic_version: "1.33.1"
+#     url: "http://download.cloudstack.org/cks/setup-v1.33.1-calico-aarch64.iso"
+#     zone_name: "Zone1"
+#     min_cpu: 2
+#     min_memory: 2048
+
+# Experimental features
+cloudstack_kubernetes_experimental_features: false

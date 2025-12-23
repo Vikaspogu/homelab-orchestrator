@@ -1,0 +1,30 @@
+# Wait for Kubernetes cluster to be ready
+---
+- name: "{{ cluster.name }} - Wait for cluster to be running"
+  ansible.builtin.uri:
+    url: "{{ cloudstack_api_url }}"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      command: listKubernetesClusters
+      name: "{{ cluster.name }}"
+      response: json
+      sessionkey: "{{ cloudstack_session_key }}"
+    headers:
+      Cookie: "{{ cloudstack_cookies }}"
+    return_content: true
+    timeout: "{{ kubernetes_api_timeout }}"
+  register: cluster_status
+  until: >
+    cluster_status.json.listkubernetesclustersresponse.kubernetescluster is defined and
+    cluster_status.json.listkubernetesclustersresponse.kubernetescluster | length > 0 and
+    cluster_status.json.listkubernetesclustersresponse.kubernetescluster[0].state == 'Running'
+  retries: "{{ (kubernetes_wait_timeout / 30) | int }}"
+  delay: 30
+
+- name: "{{ cluster.name }} - Display cluster status"
+  ansible.builtin.debug:
+    msg: |
+      Cluster '{{ cluster.name }}' is now Running!
+      Endpoint: {{ cluster_status.json.listkubernetesclustersresponse.kubernetescluster[0].endpoint | default('N/A') }}
+

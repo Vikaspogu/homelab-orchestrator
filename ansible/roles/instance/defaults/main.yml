@@ -1,0 +1,82 @@
+# CloudStack Instance Role - Default Variables
+---
+# CloudStack API connection
+cloudstack_api_url: ""
+cloudstack_api_key: ""
+cloudstack_api_secret: ""
+
+# Admin credentials (used if API keys not provided)
+cloudstack_admin_username: "admin"
+cloudstack_admin_password: ""
+
+# Instance defaults
+cloudstack_instance_defaults:
+  service_offering: "Small Instance"
+  template: "Ubuntu 24.04"
+  zone: "Zone1"
+  disk_offering: "" # Leave empty for root disk only
+  disk_size: 0 # Additional disk size in GB (0 = no additional disk)
+
+# Template registration (used when template doesn't exist)
+cloudstack_instance_templates:
+  "Ubuntu 24.04":
+    url: "http://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
+    format: "QCOW2"
+    os_type: "Ubuntu 24.04 LTS"
+    hypervisor: "KVM"
+    is_public: true
+    is_featured: true
+    passwordenabled: true
+    sshkeyenabled: true
+  "Ubuntu 22.04":
+    url: "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
+    format: "QCOW2"
+    os_type: "Ubuntu 22.04 LTS"
+    hypervisor: "KVM"
+    is_public: true
+    is_featured: true
+    passwordenabled: true
+    sshkeyenabled: true
+
+# Instances to create
+cloudstack_instances: []
+# Example:
+#   - name: "k8s-master"
+#     service_offering: "Medium Instance"
+#     template: "Ubuntu 22.04"
+#     zone: "Zone1"
+#     network: "guest-network"
+#     ip_address: ""  # Leave empty for DHCP
+#     ssh_key: "my-ssh-key"
+#     user_data: ""   # Base64 encoded cloud-init
+#     gpu_enabled: false
+#
+#   - name: "k8s-worker1"
+#     service_offering: "Large Instance"
+#     template: "Ubuntu 22.04"
+#     zone: "Zone1"
+#     network: "guest-network"
+#     gpu_enabled: true
+#     gpu_offering: "NVIDIA-A100"  # GPU compute offering
+
+# Network for instances
+cloudstack_instance_network: ""
+cloudstack_instance_network_type: "Shared" # Shared, Isolated, VPC
+
+# SSH key name (must exist in CloudStack)
+cloudstack_ssh_key_name: ""
+
+# Affinity groups
+cloudstack_instance_affinity_groups: []
+# Example:
+#   - name: "k8s-masters"
+#     type: "host anti-affinity"
+#   - name: "k8s-workers"
+#     type: "host affinity"
+
+# Start instances after creation
+cloudstack_instance_start: true
+
+# Wait for instance to be ready
+cloudstack_instance_wait_for_ip: true
+cloudstack_instance_wait_timeout: 300

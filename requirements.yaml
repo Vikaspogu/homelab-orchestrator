@@ -1,22 +1,17 @@
 ---
 collections:
-  - name: ansible.posix
+  - name: community.general
+    version: ">=6.0.0"
+  - name: community.mysql
+    version: ">=3.5.0"
+  - name: community.libvirt
+    version: ">=1.3.0"
   - name: ansible.utils
-  - name: ansible.controller
-  - name: ansible.platform
-  - name: ansible.hub
-  - name: redhat.satellite
+    version: ">=2.0.0"
+  - name: ansible.posix
+    version: ">=1.5.0"
+  - name: ngine_io.cloudstack
+    version: ">=2.3.0"
   - name: community.general
   - name: community.sops
   - name: kubernetes.core
-  - name: infra.controller_configuration
-  - name: infra.aap_utilities
-  - name: community.vmware
-  - name: community.docker
-roles:
-  - src: https://github.com/geerlingguy/ansible-role-docker.git
-    scm: git
-    version: master
-  - src: https://github.com/geerlingguy/ansible-role-pip.git
-    scm: git
-    version: master

@@ -1,0 +1,27 @@
+# Prepare KVM Role - Handlers
+---
+- name: Restart libvirt
+  ansible.builtin.systemd:
+    name: "{{ libvirt_service }}"
+    state: restarted
+    daemon_reload: true
+
+- name: Restart chrony
+  ansible.builtin.systemd:
+    name: "{{ chrony_service }}"
+    state: restarted
+
+- name: Restart CloudStack Agent
+  ansible.builtin.systemd:
+    name: cloudstack-agent
+    state: restarted
+    daemon_reload: true
+
+- name: Reload UFW
+  community.general.ufw:
+    state: reloaded
+
+- name: Restart SSH
+  ansible.builtin.systemd:
+    name: ssh
+    state: restarted

@@ -3,18 +3,10 @@
   hosts: localhost
   connection: local
   environment:
-    CONTROLLER_HOST: '{{ controller_hostname }}'
-    CONTROLLER_USERNAME: '{{ controller_username }}'
-    CONTROLLER_PASSWORD: '{{ controller_password }}'
+    CONTROLLER_HOST: '{{ awx.hostname }}'
+    CONTROLLER_USERNAME: '{{ awx.username }}'
+    CONTROLLER_PASSWORD: '{{ awx.password }}'
     CONTROLLER_VERIFY_SSL: 'false'
-    GATEWAY_HOSTNAME: '{{ controller_hostname }}'
-    GATEWAY_USERNAME: '{{ controller_username }}'
-    GATEWAY_PASSWORD: '{{ controller_password }}'
-    GATEWAY_VERIFY_SSL: 'false'
-    AH_USERNAME: '{{ controller_username }}'
-    AH_PASSWORD: '{{ controller_password }}'
-    AH_HOST: '{{ controller_hostname }}'
-    AH_VERIFY_SSL: 'false'
   vars_files:
     - ../../vars/common.vault.yaml
   tasks:
@@ -28,146 +20,42 @@
       check_mode: false
       failed_when: repository_path.rc != 0
 
-    - name: Set the license using a file
-      ansible.controller.license:
-        manifest: '{{ repository_path.stdout }}/manifest_subscription.zip'
-        validate_certs: false
-
-    - name: Create a new token using existing token
-      ansible.hub.ah_token:
-        state: present
-      no_log: True
-      register: ah_token
-
-    - name: Authenticators | Configuration # noqa fqcn[action-core]
-      ansible.platform.authenticator:
-        name: 'Authentik'
-        type: 'ansible_base.authentication.authenticator_plugins.oidc'
-        slug: 'authentik'
-        enabled: true
-        configuration:
-          OIDC_ENDPOINT: '{{OIDC_ENDPOINT}}'
-          KEY: '{{CLIENT_ID}}'
-          SECRET: '{{CLIENT_SECRET}}'
-          GROUPS_CLAIM: 'groups'
-
-    - name: Authenticator Map | Configuration
-      ansible.platform.authenticator_map:
-        name: 'Authentik Map'
-        authenticator: 'Authentik'
-        revoke: true
-        map_type: is_superuser
-        triggers:
-          groups:
-            has_or:
-              - 'admins'
-
-    - name: Add webhook notification
-      ansible.controller.notification_template:
-        name: Gotify
-        notification_type: webhook
-        organization: Default
-        notification_configuration:
-          url: '{{GOTIFY_APPLICATION_WEBHOOK}}'
-          headers:
-            'accept': 'application/json'
-            'Content-Type': 'application/json'
-            'application': 'Ansible Platform'
-        state: present
-
     - name: Configure Platform Settings
-      ansible.platform.settings:
+      awx.awx.settings:
         settings:
           SESSION_COOKIE_AGE: 7200
-
-    - name: Configure Controller Settings
-      ansible.controller.settings:
-        settings:
           GALAXY_IGNORE_CERTS: true
 
     - name: Add notifiers to Default Organization
-      ansible.controller.organization:
+      awx.awx.organization:
         name: Default
-        notification_templates_error: ['Gotify']
         state: present
 
     - name: Create an inventory
-      ansible.controller.inventory:
+      awx.awx.inventory:
         name: '{{ awx_inventory_name }}'
         organization: Default
 
-    - name: Private Hub rh-certified Credentials
-      ansible.controller.credential:
-        name: Automation Hub rh-certified credentials
-        credential_type: Ansible Galaxy/Automation Hub API Token
-        organization: Default
-        inputs:
-          url: https://aap-controller.vikaspogu.internal/pulp_ansible/galaxy/rh-certified/
-          token: '{{ ah_token.ansible_facts.ah_token.token }}'
-
-    - name: Private Hub community Credentials
-      ansible.controller.credential:
-        name: Automation Hub community credentials
-        credential_type: Ansible Galaxy/Automation Hub API Token
-        organization: Default
-        inputs:
-          url: https://aap-controller.vikaspogu.internal/pulp_ansible/galaxy/community/
-          token: '{{ ah_token.ansible_facts.ah_token.token }}'
-
-    - name: Private Hub validated Credentials
-      ansible.controller.credential:
-        name: Automation Hub validated credentials
-        credential_type: Ansible Galaxy/Automation Hub API Token
-        organization: Default
-        inputs:
-          url: https://aap-controller.vikaspogu.internal/pulp_ansible/galaxy/validated/
-          token: '{{ ah_token.ansible_facts.ah_token.token }}'
-
-    - name: Machine Credentials
-      ansible.controller.credential:
-        name: Host Credentials
-        credential_type: Machine
-        organization: Default
-        inputs:
-          username: '{{ host_user }}'
-          password: '{{ host_password }}'
-          ssh_key_data: "{{ lookup('file', '/Users/vikaspogu/.ssh/id_rsa') }}"
-
-    - name: Quay Credentials
-      ansible.controller.credential:
-        name: Quay Credentials
-        credential_type: Container Registry
-        organization: Default
-        inputs:
-          host: quay.io
-          username: '{{ quay_username }}'
-          password: '{{ quay_password }}'
+    # - name: Machine Credentials
+    #   awx.awx.credential:
+    #     name: Host Credentials
+    #     credential_type: Machine
+    #     organization: Default
+    #     inputs:
+    #       username: '{{ host_user }}'
+    #       password: '{{ host_password }}'
+    #       ssh_key_data: "{{ lookup('file', '/Users/vikaspogu/.ssh/id_rsa') }}"
 
     - name: Ansible Vault Credentials
-      ansible.controller.credential:
+      awx.awx.credential:
         name: Vault Credentials
         credential_type: Vault
         organization: Default
         inputs:
           vault_password: '{{ vault_password }}'
 
-    - name: Update organization that pulls content from galaxy.ansible.com
-      ansible.controller.organization:
-        name: 'Default'
-        state: present
-        galaxy_credentials:
-          - Automation Hub rh-certified credentials
-          - Automation Hub community credentials
-          - Automation Hub validated credentials
-
-    - name: Add EE to the controller instance
-      ansible.controller.execution_environment:
-        name: 'Custom EE'
-        image: quay.io/rhn_gps_vpogu/custom-aap24-ee-rhel9:2.1.0
-        credential: 'Quay Credentials'
-
     - name: '{{ awx_project_name }}'
-      ansible.controller.project:
+      awx.awx.project:
         name: '{{ awx_project_name }}'
         organization: Default
         state: present
@@ -177,7 +65,7 @@
         scm_url: https://github.com/Vikaspogu/homelab-orchestrator.git
 
     - name: Add inventory source to inventory
-      ansible.controller.inventory_source:
+      awx.awx.inventory_source:
         name: 'scm-inventory'
         description: Source for inventory
         inventory: '{{ awx_inventory_name }}'
@@ -195,24 +83,18 @@
       retries: 10
       delay: 10
 
-    - name: Create a Job Template with survey
-      ansible.builtin.import_tasks: ../../awx/job_templates/job-template-survey.yaml
-      register: job_templates_survery
-      until: not job_templates_survery.failed
-      retries: 10
-      delay: 10
-
-    - name: Create a Job Template with survey
-      ansible.controller.schedule:
-        name: 'Shutdown Hosts'
-        state: present
-        unified_job_template: 'Adhoc - Shutdown Hosts'
-        rrule: 'DTSTART:20250601T133500Z RRULE:FREQ=DAILY;INTERVAL=1;WKST=SU;BYHOUR=19;BYMINUTE=30'
-      register: result
-
-    # - name: Create 3 node cluster workflow
-    #   ansible.builtin.import_tasks: ../../awx/workflows/openshift-cluster.yaml
-    #   register: acm_cluster_workflow
-    #   until: not acm_cluster_workflow.failed
+    # - name: Create a Job Template with survey
+    #   ansible.builtin.import_tasks: ../../awx/job_templates/job-template-survey.yaml
+    #   register: job_templates_survery
+    #   until: not job_templates_survery.failed
     #   retries: 10
     #   delay: 10
+
+    # - name: Create a Job Template with survey
+    #   awx.awx.schedule:
+    #     name: 'Shutdown Hosts'
+    #     state: present
+    #     unified_job_template: 'Adhoc - Shutdown Hosts'
+    #     rrule: 'DTSTART:20250601T133500Z RRULE:FREQ=DAILY;INTERVAL=1;WKST=SU;BYHOUR=19;BYMINUTE=30'
+    #   register: result
+a
