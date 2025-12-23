@@ -1,7 +1,7 @@
 # CloudStack Repository for Debian/Ubuntu
 # Managed by Ansible - Do not edit manually
 {% if ansible_distribution == 'Ubuntu' -%}
-deb [signed-by={{ cloudstack_gpg_key_file }}] {{ cloudstack_repo_base_url_ubuntu }} {{ ansible_distribution_release }} {{ cloudstack_version }}
+deb [signed-by={{ prepare_management_gpg_key_file }}] {{ prepare_management_repo_base_url_ubuntu }} {{ ansible_distribution_release }} {{ prepare_management_version }}
 {% else -%}
-deb [signed-by={{ cloudstack_gpg_key_file }}] {{ cloudstack_repo_base_url_debian }} {{ ansible_distribution_release }} {{ cloudstack_version }}
+deb [signed-by={{ prepare_management_gpg_key_file }}] {{ prepare_management_repo_base_url_ubuntu }} {{ ansible_distribution_release }} {{ prepare_management_version }}
 {% endif -%}
