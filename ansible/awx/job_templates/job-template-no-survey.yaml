@@ -22,36 +22,36 @@
       }
     - {
         name: 'CloudStack - Prepare Management',
-        file: ansible/playbooks/cloudstack/01-prepare-management.yml,
+        file: ansible/playbooks/cloudstack/01-prepare-management.yaml,
         enable_survey: true,
       }
     - {
         name: 'CloudStack - Prepare KVM',
-        file: ansible/playbooks/cloudstack/02-prepare-kvm.yml,
+        file: ansible/playbooks/cloudstack/02-prepare-kvm.yaml,
         enable_survey: true,
       }
     - {
         name: 'CloudStack - Configure',
-        file: ansible/playbooks/cloudstack/03-configure.yml,
+        file: ansible/playbooks/cloudstack/03-configure.yaml,
         enable_survey: true,
       }
     - {
         name: 'CloudStack - Kubernetes Setup',
-        file: ansible/playbooks/cloudstack/04-kubernetes-setup.yml,
+        file: ansible/playbooks/cloudstack/04-kubernetes-setup.yaml,
         enable_survey: true,
       }
     - {
         name: 'CloudStack - Instances',
-        file: ansible/playbooks/cloudstack/05-instances.yml,
+        file: ansible/playbooks/cloudstack/05-instances.yaml,
         enable_survey: true,
       }
     - {
         name: 'CloudStack - Kubernetes Cluster',
-        file: ansible/playbooks/cloudstack/06-kubernetes-cluster.yml,
+        file: ansible/playbooks/cloudstack/06-kubernetes-cluster.yaml,
         enable_survey: true,
       }
     - {
         name: 'CloudStack - Cleanup',
-        file: ansible/playbooks/cloudstack/99-cleanup.yml,
+        file: ansible/playbooks/cloudstack/99-cleanup.yaml,
         enable_survey: true,
       }

@@ -1,0 +1,80 @@
+# Prepare the Operating System for CloudStack Management Server
+---
+- name: Gather facts if not already done
+  ansible.builtin.setup:
+  when: ansible_fqdn is not defined
+
+- name: Display current hostname
+  ansible.builtin.debug:
+    msg: "Current FQDN: {{ ansible_fqdn | default('not set') }}"
+
+- name: Ensure hostname is set correctly
+  ansible.builtin.hostname:
+    name: "{{ prepare_management_hostname }}"
+  when: prepare_management_hostname != ansible_hostname
+
+- name: Ensure FQDN is resolvable in /etc/hosts
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: "^{{ ansible_default_ipv4.address | default('127.0.1.1') }}.*{{ prepare_management_hostname }}.*"
+    line: "{{ ansible_default_ipv4.address | default('127.0.1.1') }} {{ prepare_management_hostname }} {{ prepare_management_hostname.split('.')[0] }}"
+    state: present
+    backup: true
+  when: prepare_management_hostname is defined
+
+- name: Ensure localhost entries exist in /etc/hosts
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: "^127\\.0\\.0\\.1"
+    line: "127.0.0.1 localhost localhost.localdomain"
+    state: present
+
+- name: Check internet connectivity
+  ansible.builtin.uri:
+    url: "https://cloudstack.apache.org"
+    method: HEAD
+    timeout: 10
+  register: prepare_management_internet_check
+  failed_when: false
+  changed_when: false
+
+- name: Warn if internet connectivity check failed
+  ansible.builtin.debug:
+    msg: "WARNING: Unable to reach cloudstack.apache.org. Ensure the server has internet access."
+  when: prepare_management_internet_check.status is not defined or prepare_management_internet_check.status != 200
+
+# Install chrony for NTP synchronization
+- name: Install chrony
+  ansible.builtin.apt:
+    name: "{{ prepare_management_chrony_packages }}"
+    state: present
+    update_cache: true
+
+- name: Enable and start chrony service
+  ansible.builtin.systemd:
+    name: "{{ prepare_management_chrony_service }}"
+    enabled: true
+    state: started
+
+- name: Verify chrony is synchronized
+  ansible.builtin.command: chronyc tracking
+  register: prepare_management_chrony_status
+  changed_when: false
+  failed_when: false
+
+- name: Display chrony synchronization status
+  ansible.builtin.debug:
+    msg: "{{ prepare_management_chrony_status.stdout_lines }}"
+  when: prepare_management_chrony_status.stdout_lines is defined
+
+# Configure passwordless sudo for Ansible user
+- name: Configure passwordless sudo for Ansible user
+  ansible.builtin.lineinfile:
+    path: "/etc/sudoers.d/{{ ansible_user }}"
+    line: "{{ ansible_user }} ALL=(ALL) NOPASSWD: ALL"
+    create: true
+    mode: "0440"
+    validate: "visudo -cf %s"
+  when:
+    - ansible_user is defined
+    - ansible_user != 'root'

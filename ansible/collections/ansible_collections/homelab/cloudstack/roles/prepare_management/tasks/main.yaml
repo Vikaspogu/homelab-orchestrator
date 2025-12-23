@@ -1,0 +1,42 @@
+# Prepare Management Role - Main Tasks
+---
+- name: Verify supported OS family
+  ansible.builtin.fail:
+    msg: "This role only supports Debian/Ubuntu. Detected: {{ ansible_os_family }}"
+  when: ansible_os_family != "Debian"
+
+- name: Include OS-specific variables
+  ansible.builtin.include_vars: "Debian.yaml"
+  tags:
+    - always
+
+- name: Prepare the Operating System
+  ansible.builtin.include_tasks: prepare_os.yaml
+  tags:
+    - prepare
+    - os
+
+- name: Configure CloudStack repository
+  ansible.builtin.include_tasks: configure_repo.yaml
+  tags:
+    - repository
+    - repo
+
+- name: Install and configure MySQL database
+  ansible.builtin.include_tasks: install_mysql.yaml
+  tags:
+    - database
+    - mysql
+
+- name: Install and configure CloudStack Management Server
+  ansible.builtin.include_tasks: install_cloudstack.yaml
+  tags:
+    - cloudstack
+    - management
+
+- name: Setup NFS storage
+  ansible.builtin.include_tasks: setup_nfs.yaml
+  when: prepare_management_nfs_enabled | bool
+  tags:
+    - nfs
+    - storage

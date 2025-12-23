@@ -1,0 +1,102 @@
+# Create Compute Offering for CloudStack Kubernetes Service
+---
+- name: List ALL service offerings
+  ansible.builtin.uri:
+    url: "{{ cloudstack_api_url }}"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      command: listServiceOfferings
+      listall: "true"
+      response: json
+      sessionkey: "{{ cloudstack_session_key }}"
+    headers:
+      Cookie: "{{ cloudstack_cookies }}"
+    return_content: true
+  register: configure_kubernetes_all_offerings
+
+- name: Filter offerings by name
+  ansible.builtin.set_fact:
+    configure_kubernetes_existing_offering_list: >-
+      {{ configure_kubernetes_all_offerings.json.listserviceofferingsresponse.serviceoffering |
+         default([]) | selectattr('name', 'equalto', configure_kubernetes_compute_offering.name) | list }}
+
+- name: Set offering exists flag
+  ansible.builtin.set_fact:
+    configure_kubernetes_offering_exists: "{{ configure_kubernetes_existing_offering_list | length > 0 }}"
+
+- name: Display found offerings
+  ansible.builtin.debug:
+    msg: |
+      Found {{ configure_kubernetes_existing_offering_list | length }} existing offering(s) named '{{ configure_kubernetes_compute_offering.name }}':
+      {% for offer in configure_kubernetes_existing_offering_list %}
+        - ID: {{ offer.id }}, CPU: {{ offer.cpunumber }}x{{ offer.cpuspeed }}MHz, RAM: {{ offer.memory }}MB, Storage: {{ offer.storagetype }}
+      {% endfor %}
+  when: configure_kubernetes_existing_offering_list | length > 0
+
+- name: Delete all existing compute offerings
+  ansible.builtin.uri:
+    url: "{{ cloudstack_api_url }}"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      command: deleteServiceOffering
+      id: "{{ item.id }}"
+      response: json
+      sessionkey: "{{ cloudstack_session_key }}"
+    headers:
+      Cookie: "{{ cloudstack_cookies }}"
+    return_content: true
+    status_code: [200]
+  loop: "{{ configure_kubernetes_existing_offering_list }}"
+  loop_control:
+    label: "{{ item.name }} ({{ item.id }})"
+  register: configure_kubernetes_delete_offering_results
+  when:
+    - configure_kubernetes_compute_offering_recreate | default(true)
+    - configure_kubernetes_existing_offering_list | length > 0
+  failed_when: >
+    configure_kubernetes_delete_offering_results is failed or
+    (configure_kubernetes_delete_offering_results.json.deleteserviceofferingresponse.success | default('true') | string | lower) == 'false'
+
+- name: Display delete results
+  ansible.builtin.debug:
+    msg: |
+      Delete results for '{{ configure_kubernetes_compute_offering.name }}':
+      {% for result in configure_kubernetes_delete_offering_results.results | default([]) %}
+        - {{ result.item.id }}: {{ 'Deleted' if result.json.deleteserviceofferingresponse.success | default(false) else 'FAILED - ' + (result.json.deleteserviceofferingresponse.displaytext | default('unknown error')) }}
+      {% endfor %}
+  when:
+    - configure_kubernetes_compute_offering_recreate | default(true)
+    - configure_kubernetes_existing_offering_list | length > 0
+    - configure_kubernetes_delete_offering_results.results is defined
+
+- name: Create Kubernetes compute offering
+  ansible.builtin.uri:
+    url: "{{ cloudstack_api_url }}"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      command: createServiceOffering
+      name: "{{ configure_kubernetes_compute_offering.name }}"
+      displaytext: "{{ configure_kubernetes_compute_offering.display_text | default(configure_kubernetes_compute_offering.name) }}"
+      cpunumber: "{{ configure_kubernetes_compute_offering.cpu }}"
+      cpuspeed: "{{ configure_kubernetes_compute_offering.cpu_speed }}"
+      memory: "{{ configure_kubernetes_compute_offering.memory }}"
+      storagetype: "{{ configure_kubernetes_compute_offering.storage_type | default('shared') }}"
+      offerha: "{{ configure_kubernetes_compute_offering.offer_ha | default(false) | lower }}"
+      response: json
+      sessionkey: "{{ cloudstack_session_key }}"
+    headers:
+      Cookie: "{{ cloudstack_cookies }}"
+    return_content: true
+  register: configure_kubernetes_create_offering_result
+
+- name: Display compute offering status
+  ansible.builtin.debug:
+    msg: |
+      Kubernetes Compute Offering:
+        Name: {{ configure_kubernetes_compute_offering.name }}
+        CPU: {{ configure_kubernetes_compute_offering.cpu }} cores @ {{ configure_kubernetes_compute_offering.cpu_speed }} MHz
+        Memory: {{ configure_kubernetes_compute_offering.memory }} MB
+        Status: {{ 'Recreated' if (configure_kubernetes_offering_exists and configure_kubernetes_compute_offering_recreate | default(true)) else 'Created' }}

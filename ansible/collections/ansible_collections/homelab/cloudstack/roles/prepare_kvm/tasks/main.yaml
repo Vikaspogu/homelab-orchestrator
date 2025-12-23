@@ -1,0 +1,69 @@
+# Prepare KVM Role - Main Tasks
+---
+- name: Verify supported OS family
+  ansible.builtin.fail:
+    msg: "This role only supports Debian/Ubuntu. Detected: {{ ansible_os_family }}"
+  when: ansible_os_family != "Debian"
+
+- name: Include OS-specific variables
+  ansible.builtin.include_vars: "Debian.yaml"
+  tags:
+    - always
+
+- name: Prepare KVM Host OS
+  ansible.builtin.include_tasks: kvm_prepare_os.yaml
+  tags:
+    - prepare
+    - os
+
+- name: Configure CloudStack repository
+  ansible.builtin.include_tasks: configure_repo.yaml
+  tags:
+    - repository
+    - repo
+
+- name: Install and configure libvirt
+  ansible.builtin.include_tasks: kvm_install_libvirt.yaml
+  tags:
+    - libvirt
+    - kvm
+
+- name: Configure security policies (AppArmor)
+  ansible.builtin.include_tasks: kvm_configure_apparmor.yaml
+  tags:
+    - security
+    - apparmor
+
+- name: Configure networking
+  ansible.builtin.include_tasks: kvm_configure_network.yaml
+  tags:
+    - network
+    - bridges
+
+- name: Configure firewall
+  ansible.builtin.include_tasks: kvm_configure_firewall.yaml
+  when: prepare_kvm_configure_firewall
+  tags:
+    - firewall
+    - ufw
+
+- name: Install and configure CloudStack Agent
+  ansible.builtin.include_tasks: kvm_install_agent.yaml
+  tags:
+    - agent
+    - cloudstack
+
+- name: Configure local storage
+  ansible.builtin.include_tasks: kvm_configure_local_storage.yaml
+  when: prepare_kvm_local_storage_enabled
+  tags:
+    - storage
+    - local_storage
+
+- name: Configure VFIO for GPU passthrough
+  ansible.builtin.include_tasks: kvm_configure_vfio_gpu.yaml
+  when: prepare_kvm_vfio_gpu_enabled
+  tags:
+    - vfio
+    - gpu
+    - passthrough

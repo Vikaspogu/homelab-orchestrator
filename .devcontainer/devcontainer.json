@@ -32,7 +32,7 @@
         "ansible.ansibleLint.enabled": true,
         "ansible.validation.enabled": true,
         "files.associations": {
-          "*.yml": "ansible",
+          "*.yaml": "ansible",
           "*.yaml": "ansible"
         },
         "[ansible]": {

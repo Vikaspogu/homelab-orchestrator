@@ -4,7 +4,7 @@ ignore: |
 extends: default
 yaml-files:
   - 'ansible/*.yaml'
-  - 'ansible/*.yml'
+  - 'ansible/*.yaml'
   - '.yamllint'
 
 rules:

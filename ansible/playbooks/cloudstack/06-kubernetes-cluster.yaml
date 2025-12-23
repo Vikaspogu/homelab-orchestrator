@@ -1,0 +1,40 @@
+# Create Kubernetes Clusters via CloudStack CKS
+# Uses CloudStack Kubernetes Service to create managed clusters
+---
+- name: Create CloudStack Kubernetes Clusters
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files:
+    - ../../vars/common.vault.yaml
+
+  roles:
+    - role: homelab.cloudstack.kubernetes_cluster
+
+  post_tasks:
+    - name: Display next steps
+      ansible.builtin.debug:
+        msg: |
+          ============================================
+          CloudStack Kubernetes Clusters Created!
+          ============================================
+
+          Kubeconfig files saved to:
+          {% for cluster in kubernetes_cluster_list %}
+            - kubeconfig-{{ cluster.name }}.yaml
+          {% endfor %}
+
+          To use a cluster:
+            export KUBECONFIG=kubeconfig-{{ kubernetes_cluster_list[0].name }}.yaml
+            kubectl get nodes
+            kubectl get pods -A
+
+          To access cluster via CloudStack:
+            cloudmonkey list kubernetesclusters
+            cloudmonkey get kubernetesclusterconfig id=<cluster-id>
+
+          To scale cluster:
+            cloudmonkey scale kubernetescluster id=<id> size=<new-size>
+
+          To delete cluster:
+            cloudmonkey delete kubernetescluster id=<id>

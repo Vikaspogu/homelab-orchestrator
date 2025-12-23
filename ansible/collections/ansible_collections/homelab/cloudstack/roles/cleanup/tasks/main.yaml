@@ -1,0 +1,21 @@
+# CloudStack Cleanup Role - Main Tasks
+---
+- name: Confirm cleanup operation
+  ansible.builtin.fail:
+    msg: |
+      CLEANUP NOT CONFIRMED!
+      This will remove CloudStack and related components.
+      Set 'cleanup_confirm: true' to proceed.
+  when: not cleanup_confirm
+
+- name: Display cleanup warning
+  ansible.builtin.debug:
+    msg: |
+      ⚠️  WARNING: CloudStack cleanup initiated!
+      Host: {{ inventory_hostname }}
+      Packages: {{ cleanup_packages }}
+      Database: {{ cleanup_database }}
+      Config: {{ cleanup_config }}
+      Logs: {{ cleanup_logs }}
+      Storage: {{ cleanup_storage }}
+      Network: {{ cleanup_network }}

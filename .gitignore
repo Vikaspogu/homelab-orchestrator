@@ -14,3 +14,7 @@ terraform.tfstate*
 node_modules/*
 extra_vars.json
 .ansible
+
+# Ansible collections from Galaxy (installed via requirements.yaml)
+ansible/collections/ansible_collections/*
+!ansible/collections/ansible_collections/homelab

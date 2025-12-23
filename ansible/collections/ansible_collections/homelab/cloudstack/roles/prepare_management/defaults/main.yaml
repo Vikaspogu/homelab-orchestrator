@@ -1,0 +1,47 @@
+# Prepare Management Role - Default Variables
+---
+# CloudStack version
+prepare_management_version: ""
+
+# Hostname configuration
+prepare_management_hostname: "{{ ansible_fqdn }}"
+prepare_management_domain: "{{ ansible_domain | default('local') }}"
+
+# CloudStack repository URLs
+prepare_management_repo_base_url_ubuntu: "https://download.cloudstack.org/ubuntu"
+prepare_management_repo_base_url_debian: "https://download.cloudstack.org/debian"
+prepare_management_repo_gpg_key: "https://download.cloudstack.org/release.asc"
+
+# Database configuration
+prepare_management_db_host: "localhost"
+prepare_management_db_name: "cloud"
+prepare_management_db_user: "cloud"
+prepare_management_db_password: "cloudstack"  # Change this in production!
+
+# MySQL configuration
+prepare_management_mysql_max_connections: 350
+prepare_management_mysql_server_id: 1
+
+# CloudStack setup configuration
+prepare_management_server_key: "password"  # Change this in production!
+prepare_management_database_key: "password"  # Change this in production!
+prepare_management_encryption_type: "file"  # Options: file, web
+
+# Management server IP (optional - uses local IP if not set)
+prepare_management_server_ip: ""
+
+# XenServer support - download vhd-util
+prepare_management_xenserver_support: false
+prepare_management_vhd_util_url: "http://download.cloudstack.org/tools/vhd-util"
+
+# Service management
+prepare_management_enable_services: true
+prepare_management_start_services: true
+
+# NFS Storage configuration (optional - for local storage on management server)
+prepare_management_nfs_enabled: false
+prepare_management_nfs_primary_path: "/export/primary"
+prepare_management_nfs_secondary_path: "/export/secondary"
+prepare_management_nfs_export_options: "rw,async,no_root_squash,no_subtree_check"
+prepare_management_nfs_allowed_network: "10.0.0.0/8"
+prepare_management_nfs_domain: ""  # Optional: NFS domain for idmapd

@@ -1,0 +1,31 @@
+# Configure Local Storage for CloudStack
+---
+- name: Ensure local storage directory exists
+  ansible.builtin.file:
+    path: "{{ prepare_kvm_local_storage_path }}"
+    state: directory
+    owner: "{{ prepare_kvm_local_storage_owner }}"
+    group: "{{ prepare_kvm_local_storage_group }}"
+    mode: "{{ prepare_kvm_local_storage_mode }}"
+
+- name: Get disk space information
+  ansible.builtin.command:
+    cmd: df -h "{{ prepare_kvm_local_storage_path }}"
+  register: prepare_kvm_disk_space
+  changed_when: false
+
+- name: Display local storage information
+  ansible.builtin.debug:
+    msg: |
+      Local storage configured at: {{ prepare_kvm_local_storage_path }}
+      Disk space:
+      {{ prepare_kvm_disk_space.stdout }}
+
+- name: Configure local storage path in agent.properties
+  ansible.builtin.lineinfile:
+    path: /etc/cloudstack/agent/agent.properties
+    regexp: '^local\.storage\.path='
+    line: "local.storage.path={{ prepare_kvm_local_storage_path }}"
+    create: false
+  notify: Restart CloudStack Agent
+  when: prepare_kvm_local_storage_path != "/var/lib/libvirt/images"

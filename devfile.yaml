@@ -33,7 +33,7 @@ commands:
   - id: cloudstack-prepare-management
     exec:
       label: '2. CloudStack: Prepare Management'
-      commandLine: 'source $HOME/.bashrc && ansible-playbook ansible/playbooks/cloudstack/01-prepare-management.yml'
+      commandLine: 'source $HOME/.bashrc && ansible-playbook ansible/playbooks/cloudstack/01-prepare-management.yaml'
       workingDir: ${PROJECTS_ROOT}/homelab-orchestrator
       group:
         kind: run
@@ -43,7 +43,7 @@ commands:
   - id: cloudstack-prepare-kvm
     exec:
       label: '3. CloudStack: Prepare KVM'
-      commandLine: 'source $HOME/.bashrc && ansible-playbook ansible/playbooks/cloudstack/02-prepare-kvm.yml'
+      commandLine: 'source $HOME/.bashrc && ansible-playbook ansible/playbooks/cloudstack/02-prepare-kvm.yaml'
       workingDir: ${PROJECTS_ROOT}/homelab-orchestrator
       group:
         kind: run
@@ -53,7 +53,7 @@ commands:
   - id: cloudstack-configure
     exec:
       label: '4. CloudStack: Configure'
-      commandLine: 'source $HOME/.bashrc && ansible-playbook ansible/playbooks/cloudstack/03-configure.yml'
+      commandLine: 'source $HOME/.bashrc && ansible-playbook ansible/playbooks/cloudstack/03-configure.yaml'
       workingDir: ${PROJECTS_ROOT}/homelab-orchestrator
       group:
         kind: run
@@ -63,7 +63,7 @@ commands:
   - id: cloudstack-kubernetes-setup
     exec:
       label: '5. CloudStack: Kubernetes Setup'
-      commandLine: 'source $HOME/.bashrc && ansible-playbook ansible/playbooks/cloudstack/04-kubernetes-setup.yml'
+      commandLine: 'source $HOME/.bashrc && ansible-playbook ansible/playbooks/cloudstack/04-kubernetes-setup.yaml'
       workingDir: ${PROJECTS_ROOT}/homelab-orchestrator
       group:
         kind: run
@@ -73,7 +73,7 @@ commands:
   - id: cloudstack-instances
     exec:
       label: '6. CloudStack: Instances'
-      commandLine: 'source $HOME/.bashrc && ansible-playbook ansible/playbooks/cloudstack/05-instances.yml'
+      commandLine: 'source $HOME/.bashrc && ansible-playbook ansible/playbooks/cloudstack/05-instances.yaml'
       workingDir: ${PROJECTS_ROOT}/homelab-orchestrator
       group:
         kind: run
@@ -83,7 +83,7 @@ commands:
   - id: cloudstack-kubernetes-cluster
     exec:
       label: '7. CloudStack: Kubernetes Cluster'
-      commandLine: 'source $HOME/.bashrc && ansible-playbook ansible/playbooks/cloudstack/06-kubernetes-cluster.yml'
+      commandLine: 'source $HOME/.bashrc && ansible-playbook ansible/playbooks/cloudstack/06-kubernetes-cluster.yaml'
       workingDir: ${PROJECTS_ROOT}/homelab-orchestrator
       group:
         kind: run
@@ -93,7 +93,7 @@ commands:
   - id: cloudstack-cleanup
     exec:
       label: '8. CloudStack: Cleanup'
-      commandLine: 'source $HOME/.bashrc && ansible-playbook ansible/playbooks/cloudstack/99-cleanup.yml'
+      commandLine: 'source $HOME/.bashrc && ansible-playbook ansible/playbooks/cloudstack/99-cleanup.yaml'
       workingDir: ${PROJECTS_ROOT}/homelab-orchestrator
       group:
         kind: run

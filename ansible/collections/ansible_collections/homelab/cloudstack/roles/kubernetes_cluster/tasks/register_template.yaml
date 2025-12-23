@@ -1,0 +1,131 @@
+# Register CKS-ready template for Kubernetes clusters
+---
+- name: List all zones
+  ansible.builtin.uri:
+    url: "{{ cloudstack_api_url }}"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      command: listZones
+      response: json
+      sessionkey: "{{ cloudstack_session_key }}"
+    headers:
+      Cookie: "{{ cloudstack_cookies }}"
+    return_content: true
+  register: kubernetes_cluster_zones_info_response
+
+- name: Set zones info
+  ansible.builtin.set_fact:
+    kubernetes_cluster_zones_info:
+      zones: "{{ kubernetes_cluster_zones_info_response.json.listzonesresponse.zone | default([]) }}"
+
+- name: Build zone name to ID mapping
+  ansible.builtin.set_fact:
+    kubernetes_cluster_zone_id_map: "{{ kubernetes_cluster_zone_id_map | default({}) | combine({item.name: item.id}) }}"
+  loop: "{{ kubernetes_cluster_zones_info.zones | default([]) }}"
+
+- name: Check if CKS template already exists
+  ansible.builtin.uri:
+    url: "{{ cloudstack_api_url }}"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      command: listTemplates
+      templatefilter: all
+      name: "{{ kubernetes_cluster_cks_template.name }}"
+      zoneid: "{{ kubernetes_cluster_zone_id_map[kubernetes_cluster_cks_template.zone] }}"
+      response: json
+      sessionkey: "{{ cloudstack_session_key }}"
+    headers:
+      Cookie: "{{ cloudstack_cookies }}"
+    return_content: true
+  register: kubernetes_cluster_template_check_response
+
+- name: Set template exists flag
+  ansible.builtin.set_fact:
+    kubernetes_cluster_template_exists: "{{ (kubernetes_cluster_template_check_response.json.listtemplatesresponse.template | default([]) | length) > 0 }}"
+    kubernetes_cluster_existing_templates: "{{ kubernetes_cluster_template_check_response.json.listtemplatesresponse.template | default([]) }}"
+
+- name: Debug template check
+  ansible.builtin.debug:
+    msg: |
+      Template check for '{{ kubernetes_cluster_cks_template.name }}':
+        Exists: {{ kubernetes_cluster_template_exists }}
+        Found templates: {{ kubernetes_cluster_existing_templates | map(attribute='name') | list }}
+  when: kubernetes_cluster_existing_templates | length > 0
+
+- name: Skip registration if template exists
+  ansible.builtin.debug:
+    msg: "Template '{{ kubernetes_cluster_cks_template.name }}' already exists (ID: {{ kubernetes_cluster_existing_templates[0].id }}), skipping registration."
+  when: kubernetes_cluster_template_exists
+
+- name: Register CKS-ready template
+  ansible.builtin.uri:
+    url: "{{ cloudstack_api_url }}"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      command: registerTemplate
+      name: "{{ kubernetes_cluster_cks_template.name }}"
+      displaytext: "{{ kubernetes_cluster_cks_template.display_text | default(kubernetes_cluster_cks_template.name) }}"
+      url: "{{ kubernetes_cluster_cks_template.url }}"
+      format: "{{ kubernetes_cluster_cks_template.format | default('QCOW2') }}"
+      hypervisor: "{{ kubernetes_cluster_cks_template.hypervisor | default('KVM') }}"
+      ostypeid: "{{ kubernetes_cluster_ostype_id }}"
+      zoneid: "{{ kubernetes_cluster_zone_id_map[kubernetes_cluster_cks_template.zone] }}"
+      ispublic: "{{ kubernetes_cluster_cks_template.is_public | default(true) | lower }}"
+      isfeatured: "true"
+      passwordenabled: "{{ kubernetes_cluster_cks_template.password_enabled | default(false) | lower }}"
+      sshkeyenabled: "{{ kubernetes_cluster_cks_template.sshkey_enabled | default(true) | lower }}"
+      isdynamicallyscalable: "true"
+      directdownload: "true"
+      hvm: "true"
+      requireshvm: "true"
+      forcks: "true"
+      response: json
+      sessionkey: "{{ cloudstack_session_key }}"
+    headers:
+      Cookie: "{{ cloudstack_cookies }}"
+    return_content: true
+  register: kubernetes_cluster_register_template_result
+  when: not kubernetes_cluster_template_exists
+  failed_when: >
+    kubernetes_cluster_register_template_result is failed and
+    'already exists' not in (kubernetes_cluster_register_template_result.content | default(''))
+
+- name: Wait for template to be ready  # noqa: no-handler
+  ansible.builtin.uri:
+    url: "{{ cloudstack_api_url }}"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      command: listTemplates
+      templatefilter: all
+      name: "{{ kubernetes_cluster_cks_template.name }}"
+      zoneid: "{{ kubernetes_cluster_zone_id_map[kubernetes_cluster_cks_template.zone] }}"
+      response: json
+      sessionkey: "{{ cloudstack_session_key }}"
+    headers:
+      Cookie: "{{ cloudstack_cookies }}"
+    return_content: true
+  register: kubernetes_cluster_template_status
+  until: >
+    (kubernetes_cluster_template_status.json.listtemplatesresponse.template | default([]) | length) > 0 and
+    (kubernetes_cluster_template_status.json.listtemplatesresponse.template[0].isready | default(false))
+  retries: 60
+  delay: 30
+  when: kubernetes_cluster_register_template_result.changed | default(false)
+
+- name: Display template registration status
+  ansible.builtin.debug:
+    msg: |
+      CKS Template Registration:
+        Name: {{ kubernetes_cluster_cks_template.name }}
+        Zone: {{ kubernetes_cluster_cks_template.zone }}
+        Status: {{ 'Already exists' if kubernetes_cluster_template_exists else ('Registered' if kubernetes_cluster_register_template_result is defined else 'Skipped') }}
+        Template ID: {{ kubernetes_cluster_existing_templates[0].id if kubernetes_cluster_template_exists else (kubernetes_cluster_register_template_result.json.registertemplateresponse.template[0].id | default('N/A') if kubernetes_cluster_register_template_result is defined else 'N/A') }}
+        Features:
+          - For CKS: enabled
+          - Featured: enabled
+          - Dynamically Scalable: enabled
+          - HVM: enabled

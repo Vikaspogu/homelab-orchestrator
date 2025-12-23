@@ -1,0 +1,77 @@
+# CloudStack Cleanup Playbook
+# Use with caution! This removes CloudStack components.
+#
+# Usage:
+#   # Dry run (will fail without confirm)
+#   ansible-playbook playbooks/cleanup.yaml
+#
+#   # Cleanup everything
+#   ansible-playbook playbooks/cleanup.yaml -e cloudstack_cleanup_confirm=true
+#
+#   # Cleanup only management server
+#   ansible-playbook playbooks/cleanup.yaml --tags management -e cloudstack_cleanup_confirm=true
+#
+#   # Cleanup only KVM hosts
+#   ansible-playbook playbooks/cleanup.yaml --tags kvm -e cloudstack_cleanup_confirm=true
+#
+#   # Cleanup only packages (no database/storage)
+#   ansible-playbook playbooks/cleanup.yaml --tags packages -e cloudstack_cleanup_confirm=true
+#
+---
+- name: Cleanup CloudStack Management Server
+  hosts: cloudstack_management
+  become: true
+  gather_facts: true
+  tags:
+    - management
+    - mgmt
+
+  vars:
+    # Cleanup options
+    cloudstack_cleanup_confirm: true # Must set to true to run!
+
+  tasks:
+    - name: Include cleanup role main tasks
+      ansible.builtin.include_role:
+        name: homelab.cloudstack.cleanup
+        tasks_from: main.yaml
+
+    - name: Run management server cleanup
+      ansible.builtin.include_role:
+        name: homelab.cloudstack.cleanup
+        tasks_from: cleanup_management.yaml
+      tags:
+        - always
+
+- name: Cleanup CloudStack KVM Hosts
+  hosts: cloudstack_kvm_hosts
+  become: true
+  gather_facts: true
+  tags:
+    - kvm
+    - hosts
+
+  vars:
+    # Cleanup options
+    cloudstack_cleanup_confirm: true # Must set to true to run!
+    cloudstack_cleanup_storage: true # Set to true to remove VM data!
+    cloudstack_cleanup_libvirt: true # Set to true to remove libvirt
+    cloudstack_cleanup_repo: true
+
+    # Bridges to remove
+    cloudstack_bridges_to_remove:
+      - cloudbr0
+      - cloudbr1
+
+  tasks:
+    - name: Include cleanup role main tasks
+      ansible.builtin.include_role:
+        name: homelab.cloudstack.cleanup
+        tasks_from: main.yaml
+
+    - name: Run KVM host cleanup
+      ansible.builtin.include_role:
+        name: homelab.cloudstack.cleanup
+        tasks_from: cleanup_kvm_host.yaml
+      tags:
+        - always

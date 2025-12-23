@@ -1,0 +1,67 @@
+# Configure AppArmor Security Policies for CloudStack KVM Host
+---
+- name: Check if AppArmor is installed
+  ansible.builtin.command: dpkg --list apparmor
+  register: prepare_kvm_apparmor_installed
+  changed_when: false
+  failed_when: false
+
+- name: Configure AppArmor for libvirt
+  when:
+    - prepare_kvm_apparmor_installed.rc == 0
+    - prepare_kvm_disable_apparmor_libvirt
+  block:
+    - name: Check if libvirtd AppArmor profile exists
+      ansible.builtin.stat:
+        path: "{{ prepare_kvm_apparmor_libvirtd_profile }}"
+      register: prepare_kvm_libvirtd_profile
+
+    - name: Create AppArmor disable directory
+      ansible.builtin.file:
+        path: "{{ prepare_kvm_apparmor_disable_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Disable AppArmor profile for libvirtd
+      ansible.builtin.file:
+        src: "{{ prepare_kvm_apparmor_libvirtd_profile }}"
+        dest: "{{ prepare_kvm_apparmor_disable_dir }}/usr.sbin.libvirtd"
+        state: link
+      when: prepare_kvm_libvirtd_profile.stat.exists
+      register: prepare_kvm_libvirtd_disabled
+
+    - name: Check if virt-aa-helper AppArmor profile exists
+      ansible.builtin.stat:
+        path: "{{ prepare_kvm_apparmor_virt_aa_helper_profile }}"
+      register: prepare_kvm_virt_aa_helper_profile
+
+    - name: Disable AppArmor profile for virt-aa-helper
+      ansible.builtin.file:
+        src: "{{ prepare_kvm_apparmor_virt_aa_helper_profile }}"
+        dest: "{{ prepare_kvm_apparmor_disable_dir }}/usr.lib.libvirt.virt-aa-helper"
+        state: link
+      when: prepare_kvm_virt_aa_helper_profile.stat.exists
+      register: prepare_kvm_virt_aa_helper_disabled
+
+    - name: Unload libvirtd AppArmor profile
+      ansible.builtin.command: apparmor_parser -R {{ prepare_kvm_apparmor_libvirtd_profile }}
+      when:
+        - prepare_kvm_libvirtd_profile.stat.exists
+        - prepare_kvm_libvirtd_disabled.changed
+      failed_when: false
+      changed_when: true
+
+    - name: Unload virt-aa-helper AppArmor profile
+      ansible.builtin.command: apparmor_parser -R {{ prepare_kvm_apparmor_virt_aa_helper_profile }}
+      when:
+        - prepare_kvm_virt_aa_helper_profile.stat.exists
+        - prepare_kvm_virt_aa_helper_disabled.changed
+      failed_when: false
+      changed_when: true
+
+- name: Display AppArmor configuration status
+  ansible.builtin.debug:
+    msg: "AppArmor profiles for libvirt have been disabled"
+  when:
+    - prepare_kvm_apparmor_installed.rc == 0
+    - prepare_kvm_disable_apparmor_libvirt

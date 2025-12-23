@@ -1,15 +1,38 @@
 ---
-proxmox:
-  hosts:
-    pxm-baymx:
-      ansible_user: root
+all:
+  children:
+    # Management Server with Database
+    cloudstack_management:
+      hosts:
+        cloudstack-mgmt.a113.internal:
+          ansible_host: 10.30.30.55
+          cloudstack_hostname: cloudstack-mgmt.a113.internal
 
-omv:
-  hosts:
-    omv-baymx.a113.internal:
-      ansible_user: vikaspogu
+    # KVM Hypervisor Hosts
+    cloudstack_kvm_hosts:
+      hosts:
+        cloudstack-kvm1.a113.internal:
+          ansible_host: 10.30.30.56
+          cloudstack_hostname: cloudstack-kvm1.a113.internal
+          cloudstack_mgmt_ip: 10.30.30.56
 
-aap:
-  hosts:
-    aap-controller:
-      ansible_user: vikaspogu
+    # Zone Setup (runs on localhost)
+    cloudstack_zone_setup:
+      hosts:
+        localhost:
+          ansible_connection: local
+
+    proxmox:
+      hosts:
+        pxm-baymx:
+          ansible_user: root
+
+    omv:
+      hosts:
+        omv-baymx.a113.internal:
+          ansible_user: vikaspogu
+
+    aap:
+      hosts:
+        aap-controller:
+          ansible_user: vikaspogu

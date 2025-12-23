@@ -1,0 +1,36 @@
+# CloudStack Kubernetes Service Setup Playbook
+# Run this after CloudStack management server is installed
+---
+- name: Enable and Configure CloudStack Kubernetes Service
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files:
+    - ../../vars/common.vault.yaml
+
+  roles:
+    - role: homelab.cloudstack.configure_kubernetes
+
+  post_tasks:
+    - name: Reminder to restart management server
+      ansible.builtin.debug:
+        msg: |
+          ============================================
+          CloudStack Kubernetes Service configured!
+          ============================================
+
+          IMPORTANT: Restart the management server to apply changes:
+
+            ssh root@<management-server-ip> 'systemctl restart cloudstack-management'
+
+          After restart, the Kubernetes tab will appear in the UI under Compute.
+
+          To create a Kubernetes cluster:
+          1. Go to Compute > Kubernetes
+          2. Click "Add Kubernetes Cluster"
+          3. Select zone, Kubernetes version, and configuration
+          4. Click "OK" to create the cluster
+
+          Kubernetes ISO download locations:
+          - http://download.cloudstack.org/cks/
+          - http://packages.shapeblue.com/cks/

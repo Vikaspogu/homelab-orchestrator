@@ -1,0 +1,11 @@
+# CloudStack API Authentication - Default Variables
+# These are shared/global variables used across multiple roles
+---
+# CloudStack API connection (shared across roles)  # noqa: var-naming[no-role-prefix]
+cloudstack_api_url: "http://localhost:8080/client/api"  # noqa: var-naming[no-role-prefix]
+cloudstack_api_key: ""  # noqa: var-naming[no-role-prefix]
+cloudstack_api_secret: ""  # noqa: var-naming[no-role-prefix]
+
+# Admin credentials (used if API keys not provided)  # noqa: var-naming[no-role-prefix]
+cloudstack_admin_username: "admin"  # noqa: var-naming[no-role-prefix]
+cloudstack_admin_password: "password"  # noqa: var-naming[no-role-prefix]

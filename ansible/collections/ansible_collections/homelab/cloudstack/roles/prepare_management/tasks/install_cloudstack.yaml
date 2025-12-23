@@ -1,0 +1,120 @@
+# Install and Configure CloudStack Management Server for Debian/Ubuntu
+---
+# Install CloudStack Management Server
+- name: Install CloudStack Management Server
+  ansible.builtin.apt:
+    name: "{{ prepare_management_cloudstack_packages }}"
+    state: present
+    update_cache: true
+
+# Verify Java 17 is the active version
+- name: Check Java version
+  ansible.builtin.command: java -version
+  register: prepare_management_java_version
+  changed_when: false
+  failed_when: false
+
+- name: Display Java version
+  ansible.builtin.debug:
+    msg: "Java version: {{ prepare_management_java_version.stderr_lines | default(['Unknown']) }}"
+
+- name: Ensure Java 17 is selected
+  ansible.builtin.command: update-alternatives --set java /usr/lib/jvm/java-17-openjdk-amd64/bin/java
+  when: "'17' not in (prepare_management_java_version.stderr | default(''))"
+  failed_when: false
+  changed_when: false
+
+# Download vhd-util for XenServer support
+- name: Download vhd-util for XenServer support
+  ansible.builtin.get_url:
+    url: "{{ prepare_management_vhd_util_url }}"
+    dest: /usr/share/cloudstack-common/scripts/vm/hypervisor/xenserver/vhd-util
+    owner: root
+    group: root
+    mode: "0755"
+  when: prepare_management_xenserver_support
+
+# Setup CloudStack database
+- name: Build cloudstack-setup-databases command
+  ansible.builtin.set_fact:
+    prepare_management_db_setup_cmd: >-
+      cloudstack-setup-databases
+      {{ prepare_management_db_user }}:{{ prepare_management_db_password }}@{{ prepare_management_db_host }}
+      --deploy-as=root
+      -e {{ prepare_management_encryption_type }}
+      -m {{ prepare_management_server_key }}
+      -k {{ prepare_management_database_key }}
+      {% if prepare_management_server_ip %}-i {{ prepare_management_server_ip }}{% endif %}
+
+- name: Check if CloudStack database already exists
+  ansible.builtin.command: >
+    mysql -u root -e "SHOW DATABASES LIKE 'cloud';"
+  register: prepare_management_cloud_db_check
+  changed_when: false
+  failed_when: false
+  no_log: true
+
+- name: Setup CloudStack databases
+  ansible.builtin.command: "{{ prepare_management_db_setup_cmd }}"
+  register: prepare_management_db_setup_result
+  when: "'cloud' not in prepare_management_cloud_db_check.stdout"
+  changed_when: "'Successfully initialized the database' in prepare_management_db_setup_result.stdout | default('')"
+  no_log: true
+
+- name: Display database setup result
+  ansible.builtin.debug:
+    msg: "{{ prepare_management_db_setup_result.stdout_lines | default(['Database already exists or setup skipped']) }}"
+  when: prepare_management_db_setup_result is defined
+
+# Configure sudoers for KVM hypervisor on management server
+- name: Add sudoers configuration for cloud user (if KVM is on management server)
+  ansible.builtin.lineinfile:
+    path: /etc/sudoers.d/cloudstack
+    line: "Defaults:cloud !requiretty"
+    create: true
+    owner: root
+    group: root
+    mode: "0440"
+    validate: "visudo -cf %s"
+  when: cloudstack_kvm_on_management | default(false)
+
+# Setup and start CloudStack Management Server
+- name: Run cloudstack-setup-management
+  ansible.builtin.command: cloudstack-setup-management
+  register: prepare_management_mgmt_setup_result
+  changed_when: "'CloudStack Management Server setup is done' in prepare_management_mgmt_setup_result.stdout | default('')"
+  failed_when:
+    - prepare_management_mgmt_setup_result.rc != 0
+    - "'already' not in prepare_management_mgmt_setup_result.stderr | default('')"
+
+- name: Display management setup result
+  ansible.builtin.debug:
+    msg: "{{ prepare_management_mgmt_setup_result.stdout_lines | default(['Management server setup completed']) }}"
+
+# Ensure CloudStack management service is enabled and started
+- name: Enable and start CloudStack management service
+  ansible.builtin.systemd:
+    name: cloudstack-management
+    enabled: "{{ prepare_management_enable_services }}"
+    state: "{{ 'started' if prepare_management_start_services else 'stopped' }}"
+    daemon_reload: true
+
+# Wait for management server to be ready
+- name: Wait for CloudStack Management Server to be ready
+  ansible.builtin.uri:
+    url: "http://localhost:8080/client"
+    method: GET
+    status_code: [200, 302]
+  register: prepare_management_mgmt_check
+  until: prepare_management_mgmt_check.status in [200, 302]
+  retries: 30
+  delay: 10
+  when: prepare_management_start_services
+  failed_when: false
+
+- name: Display CloudStack Management Server status
+  ansible.builtin.debug:
+    msg: >
+      CloudStack Management Server is {{ 'ready' if prepare_management_mgmt_check.status | default(0) in [200, 302] else 'starting up (may take a few minutes)' }}.
+      Access the UI at http://{{ ansible_default_ipv4.address | default('localhost') }}:8080/client
+  when: prepare_management_start_services

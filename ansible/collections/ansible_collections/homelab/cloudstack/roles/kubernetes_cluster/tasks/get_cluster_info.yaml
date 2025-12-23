@@ -1,0 +1,71 @@
+# Get Kubernetes cluster information
+---
+- name: Get all cluster details
+  ansible.builtin.uri:
+    url: "{{ cloudstack_api_url }}"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      command: listKubernetesClusters
+      response: json
+      sessionkey: "{{ cloudstack_session_key }}"
+    headers:
+      Cookie: "{{ cloudstack_cookies }}"
+    return_content: true
+    timeout: "{{ kubernetes_cluster_api_timeout }}"
+  register: kubernetes_cluster_all_clusters
+
+- name: Build cluster state map
+  ansible.builtin.set_fact:
+    kubernetes_cluster_states: "{{ kubernetes_cluster_states | default({}) | combine({item.name: item.state}) }}"
+    kubernetes_cluster_endpoints: "{{ kubernetes_cluster_endpoints | default({}) | combine({item.name: item.endpoint | default('')}) }}"
+    kubernetes_cluster_ids: "{{ kubernetes_cluster_ids | default({}) | combine({item.name: item.id}) }}"
+  loop: "{{ kubernetes_cluster_all_clusters.json.listkubernetesclustersresponse.kubernetescluster | default([]) }}"
+
+- name: Get kubeconfig for running clusters
+  ansible.builtin.uri:
+    url: "{{ cloudstack_api_url }}"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      command: getKubernetesClusterConfig
+      id: "{{ kubernetes_cluster_ids[cluster.name] }}"
+      response: json
+      sessionkey: "{{ cloudstack_session_key }}"
+    headers:
+      Cookie: "{{ cloudstack_cookies }}"
+    return_content: true
+    timeout: "{{ kubernetes_cluster_api_timeout }}"
+  register: kubernetes_cluster_kubeconfig_result
+  loop: "{{ kubernetes_cluster_list }}"
+  loop_control:
+    loop_var: cluster
+  when:
+    - kubernetes_cluster_ids[cluster.name] is defined
+    - kubernetes_cluster_states[cluster.name] | default('') == 'Running'
+  failed_when: false
+
+- name: Save kubeconfig files
+  ansible.builtin.copy:
+    content: "{{ item.json.getkubernetesclusterconfigresponse.clusterconfig.configdata | default('') }}"
+    dest: "{{ playbook_dir }}/../kubeconfig-{{ item.cluster.name }}.yaml"
+    mode: "0600"
+  loop: "{{ kubernetes_cluster_kubeconfig_result.results | default([]) }}"
+  when:
+    - item.json is defined
+    - item.json.getkubernetesclusterconfigresponse.clusterconfig.configdata is defined
+  delegate_to: localhost
+
+- name: Display kubeconfig locations
+  ansible.builtin.debug:
+    msg: |
+      Kubeconfig files saved:
+      {% for cluster in kubernetes_cluster_list %}
+      {% if kubernetes_cluster_states[cluster.name] | default('') == 'Running' %}
+        - {{ playbook_dir }}/../kubeconfig-{{ cluster.name }}.yaml
+      {% endif %}
+      {% endfor %}
+
+      To use:
+        export KUBECONFIG={{ playbook_dir }}/../kubeconfig-<cluster-name>.yaml
+        kubectl get nodes

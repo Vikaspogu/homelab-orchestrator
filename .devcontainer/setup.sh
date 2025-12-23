@@ -54,9 +54,9 @@ if ! command -v ansible &> /dev/null; then
     pip install ansible --quiet
 fi
 
-# Install Ansible collections
+# Install Ansible collections to ansible/collections
 echo "Installing Ansible collections..."
-ansible-galaxy collection install -r "${WORKSPACE_DIR}/requirements.yml" --force
+ansible-galaxy collection install -r "${WORKSPACE_DIR}/requirements.yaml" -p "${WORKSPACE_DIR}/ansible/collections" --force
 
 echo ""
 echo "=== Setup Complete ==="
@@ -68,7 +68,7 @@ echo "Or use the helper script:"
 echo "  source .devcontainer/activate.sh"
 echo ""
 echo "Then run playbooks:"
-echo "  ansible-playbook playbooks/mgmt-host.yml"
-echo "  ansible-playbook playbooks/kvm-hosts.yml"
-echo "  ansible-playbook playbooks/cloudstack-setup.yml"
+echo "  ansible-playbook playbooks/mgmt-host.yaml"
+echo "  ansible-playbook playbooks/kvm-hosts.yaml"
+echo "  ansible-playbook playbooks/cloudstack-setup.yaml"
 

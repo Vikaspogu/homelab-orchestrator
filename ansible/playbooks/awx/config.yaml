@@ -10,16 +10,6 @@
   vars_files:
     - ../../vars/common.vault.yaml
   tasks:
-    - name: Get absolute path to this Git repository
-      ansible.builtin.command: git rev-parse --show-toplevel
-      delegate_to: localhost
-      become: false
-      run_once: true
-      register: repository_path
-      changed_when: false
-      check_mode: false
-      failed_when: repository_path.rc != 0
-
     - name: Configure Platform Settings
       awx.awx.settings:
         settings:

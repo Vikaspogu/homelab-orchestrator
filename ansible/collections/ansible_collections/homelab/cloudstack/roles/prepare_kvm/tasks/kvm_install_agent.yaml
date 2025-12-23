@@ -1,0 +1,87 @@
+# Install and Configure CloudStack Agent
+---
+- name: Install CloudStack Agent
+  ansible.builtin.apt:
+    name: "{{ prepare_kvm_agent_packages }}"
+    state: present
+    update_cache: true
+
+# Verify Java 17 is the active version
+- name: Check Java version
+  ansible.builtin.command: java -version
+  register: prepare_kvm_java_version
+  changed_when: false
+  failed_when: false
+
+- name: Display Java version
+  ansible.builtin.debug:
+    msg: "Java version: {{ prepare_kvm_java_version.stderr_lines | default(['Unknown']) }}"
+
+- name: Ensure Java 17 is selected
+  ansible.builtin.command: update-alternatives --set java /usr/lib/jvm/java-17-openjdk-amd64/bin/java
+  when: "'17' not in (prepare_kvm_java_version.stderr | default(''))"
+  failed_when: false
+  changed_when: false
+
+# Configure guest CPU settings in agent.properties
+- name: Configure guest CPU mode
+  ansible.builtin.lineinfile:
+    path: "{{ prepare_kvm_agent_properties_file }}"
+    regexp: "^#?guest\\.cpu\\.mode="
+    line: "guest.cpu.mode={{ prepare_kvm_guest_cpu_mode }}"
+    create: true
+    mode: "0644"
+  when: prepare_kvm_guest_cpu_mode | length > 0
+  notify: Restart CloudStack Agent
+
+- name: Configure guest CPU model
+  ansible.builtin.lineinfile:
+    path: "{{ prepare_kvm_agent_properties_file }}"
+    regexp: "^#?guest\\.cpu\\.model="
+    line: "guest.cpu.model={{ prepare_kvm_guest_cpu_model }}"
+    create: true
+    mode: "0644"
+  when:
+    - prepare_kvm_guest_cpu_mode == "custom"
+    - prepare_kvm_guest_cpu_model | length > 0
+  notify: Restart CloudStack Agent
+
+- name: Configure guest CPU features
+  ansible.builtin.lineinfile:
+    path: "{{ prepare_kvm_agent_properties_file }}"
+    regexp: "^#?guest\\.cpu\\.features="
+    line: "guest.cpu.features={{ prepare_kvm_guest_cpu_features }}"
+    create: true
+    mode: "0644"
+  when: prepare_kvm_guest_cpu_features | length > 0
+  notify: Restart CloudStack Agent
+
+# Configure sudoers for non-root user if specified
+- name: Configure sudoers for CloudStack host user
+  ansible.builtin.lineinfile:
+    path: "/etc/sudoers.d/cloudstack"
+    line: "cloudstack ALL=NOPASSWD: /usr/bin/cloudstack-setup-agent\nDefaults:cloudstack !requiretty"
+    create: true
+    mode: "0440"
+    validate: "visudo -cf %s"
+
+# Note: Agent is typically started when host is added to CloudStack
+- name: Display agent installation status
+  ansible.builtin.debug:
+    msg: |
+      CloudStack Agent has been installed.
+
+      The host is now ready to be added to CloudStack.
+      When adding the host, CloudStack will automatically configure
+      the agent and set up the necessary certificates.
+
+      To add this host to CloudStack:
+      1. Log in to the CloudStack UI
+      2. Navigate to Infrastructure > Hosts
+      3. Click "Add Host"
+      4. Enter this host's IP address: {{ ansible_default_ipv4.address }}
+      {% if prepare_kvm_host_user | length > 0 %}
+      5. Use username: {{ prepare_kvm_host_user }}
+      {% else %}
+      5. Use username: root
+      {% endif %}
