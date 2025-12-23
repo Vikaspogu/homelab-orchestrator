@@ -48,7 +48,7 @@
     - name: Backup existing interfaces file
       ansible.builtin.copy:
         src: "{{ prepare_kvm_interfaces_config_file }}"
-        dest: "{{ prepare_kvm_interfaces_config_file }}.backup.{{ ansible_date_time.epoch }}"
+        dest: "{{ prepare_kvm_interfaces_config_file }}.backup.{{ ansible_facts['date_time']['epoch'] }}"
         remote_src: true
         mode: "0644"
       failed_when: false

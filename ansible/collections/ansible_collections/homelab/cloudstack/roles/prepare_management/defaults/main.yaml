@@ -4,8 +4,8 @@
 prepare_management_version: ""
 
 # Hostname configuration
-prepare_management_hostname: "{{ ansible_fqdn }}"
-prepare_management_domain: "{{ ansible_domain | default('local') }}"
+prepare_management_hostname: "{{ ansible_facts['fqdn'] }}"
+prepare_management_domain: "{{ ansible_facts['domain'] | default('local') }}"
 
 # CloudStack repository URLs
 prepare_management_repo_base_url_ubuntu: "https://download.cloudstack.org/ubuntu"

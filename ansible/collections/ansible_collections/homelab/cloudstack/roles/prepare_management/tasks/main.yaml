@@ -2,8 +2,8 @@
 ---
 - name: Verify supported OS family
   ansible.builtin.fail:
-    msg: "This role only supports Debian/Ubuntu. Detected: {{ ansible_os_family }}"
-  when: ansible_os_family != "Debian"
+    msg: "This role only supports Debian/Ubuntu. Detected: {{ ansible_facts['os_family'] }}"
+  when: ansible_facts['os_family'] != "Debian"
 
 - name: Include OS-specific variables
   ansible.builtin.include_vars: "Debian.yaml"

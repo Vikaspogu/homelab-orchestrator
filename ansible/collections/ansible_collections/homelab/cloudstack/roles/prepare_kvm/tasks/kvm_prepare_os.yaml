@@ -2,22 +2,22 @@
 ---
 - name: Gather facts if not already done
   ansible.builtin.setup:
-  when: ansible_fqdn is not defined
+  when: ansible_facts['fqdn'] is not defined
 
 - name: Display current hostname
   ansible.builtin.debug:
-    msg: "Current FQDN: {{ ansible_fqdn | default('not set') }}"
+    msg: "Current FQDN: {{ ansible_facts['fqdn'] | default('not set') }}"
 
 - name: Ensure hostname is set correctly
   ansible.builtin.hostname:
     name: "{{ prepare_kvm_hostname }}"
-  when: prepare_kvm_hostname != ansible_hostname
+  when: prepare_kvm_hostname != ansible_facts['hostname']
 
 - name: Ensure FQDN is resolvable in /etc/hosts
   ansible.builtin.lineinfile:
     path: /etc/hosts
-    regexp: "^{{ ansible_default_ipv4.address | default('127.0.1.1') }}.*{{ prepare_kvm_hostname }}.*"
-    line: "{{ ansible_default_ipv4.address | default('127.0.1.1') }} {{ prepare_kvm_hostname }} {{ prepare_kvm_hostname.split('.')[0] }}"
+    regexp: "^{{ ansible_facts['default_ipv4']['address'] | default('127.0.1.1') }}.*{{ prepare_kvm_hostname }}.*"
+    line: "{{ ansible_facts['default_ipv4']['address'] | default('127.0.1.1') }} {{ prepare_kvm_hostname }} {{ prepare_kvm_hostname.split('.')[0] }}"
     state: present
     backup: true
   when: prepare_kvm_hostname is defined

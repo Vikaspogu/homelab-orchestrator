@@ -79,7 +79,7 @@
       1. Log in to the CloudStack UI
       2. Navigate to Infrastructure > Hosts
       3. Click "Add Host"
-      4. Enter this host's IP address: {{ ansible_default_ipv4.address }}
+      4. Enter this host's IP address: {{ ansible_facts['default_ipv4']['address'] }}
       {% if prepare_kvm_host_user | length > 0 %}
       5. Use username: {{ prepare_kvm_host_user }}
       {% else %}

@@ -70,8 +70,8 @@
 # Configure libvirtd default for listening (Ubuntu specific)
 - name: Check Ubuntu version
   ansible.builtin.set_fact:
-    prepare_kvm_ubuntu_version: "{{ ansible_distribution_version | float }}"
-  when: ansible_distribution == "Ubuntu"
+    prepare_kvm_ubuntu_version: "{{ ansible_facts['distribution_version'] | float }}"
+  when: ansible_facts['distribution'] == "Ubuntu"
 
 - name: Configure libvirtd to listen (Ubuntu 22.04+)
   ansible.builtin.lineinfile:
@@ -81,7 +81,7 @@
     create: true
     mode: "0644"
   when:
-    - ansible_distribution == "Ubuntu"
+    - ansible_facts['distribution'] == "Ubuntu"
     - prepare_kvm_ubuntu_version | default(0) | float >= 22.04
   notify: Restart libvirt
 
@@ -93,7 +93,7 @@
     create: true
     mode: "0644"
   when:
-    - ansible_distribution == "Ubuntu"
+    - ansible_facts['distribution'] == "Ubuntu"
     - prepare_kvm_ubuntu_version | default(0) | float < 22.04
   notify: Restart libvirt
 
@@ -109,7 +109,7 @@
     - libvirtd-tls.socket
     - libvirtd-tcp.socket
   when:
-    - ansible_distribution == "Ubuntu"
+    - ansible_facts['distribution'] == "Ubuntu"
     - prepare_kvm_ubuntu_version | default(0) | float >= 24.04
   notify: Restart libvirt
 

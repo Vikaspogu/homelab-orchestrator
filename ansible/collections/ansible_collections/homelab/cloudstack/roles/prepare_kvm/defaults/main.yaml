@@ -4,7 +4,7 @@
 prepare_kvm_version: ""
 
 # Hostname configuration
-prepare_kvm_hostname: "{{ ansible_fqdn }}"
+prepare_kvm_hostname: "{{ ansible_facts['fqdn'] }}"
 
 # CloudStack repository URLs
 prepare_kvm_repo_base_url_ubuntu: "https://download.cloudstack.org/ubuntu"
@@ -35,12 +35,12 @@ prepare_kvm_network_mode: "advanced"  # Options: basic, advanced
 # Management bridge (cloudbr0)
 prepare_kvm_mgmt_bridge: "cloudbr0"
 prepare_kvm_mgmt_interface: "eth0"
-prepare_kvm_mgmt_ip: "{{ ansible_default_ipv4.address | default('') }}"
-prepare_kvm_mgmt_netmask: "{{ ansible_default_ipv4.netmask | default('255.255.255.0') }}"
+prepare_kvm_mgmt_ip: "{{ ansible_facts['default_ipv4']['address'] | default('') }}"
+prepare_kvm_mgmt_netmask: "{{ ansible_facts['default_ipv4']['netmask'] | default('255.255.255.0') }}"
 prepare_kvm_mgmt_prefix: "24"
-prepare_kvm_mgmt_gateway: "{{ ansible_default_ipv4.gateway | default('') }}"
+prepare_kvm_mgmt_gateway: "{{ ansible_facts['default_ipv4']['gateway'] | default('') }}"
 prepare_kvm_mgmt_dns: ["8.8.8.8", "8.8.4.4"]
-prepare_kvm_mgmt_domain: "{{ ansible_domain | default('local') }}"
+prepare_kvm_mgmt_domain: "{{ ansible_facts['domain'] | default('local') }}"
 
 # Guest bridge configuration
 prepare_kvm_guest_bridge: "cloudbr0"

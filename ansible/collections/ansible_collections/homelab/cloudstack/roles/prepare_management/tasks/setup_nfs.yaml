@@ -94,5 +94,5 @@
     msg: |
       NFS Storage configured successfully!
 
-      Primary Storage:   nfs://{{ ansible_default_ipv4.address | default(inventory_hostname) }}{{ prepare_management_nfs_primary_path }}
-      Secondary Storage: nfs://{{ ansible_default_ipv4.address | default(inventory_hostname) }}{{ prepare_management_nfs_secondary_path }}
+      Primary Storage:   nfs://{{ ansible_facts['default_ipv4']['address'] | default(inventory_hostname) }}{{ prepare_management_nfs_primary_path }}
+      Secondary Storage: nfs://{{ ansible_facts['default_ipv4']['address'] | default(inventory_hostname) }}{{ prepare_management_nfs_secondary_path }}

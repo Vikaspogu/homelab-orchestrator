@@ -116,5 +116,5 @@
   ansible.builtin.debug:
     msg: >
       CloudStack Management Server is {{ 'ready' if prepare_management_mgmt_check.status | default(0) in [200, 302] else 'starting up (may take a few minutes)' }}.
-      Access the UI at http://{{ ansible_default_ipv4.address | default('localhost') }}:8080/client
+      Access the UI at http://{{ ansible_facts['default_ipv4']['address'] | default('localhost') }}:8080/client
   when: prepare_management_start_services

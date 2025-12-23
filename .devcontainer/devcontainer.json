@@ -1,5 +1,5 @@
 {
-  "name": "CloudStack Ops",
+  "name": "Homelab Orchestrator",
   "build": {
     "dockerfile": "Dockerfile",
     "context": ".."
@@ -32,7 +32,6 @@
         "ansible.ansibleLint.enabled": true,
         "ansible.validation.enabled": true,
         "files.associations": {
-          "*.yaml": "ansible",
           "*.yaml": "ansible"
         },
         "[ansible]": {
