@@ -5,6 +5,6 @@
   become: true
   gather_facts: true
   vars_files:
-    - ../vars/common.vault.yml
+    - ../../vars/common.vault.yml
   roles:
     - role: prepare-kvm
