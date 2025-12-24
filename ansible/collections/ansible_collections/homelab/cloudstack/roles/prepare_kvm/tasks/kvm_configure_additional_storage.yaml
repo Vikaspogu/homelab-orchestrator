@@ -79,16 +79,25 @@
   register: prepare_kvm_device_uuids
   changed_when: false
 
-- name: Mount storage devices via fstab
-  ansible.posix.mount:
-    path: "{{ item.storage.mount_point }}"
-    src: "UUID={{ item.stdout }}"
-    fstype: "{{ item.storage.filesystem | default('xfs') }}"
-    opts: "{{ item.storage.mount_options | default('noatime,nodiratime') }}"
-    state: mounted
+- name: Fail if UUID could not be retrieved
+  ansible.builtin.fail:
+    msg: "Could not retrieve UUID for device {{ item.storage.device }}. Ensure the device has a valid filesystem."
   loop: "{{ prepare_kvm_device_uuids.results }}"
   loop_control:
-    label: "{{ item.storage.mount_point }}"
+    label: "{{ item.storage.device }}"
+  when: item.rc != 0 or item.stdout | trim == ''
+
+- name: Mount storage devices via fstab
+  ansible.posix.mount:
+    path: "{{ item.0.storage.mount_point }}"
+    src: "UUID={{ item.0.stdout }}"
+    fstype: "{{ item.0.storage.filesystem | default('xfs') }}"
+    opts: "{{ item.0.storage.mount_options | default('noatime,nodiratime') }}"
+    state: mounted
+  loop: "{{ prepare_kvm_device_uuids.results | zip(prepare_kvm_mount_check.results) | list }}"
+  loop_control:
+    label: "{{ item.0.storage.mount_point }}"
+  when: item.1.stdout == ''  # Skip if already mounted
 
 - name: Set correct permissions on mount points
   ansible.builtin.file:
