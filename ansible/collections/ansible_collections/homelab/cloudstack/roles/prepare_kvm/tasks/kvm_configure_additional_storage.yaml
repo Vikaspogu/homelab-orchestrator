@@ -29,6 +29,8 @@
   ansible.builtin.shell: |
     set -o pipefail
     mount | grep "{{ storage.device }}" || true
+  args:
+    executable: /bin/bash
   loop: "{{ prepare_kvm_additional_storage }}"
   loop_control:
     loop_var: storage
