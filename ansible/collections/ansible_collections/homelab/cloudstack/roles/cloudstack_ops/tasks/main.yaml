@@ -3,7 +3,7 @@
 - name: Validate required variables
   ansible.builtin.assert:
     that:
-      - cloudstack_api_url is defined
+      - cloudstack_ops_api_url is defined
       - cloudstack_ops_zone.name is defined
       - cloudstack_ops_zone.dns1 is defined
     fail_msg: "Required CloudStack configuration variables are not set"
