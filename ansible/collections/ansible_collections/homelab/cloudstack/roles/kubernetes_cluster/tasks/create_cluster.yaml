@@ -109,15 +109,20 @@
     - not kubernetes_cluster_exists
     - kubernetes_cluster_template | length > 0
 
-- name: Add custom template for control and worker nodes for {{ cluster.name }}
+- name: Add custom template for cluster nodes for {{ cluster.name }}
   ansible.builtin.set_fact:
     kubernetes_cluster_create_params: >-
       {{ kubernetes_cluster_create_params | combine({
-        'nodetemplates[0].node': 'control',
-        'nodetemplates[0].template': kubernetes_cluster_template_ids[kubernetes_cluster_template],
-        'nodetemplates[1].node': 'worker',
-        'nodetemplates[1].template': kubernetes_cluster_template_ids[kubernetes_cluster_template]
+        'templateid': kubernetes_cluster_template_ids[kubernetes_cluster_template]
       }) }}
+  when:
+    - not kubernetes_cluster_exists
+    - kubernetes_cluster_template | length > 0
+    - kubernetes_cluster_template_ids[kubernetes_cluster_template] is defined
+
+- name: Display template being used for {{ cluster.name }}
+  ansible.builtin.debug:
+    msg: "Using custom template '{{ kubernetes_cluster_template }}' (ID: {{ kubernetes_cluster_template_ids[kubernetes_cluster_template] }}) for cluster nodes"
   when:
     - not kubernetes_cluster_exists
     - kubernetes_cluster_template | length > 0
@@ -181,8 +186,7 @@
         Zone ID: {{ kubernetes_cluster_create_params.zoneid }}
         K8s Version ID: {{ kubernetes_cluster_create_params.kubernetesversionid }}
         Service Offering ID: {{ kubernetes_cluster_create_params.serviceofferingid }}
-        Control Template: {{ kubernetes_cluster_create_params['nodetemplates[0].template'] | default('NOT SET') }}
-        Worker Template: {{ kubernetes_cluster_create_params['nodetemplates[1].template'] | default('NOT SET') }}
+        Template ID: {{ kubernetes_cluster_create_params.templateid | default('SystemVM (default)') }}
         Network ID: {{ kubernetes_cluster_create_params.networkid | default('AUTO-CREATE') }}
         CSI Enabled: {{ kubernetes_cluster_create_params.csi | default('false') }}
         Size: {{ kubernetes_cluster_create_params.size }}
