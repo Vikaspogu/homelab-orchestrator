@@ -1,0 +1,117 @@
+# Configure additional storage devices (NVMe, SSD) for CloudStack local storage
+---
+- name: Install filesystem utilities
+  ansible.builtin.apt:
+    name:
+      - xfsprogs
+      - nvme-cli
+    state: present
+    update_cache: true
+
+- name: Check if device exists
+  ansible.builtin.stat:
+    path: "{{ storage.device }}"
+  loop: "{{ prepare_kvm_additional_storage }}"
+  loop_control:
+    loop_var: storage
+    label: "{{ storage.device }}"
+  register: prepare_kvm_storage_devices
+
+- name: Fail if device does not exist
+  ansible.builtin.fail:
+    msg: "Device {{ item.storage.device }} does not exist!"
+  loop: "{{ prepare_kvm_storage_devices.results }}"
+  loop_control:
+    label: "{{ item.storage.device }}"
+  when: not item.stat.exists
+
+- name: Check if device is already mounted
+  ansible.builtin.shell: |
+    set -o pipefail
+    mount | grep "{{ storage.device }}" || true
+  loop: "{{ prepare_kvm_additional_storage }}"
+  loop_control:
+    loop_var: storage
+    label: "{{ storage.device }}"
+  register: prepare_kvm_mount_check
+  changed_when: false
+
+- name: Check if device has filesystem
+  ansible.builtin.command: "blkid {{ storage.device }}"
+  loop: "{{ prepare_kvm_additional_storage }}"
+  loop_control:
+    loop_var: storage
+    label: "{{ storage.device }}"
+  register: prepare_kvm_blkid_check
+  changed_when: false
+  failed_when: false
+
+- name: Create filesystem on device
+  community.general.filesystem:
+    fstype: "{{ item.storage.filesystem | default('xfs') }}"
+    dev: "{{ item.storage.device }}"
+    opts: "{{ '-L ' + item.storage.label if item.storage.label is defined else '' }}"
+  loop: "{{ prepare_kvm_blkid_check.results }}"
+  loop_control:
+    label: "{{ item.storage.device }}"
+  when: item.rc != 0  # No filesystem exists
+
+- name: Create mount point directories
+  ansible.builtin.file:
+    path: "{{ storage.mount_point }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop: "{{ prepare_kvm_additional_storage }}"
+  loop_control:
+    loop_var: storage
+    label: "{{ storage.mount_point }}"
+
+- name: Get device UUID
+  ansible.builtin.command: "blkid -s UUID -o value {{ storage.device }}"
+  loop: "{{ prepare_kvm_additional_storage }}"
+  loop_control:
+    loop_var: storage
+    label: "{{ storage.device }}"
+  register: prepare_kvm_device_uuids
+  changed_when: false
+
+- name: Mount storage devices via fstab
+  ansible.posix.mount:
+    path: "{{ item.storage.mount_point }}"
+    src: "UUID={{ item.stdout }}"
+    fstype: "{{ item.storage.filesystem | default('xfs') }}"
+    opts: "{{ item.storage.mount_options | default('noatime,nodiratime') }}"
+    state: mounted
+  loop: "{{ prepare_kvm_device_uuids.results }}"
+  loop_control:
+    label: "{{ item.storage.mount_point }}"
+
+- name: Set correct permissions on mount points
+  ansible.builtin.file:
+    path: "{{ storage.mount_point }}"
+    owner: root
+    group: root
+    mode: "0755"
+  loop: "{{ prepare_kvm_additional_storage }}"
+  loop_control:
+    loop_var: storage
+    label: "{{ storage.mount_point }}"
+
+- name: Display storage configuration summary
+  ansible.builtin.debug:
+    msg: |
+      Additional Storage Configured:
+      {% for result in prepare_kvm_device_uuids.results %}
+        - Device: {{ result.storage.device }}
+          Mount Point: {{ result.storage.mount_point }}
+          UUID: {{ result.stdout }}
+          Filesystem: {{ result.storage.filesystem | default('xfs') }}
+      {% endfor %}
+
+      To add these as Primary Storage in CloudStack:
+      1. Go to Infrastructure → Primary Storage → Add Primary Storage
+      2. Select Scope: Host (for local) or Cluster
+      3. Protocol: Filesystem
+      4. Path: <mount_point from above>

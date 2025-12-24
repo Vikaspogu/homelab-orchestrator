@@ -83,6 +83,19 @@ prepare_kvm_local_storage_owner: "root"
 prepare_kvm_local_storage_group: "root"
 prepare_kvm_local_storage_mode: "0755"
 
+# Additional storage devices (NVMe, SSD, etc.)
+# These will be formatted, mounted, and configured for CloudStack
+prepare_kvm_additional_storage: []
+# Example:
+#   - device: "/dev/nvme0n1"           # Block device path
+#     mount_point: "/mnt/nvme-storage" # Where to mount
+#     filesystem: "xfs"                # xfs or ext4 (xfs recommended for performance)
+#     mount_options: "noatime,nodiratime,discard"  # Mount options
+#     label: "nvme-local"              # Optional filesystem label
+#   - device: "/dev/nvme1n1"
+#     mount_point: "/mnt/nvme-storage2"
+#     filesystem: "xfs"
+
 # UEFI support
 prepare_kvm_uefi_support: false
 

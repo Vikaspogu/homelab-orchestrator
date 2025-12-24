@@ -60,6 +60,14 @@
     - storage
     - local_storage
 
+- name: Configure additional storage devices (NVMe/SSD)
+  ansible.builtin.include_tasks: kvm_configure_additional_storage.yaml
+  when: prepare_kvm_additional_storage | length > 0
+  tags:
+    - storage
+    - nvme
+    - additional_storage
+
 - name: Configure VFIO for GPU passthrough
   ansible.builtin.include_tasks: kvm_configure_vfio_gpu.yaml
   when: prepare_kvm_vfio_gpu_enabled
