@@ -1,118 +1,160 @@
 # Configure GPU devices on CloudStack hosts
 ---
-- name: Get host information for GPU configuration
+# List hosts with GPU capabilities
+- name: List hosts with GPU devices
   ansible.builtin.uri:
     url: "{{ cloudstack_api_url }}"
     method: POST
     body_format: form-urlencoded
     body:
       command: listHosts
-      name: "{{ gpu_group.host }}"
       type: Routing
+      zoneid: "{{ cloudstack_ops_zone_id }}"
       response: json
       sessionkey: "{{ cloudstack_session_key }}"
     headers:
       Cookie: "{{ cloudstack_cookies }}"
     return_content: true
     timeout: "{{ cloudstack_ops_async_timeout }}"
-  register: cloudstack_ops_gpu_host_info
-  loop: "{{ cloudstack_ops_gpu_groups }}"
-  loop_control:
-    loop_var: gpu_group
+  register: cloudstack_ops_all_hosts
 
-- name: Set host IDs for GPU configuration
+- name: Get zone ID for GPU configuration
+  ansible.builtin.uri:
+    url: "{{ cloudstack_api_url }}"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      command: listZones
+      name: "{{ cloudstack_ops_zone.name }}"
+      response: json
+      sessionkey: "{{ cloudstack_session_key }}"
+    headers:
+      Cookie: "{{ cloudstack_cookies }}"
+    return_content: true
+    timeout: "{{ cloudstack_ops_async_timeout }}"
+  register: cloudstack_ops_zone_for_gpu
+
+- name: Set zone ID
   ansible.builtin.set_fact:
-    cloudstack_ops_gpu_host_ids: >-
-      {{
-        cloudstack_ops_gpu_host_ids | default({}) | combine({
-          item.gpu_group.host: item.json.listhostsresponse.host[0].id
-        })
-      }}
-  loop: "{{ cloudstack_ops_gpu_host_info.results }}"
+    cloudstack_ops_gpu_zone_id: "{{ cloudstack_ops_zone_for_gpu.json.listzonesresponse.zone[0].id }}"
   when:
-    - item.json.listhostsresponse.host is defined
-    - item.json.listhostsresponse.host | length > 0
+    - cloudstack_ops_zone_for_gpu.json.listzonesresponse.zone is defined
+    - cloudstack_ops_zone_for_gpu.json.listzonesresponse.zone | length > 0
 
-- name: Check existing GPU groups on hosts
+# Check for GPU groups on hosts
+- name: List GPU groups in zone
   ansible.builtin.uri:
     url: "{{ cloudstack_api_url }}"
     method: POST
     body_format: form-urlencoded
     body:
       command: listGpuGroups
-      hostid: "{{ cloudstack_ops_gpu_host_ids[gpu_group.host] }}"
+      zoneid: "{{ cloudstack_ops_gpu_zone_id }}"
       response: json
       sessionkey: "{{ cloudstack_session_key }}"
     headers:
       Cookie: "{{ cloudstack_cookies }}"
     return_content: true
     timeout: "{{ cloudstack_ops_async_timeout }}"
-  register: cloudstack_ops_existing_gpu_groups
-  loop: "{{ cloudstack_ops_gpu_groups }}"
-  loop_control:
-    loop_var: gpu_group
-  when: cloudstack_ops_gpu_host_ids[gpu_group.host] is defined
+  register: cloudstack_ops_gpu_groups_list
   failed_when: false
 
-- name: Add GPU group to host (passthrough mode)
-  ansible.builtin.uri:
-    url: "{{ cloudstack_api_url }}"
-    method: POST
-    body_format: form-urlencoded
-    body:
-      command: addGpuGroup
-      hostid: "{{ cloudstack_ops_gpu_host_ids[item.gpu_group.host] }}"
-      gpugroupname: "{{ item.gpu_group.gpu_group_name }}"
-      response: json
-      sessionkey: "{{ cloudstack_session_key }}"
-    headers:
-      Cookie: "{{ cloudstack_cookies }}"
-    return_content: true
-    timeout: "{{ cloudstack_ops_async_timeout }}"
-  register: cloudstack_ops_add_gpu_group_result
-  loop: "{{ cloudstack_ops_existing_gpu_groups.results }}"
-  when:
-    - item.gpu_group.gpu_type == "passthrough"
-    - cloudstack_ops_gpu_host_ids[item.gpu_group.host] is defined
-    - (item.json.listgpugroupsresponse.gpugroup | default([]) | selectattr('gpugroupname', 'equalto', item.gpu_group.gpu_group_name) | list | length) == 0
-  failed_when: false
-
-- name: Add vGPU group to host (vGPU mode)
-  ansible.builtin.uri:
-    url: "{{ cloudstack_api_url }}"
-    method: POST
-    body_format: form-urlencoded
-    body:
-      command: addGpuGroup
-      hostid: "{{ cloudstack_ops_gpu_host_ids[item.gpu_group.host] }}"
-      gpugroupname: "{{ item.gpu_group.gpu_group_name }}"
-      vgputype: "{{ item.gpu_group.vgpu_type }}"
-      response: json
-      sessionkey: "{{ cloudstack_session_key }}"
-    headers:
-      Cookie: "{{ cloudstack_cookies }}"
-    return_content: true
-    timeout: "{{ cloudstack_ops_async_timeout }}"
-  register: cloudstack_ops_add_vgpu_group_result
-  loop: "{{ cloudstack_ops_existing_gpu_groups.results }}"
-  when:
-    - item.gpu_group.gpu_type == "vgpu"
-    - item.gpu_group.vgpu_type is defined
-    - item.gpu_group.vgpu_type | length > 0
-    - cloudstack_ops_gpu_host_ids[item.gpu_group.host] is defined
-    - (item.json.listgpugroupsresponse.gpugroup | default([]) | selectattr('gpugroupname', 'equalto', item.gpu_group.gpu_group_name) | list | length) == 0
-  failed_when: false
-
-- name: Display GPU configuration results
+- name: Display available GPU groups
   ansible.builtin.debug:
     msg: |
-      GPU Configuration for host {{ gpu_group.host }}:
-        GPU Group: {{ gpu_group.gpu_group_name }}
-        Type: {{ gpu_group.gpu_type }}
-        {% if gpu_group.vgpu_type | default('') | length > 0 %}
-        vGPU Type: {{ gpu_group.vgpu_type }}
-        {% endif %}
-        Host ID: {{ cloudstack_ops_gpu_host_ids[gpu_group.host] | default('Not found') }}
-  loop: "{{ cloudstack_ops_gpu_groups }}"
-  loop_control:
-    loop_var: gpu_group
+      GPU Groups in Zone {{ cloudstack_ops_zone.name }}:
+      {{ cloudstack_ops_gpu_groups_list.json.listgpugroupsresponse.gpugroup | default([]) | to_nice_yaml }}
+  when: cloudstack_ops_gpu_groups_list.json is defined
+
+# List vGPU types if available
+- name: List vGPU types
+  ansible.builtin.uri:
+    url: "{{ cloudstack_api_url }}"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      command: listVGpuTypes
+      zoneid: "{{ cloudstack_ops_gpu_zone_id }}"
+      response: json
+      sessionkey: "{{ cloudstack_session_key }}"
+    headers:
+      Cookie: "{{ cloudstack_cookies }}"
+    return_content: true
+    timeout: "{{ cloudstack_ops_async_timeout }}"
+  register: cloudstack_ops_vgpu_types_list
+  failed_when: false
+
+- name: Display available vGPU types
+  ansible.builtin.debug:
+    msg: |
+      vGPU Types available:
+      {{ cloudstack_ops_vgpu_types_list.json.listvgputypesresponse.vgputype | default([]) | to_nice_yaml }}
+  when: cloudstack_ops_vgpu_types_list.json is defined
+
+# Check if GPU-enabled compute offering exists
+- name: Check for existing GPU compute offering
+  ansible.builtin.uri:
+    url: "{{ cloudstack_api_url }}"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      command: listServiceOfferings
+      name: "{{ cloudstack_ops_gpu_offering.name | default('GPU Instance') }}"
+      response: json
+      sessionkey: "{{ cloudstack_session_key }}"
+    headers:
+      Cookie: "{{ cloudstack_cookies }}"
+    return_content: true
+    timeout: "{{ cloudstack_ops_async_timeout }}"
+  register: cloudstack_ops_gpu_offering_check
+  when: cloudstack_ops_gpu_offering is defined
+
+# Create GPU-enabled compute offering if it doesn't exist
+- name: Create GPU-enabled compute offering
+  ansible.builtin.uri:
+    url: "{{ cloudstack_api_url }}"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      command: createServiceOffering
+      name: "{{ cloudstack_ops_gpu_offering.name | default('GPU Instance') }}"
+      displaytext: "{{ cloudstack_ops_gpu_offering.display_text | default('Compute offering with GPU passthrough') }}"
+      cpunumber: "{{ cloudstack_ops_gpu_offering.cpu | default(4) }}"
+      cpuspeed: "{{ cloudstack_ops_gpu_offering.cpu_speed | default(2000) }}"
+      memory: "{{ cloudstack_ops_gpu_offering.memory | default(8192) }}"
+      storagetype: "{{ cloudstack_ops_gpu_offering.storage_type | default('local') }}"
+      hosttags: "{{ cloudstack_ops_gpu_offering.host_tags | default('') }}"
+      response: json
+      sessionkey: "{{ cloudstack_session_key }}"
+    headers:
+      Cookie: "{{ cloudstack_cookies }}"
+    return_content: true
+    timeout: "{{ cloudstack_ops_async_timeout }}"
+  register: cloudstack_ops_create_gpu_offering
+  when:
+    - cloudstack_ops_gpu_offering is defined
+    - cloudstack_ops_gpu_offering_check.json.listserviceofferingsresponse.serviceoffering | default([]) | length == 0
+
+- name: Display GPU configuration summary
+  ansible.builtin.debug:
+    msg: |
+      ============================================
+      GPU Configuration Summary
+      ============================================
+      Zone: {{ cloudstack_ops_zone.name }}
+
+      GPU Groups Found: {{ cloudstack_ops_gpu_groups_list.json.listgpugroupsresponse.count | default(0) }}
+      vGPU Types Found: {{ cloudstack_ops_vgpu_types_list.json.listvgputypesresponse.count | default(0) }}
+
+      {% if cloudstack_ops_gpu_offering is defined %}
+      GPU Compute Offering: {{ cloudstack_ops_gpu_offering.name | default('GPU Instance') }}
+      {% endif %}
+
+      Note: GPU passthrough requires:
+      1. VFIO configured on KVM host (prepare_kvm_vfio_gpu_enabled: true)
+      2. Host reboot after VFIO configuration
+      3. GPU bound to vfio-pci driver
+
+      To verify GPU on host, run:
+        lspci -nnk | grep -A3 -i nvidia
+        ls -la /dev/vfio/

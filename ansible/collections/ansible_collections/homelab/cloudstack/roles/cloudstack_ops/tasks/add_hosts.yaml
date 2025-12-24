@@ -25,7 +25,19 @@
   ansible.builtin.debug:
     msg: "Host '{{ item.host.hostname }}' {{ 'added' if item.changed else 'already exists' }}"
   loop: "{{ cloudstack_ops_hosts_result.results }}"
+  loop_control:
+    label: "{{ item.host.hostname }}"
   when: cloudstack_ops_hosts_result.results is defined
+
+# Filter hosts that need tagging
+- name: Identify hosts requiring tag updates
+  ansible.builtin.set_fact:
+    cloudstack_ops_hosts_to_tag: "{{ cloudstack_ops_hosts | selectattr('host_tags', 'defined') | list }}"
+
+- name: Debug hosts to tag
+  ansible.builtin.debug:
+    msg: "Hosts to tag: {{ cloudstack_ops_hosts_to_tag | map(attribute='hostname') | list }}"
+  when: cloudstack_ops_hosts_to_tag | length > 0
 
 # Get host IDs for tagging
 - name: Get host details for tagging
@@ -35,7 +47,7 @@
     body_format: form-urlencoded
     body:
       command: listHosts
-      name: "{{ host.hostname }}"
+      name: "{{ host_to_tag.hostname }}"
       type: Routing
       response: json
       sessionkey: "{{ cloudstack_session_key }}"
@@ -43,11 +55,28 @@
       Cookie: "{{ cloudstack_cookies }}"
     return_content: true
     timeout: "{{ cloudstack_ops_async_timeout }}"
-  loop: "{{ cloudstack_ops_hosts }}"
+  loop: "{{ cloudstack_ops_hosts_to_tag }}"
   loop_control:
-    loop_var: host
+    loop_var: host_to_tag
+    label: "{{ host_to_tag.hostname }}"
   register: cloudstack_ops_host_details
-  when: host.host_tags is defined and host.host_tags | length > 0
+  when: cloudstack_ops_hosts_to_tag | length > 0
+
+- name: Debug host details response
+  ansible.builtin.debug:
+    msg: |
+      Host: {{ item.host_to_tag.hostname }}
+      Found: {{ item.json.listhostsresponse.host | default([]) | length > 0 }}
+      Host ID: {{ item.json.listhostsresponse.host[0].id | default('N/A') }}
+      Current tags: {{ item.json.listhostsresponse.host[0].hosttags | default('none') }}
+      Desired tags: {{ item.host_to_tag.host_tags }}
+  loop: "{{ cloudstack_ops_host_details.results | default([]) }}"
+  loop_control:
+    label: "{{ item.host_to_tag.hostname | default('N/A') }}"
+  when:
+    - cloudstack_ops_host_details.results is defined
+    - item.json is defined
+    - item.json.listhostsresponse.host is defined
 
 - name: Update host tags
   ansible.builtin.uri:
@@ -57,7 +86,7 @@
     body:
       command: updateHost
       id: "{{ item.json.listhostsresponse.host[0].id }}"
-      hosttags: "{{ item.host.host_tags }}"
+      hosttags: "{{ item.host_to_tag.host_tags }}"
       response: json
       sessionkey: "{{ cloudstack_session_key }}"
     headers:
@@ -66,21 +95,23 @@
     timeout: "{{ cloudstack_ops_async_timeout }}"
   loop: "{{ cloudstack_ops_host_details.results | default([]) }}"
   loop_control:
-    label: "{{ item.host.hostname | default('N/A') }}"
+    label: "{{ item.host_to_tag.hostname | default('N/A') }}"
   register: cloudstack_ops_host_tags_result
   when:
     - item.json is defined
+    - item.json.listhostsresponse is defined
     - item.json.listhostsresponse.host is defined
     - item.json.listhostsresponse.host | length > 0
-    - item.host.host_tags is defined
+    - item.host_to_tag.host_tags is defined
+    - item.host_to_tag.host_tags | length > 0
 
 - name: Display host tag update results
   ansible.builtin.debug:
-    msg: |
-      Host tags updated:
-      {% for result in cloudstack_ops_host_tags_result.results | default([]) %}
-      {% if result.json is defined %}
-        - {{ result.item.host.hostname }}: {{ result.item.host.host_tags }}
-      {% endif %}
-      {% endfor %}
-  when: cloudstack_ops_host_tags_result.results is defined
+    msg: "Host '{{ item.item.host_to_tag.hostname }}' tags updated to: {{ item.item.host_to_tag.host_tags }}"
+  loop: "{{ cloudstack_ops_host_tags_result.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item.host_to_tag.hostname | default('N/A') }}"
+  when:
+    - cloudstack_ops_host_tags_result.results is defined
+    - item.json is defined
+    - not item.skipped | default(false)

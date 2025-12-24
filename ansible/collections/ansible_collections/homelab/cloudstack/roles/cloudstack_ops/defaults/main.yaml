@@ -81,14 +81,25 @@ cloudstack_ops_secondary_storages: []
 #     host_tags: "kubernetes,gpu"  # Optional: comma-separated tags
 cloudstack_ops_hosts: []
 
-# GPU device groups to add to hosts
+# GPU configuration
 # CloudStack supports GPU passthrough (vGPU) for NVIDIA GPUs
+# Set to empty dict {} to skip GPU configuration
 cloudstack_ops_gpu_groups: []
 # Example:
 #   - host: "10.30.30.56"           # Host IP or name
 #     gpu_type: "passthrough"       # "passthrough" or "vgpu"
 #     gpu_group_name: "NVIDIA"      # GPU group name (e.g., NVIDIA, AMD)
 #     vgpu_type: ""                 # vGPU type (only for vgpu, e.g., "GRID K1", "GRID K2")
+
+# GPU-enabled compute offering (optional)
+# cloudstack_ops_gpu_offering:
+#   name: "GPU Instance"
+#   display_text: "Compute offering with GPU passthrough"
+#   cpu: 8
+#   cpu_speed: 2000
+#   memory: 16384
+#   storage_type: "local"
+#   host_tags: "gpu"                # Tag to match GPU-enabled hosts
 
 # SSH key pair (optional)
 cloudstack_ops_ssh_key_name: ""

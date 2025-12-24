@@ -35,6 +35,27 @@
   ansible.builtin.set_fact:
     kubernetes_cluster_exists: "{{ (kubernetes_cluster_existing.json.listkubernetesclustersresponse.kubernetescluster | default([]) | length) > 0 }}"
 
+- name: Determine service offering for {{ cluster.name }}
+  ansible.builtin.set_fact:
+    kubernetes_cluster_effective_offering: >-
+      {{
+        cluster.gpu_service_offering
+        if (cluster.enable_gpu | default(false) | bool and cluster.gpu_service_offering is defined and cluster.gpu_service_offering | length > 0)
+        else cluster.service_offering
+      }}
+  when: not kubernetes_cluster_exists
+
+- name: Display GPU configuration for {{ cluster.name }}
+  ansible.builtin.debug:
+    msg: |
+      GPU Configuration:
+        GPU Enabled: {{ cluster.enable_gpu | default(false) }}
+        Service Offering: {{ kubernetes_cluster_effective_offering }}
+        {% if cluster.enable_gpu | default(false) | bool %}
+        Note: Ensure the service offering '{{ kubernetes_cluster_effective_offering }}' has GPU/host_tags configured
+        {% endif %}
+  when: not kubernetes_cluster_exists
+
 - name: Build create cluster parameters for {{ cluster.name }}
   ansible.builtin.set_fact:
     kubernetes_cluster_create_params:
@@ -43,7 +64,7 @@
       description: "{{ cluster.description | default(kubernetes_cluster_defaults.description) }}"
       zoneid: "{{ kubernetes_cluster_zone_ids[cluster.zone] }}"
       kubernetesversionid: "{{ kubernetes_cluster_k8s_version_ids[cluster.kubernetes_version] }}"
-      serviceofferingid: "{{ kubernetes_cluster_offering_ids[cluster.service_offering] }}"
+      serviceofferingid: "{{ kubernetes_cluster_offering_ids[kubernetes_cluster_effective_offering] }}"
       size: "{{ cluster.size | default(kubernetes_cluster_defaults.size) }}"
       controlnodes: "{{ cluster.control_nodes | default(kubernetes_cluster_defaults.control_nodes) }}"
       noderootdisksize: "{{ cluster.node_root_disk_size | default(kubernetes_cluster_defaults.node_root_disk_size) }}"

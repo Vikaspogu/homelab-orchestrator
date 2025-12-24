@@ -23,6 +23,8 @@ kubernetes_cluster_list: []
 #     node_root_disk_size: 20          # Root disk size in GB
 #     template: "CKS-Ubuntu-22.04"     # CKS template for control/worker nodes
 #     enable_csi: true                 # Enable CSI driver (default: true)
+#     enable_gpu: false                # Enable GPU passthrough (requires GPU service offering)
+#     gpu_service_offering: ""         # GPU-enabled service offering (optional, uses service_offering if empty)
 #     external_load_balancer: ""       # External LB IP for HA (optional)
 #     docker_registry_username: ""     # Private registry username (optional)
 #     docker_registry_password: ""     # Private registry password (optional)
