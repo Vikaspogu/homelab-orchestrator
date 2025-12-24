@@ -69,6 +69,13 @@
   tags:
     - hosts
 
+- name: Configure GPU devices on hosts
+  ansible.builtin.include_tasks: configure_gpu.yaml
+  when: cloudstack_ops_gpu_groups | length > 0
+  tags:
+    - gpu
+    - hosts
+
 - name: Create SSH Key Pair
   ansible.builtin.include_tasks: create_ssh_key.yaml
   when: cloudstack_ops_ssh_key_name | length > 0

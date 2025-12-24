@@ -1,0 +1,118 @@
+# Configure GPU devices on CloudStack hosts
+---
+- name: Get host information for GPU configuration
+  ansible.builtin.uri:
+    url: "{{ cloudstack_api_url }}"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      command: listHosts
+      name: "{{ gpu_group.host }}"
+      type: Routing
+      response: json
+      sessionkey: "{{ cloudstack_session_key }}"
+    headers:
+      Cookie: "{{ cloudstack_cookies }}"
+    return_content: true
+    timeout: "{{ cloudstack_ops_async_timeout }}"
+  register: cloudstack_ops_gpu_host_info
+  loop: "{{ cloudstack_ops_gpu_groups }}"
+  loop_control:
+    loop_var: gpu_group
+
+- name: Set host IDs for GPU configuration
+  ansible.builtin.set_fact:
+    cloudstack_ops_gpu_host_ids: >-
+      {{
+        cloudstack_ops_gpu_host_ids | default({}) | combine({
+          item.gpu_group.host: item.json.listhostsresponse.host[0].id
+        })
+      }}
+  loop: "{{ cloudstack_ops_gpu_host_info.results }}"
+  when:
+    - item.json.listhostsresponse.host is defined
+    - item.json.listhostsresponse.host | length > 0
+
+- name: Check existing GPU groups on hosts
+  ansible.builtin.uri:
+    url: "{{ cloudstack_api_url }}"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      command: listGpuGroups
+      hostid: "{{ cloudstack_ops_gpu_host_ids[gpu_group.host] }}"
+      response: json
+      sessionkey: "{{ cloudstack_session_key }}"
+    headers:
+      Cookie: "{{ cloudstack_cookies }}"
+    return_content: true
+    timeout: "{{ cloudstack_ops_async_timeout }}"
+  register: cloudstack_ops_existing_gpu_groups
+  loop: "{{ cloudstack_ops_gpu_groups }}"
+  loop_control:
+    loop_var: gpu_group
+  when: cloudstack_ops_gpu_host_ids[gpu_group.host] is defined
+  failed_when: false
+
+- name: Add GPU group to host (passthrough mode)
+  ansible.builtin.uri:
+    url: "{{ cloudstack_api_url }}"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      command: addGpuGroup
+      hostid: "{{ cloudstack_ops_gpu_host_ids[item.gpu_group.host] }}"
+      gpugroupname: "{{ item.gpu_group.gpu_group_name }}"
+      response: json
+      sessionkey: "{{ cloudstack_session_key }}"
+    headers:
+      Cookie: "{{ cloudstack_cookies }}"
+    return_content: true
+    timeout: "{{ cloudstack_ops_async_timeout }}"
+  register: cloudstack_ops_add_gpu_group_result
+  loop: "{{ cloudstack_ops_existing_gpu_groups.results }}"
+  when:
+    - item.gpu_group.gpu_type == "passthrough"
+    - cloudstack_ops_gpu_host_ids[item.gpu_group.host] is defined
+    - (item.json.listgpugroupsresponse.gpugroup | default([]) | selectattr('gpugroupname', 'equalto', item.gpu_group.gpu_group_name) | list | length) == 0
+  failed_when: false
+
+- name: Add vGPU group to host (vGPU mode)
+  ansible.builtin.uri:
+    url: "{{ cloudstack_api_url }}"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      command: addGpuGroup
+      hostid: "{{ cloudstack_ops_gpu_host_ids[item.gpu_group.host] }}"
+      gpugroupname: "{{ item.gpu_group.gpu_group_name }}"
+      vgputype: "{{ item.gpu_group.vgpu_type }}"
+      response: json
+      sessionkey: "{{ cloudstack_session_key }}"
+    headers:
+      Cookie: "{{ cloudstack_cookies }}"
+    return_content: true
+    timeout: "{{ cloudstack_ops_async_timeout }}"
+  register: cloudstack_ops_add_vgpu_group_result
+  loop: "{{ cloudstack_ops_existing_gpu_groups.results }}"
+  when:
+    - item.gpu_group.gpu_type == "vgpu"
+    - item.gpu_group.vgpu_type is defined
+    - item.gpu_group.vgpu_type | length > 0
+    - cloudstack_ops_gpu_host_ids[item.gpu_group.host] is defined
+    - (item.json.listgpugroupsresponse.gpugroup | default([]) | selectattr('gpugroupname', 'equalto', item.gpu_group.gpu_group_name) | list | length) == 0
+  failed_when: false
+
+- name: Display GPU configuration results
+  ansible.builtin.debug:
+    msg: |
+      GPU Configuration for host {{ gpu_group.host }}:
+        GPU Group: {{ gpu_group.gpu_group_name }}
+        Type: {{ gpu_group.gpu_type }}
+        {% if gpu_group.vgpu_type | default('') | length > 0 %}
+        vGPU Type: {{ gpu_group.vgpu_type }}
+        {% endif %}
+        Host ID: {{ cloudstack_ops_gpu_host_ids[gpu_group.host] | default('Not found') }}
+  loop: "{{ cloudstack_ops_gpu_groups }}"
+  loop_control:
+    loop_var: gpu_group
