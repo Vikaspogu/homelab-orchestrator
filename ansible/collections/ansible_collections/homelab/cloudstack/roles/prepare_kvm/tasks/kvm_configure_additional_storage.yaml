@@ -39,7 +39,9 @@
   changed_when: false
 
 - name: Check if device has filesystem
-  ansible.builtin.command: "blkid {{ storage.device }}"
+  ansible.builtin.shell: "blkid -s TYPE -o value {{ storage.device }}"
+  args:
+    executable: /bin/bash
   loop: "{{ prepare_kvm_additional_storage }}"
   loop_control:
     loop_var: storage
@@ -50,13 +52,15 @@
 
 - name: Create filesystem on device
   community.general.filesystem:
-    fstype: "{{ item.storage.filesystem | default('xfs') }}"
-    dev: "{{ item.storage.device }}"
-    opts: "{{ '-L ' + item.storage.label if item.storage.label is defined else '' }}"
-  loop: "{{ prepare_kvm_blkid_check.results }}"
+    fstype: "{{ item.0.storage.filesystem | default('xfs') }}"
+    dev: "{{ item.0.storage.device }}"
+    opts: "{{ '-L ' + item.0.storage.label if item.0.storage.label is defined else '' }}"
+  loop: "{{ prepare_kvm_blkid_check.results | zip(prepare_kvm_mount_check.results) | list }}"
   loop_control:
-    label: "{{ item.storage.device }}"
-  when: item.rc != 0  # No filesystem exists
+    label: "{{ item.0.storage.device }}"
+  when:
+    - item.0.stdout | trim == ''  # No filesystem type detected
+    - item.1.stdout == ''  # Not already mounted
 
 - name: Create mount point directories
   ansible.builtin.file:
