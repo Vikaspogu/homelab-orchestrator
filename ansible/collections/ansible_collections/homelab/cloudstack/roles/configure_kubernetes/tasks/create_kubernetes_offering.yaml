@@ -34,43 +34,6 @@
       {% endfor %}
   when: configure_kubernetes_existing_offering_list | length > 0
 
-- name: Delete all existing compute offerings
-  ansible.builtin.uri:
-    url: "{{ cloudstack_api_url }}"
-    method: POST
-    body_format: form-urlencoded
-    body:
-      command: deleteServiceOffering
-      id: "{{ item.id }}"
-      response: json
-      sessionkey: "{{ cloudstack_session_key }}"
-    headers:
-      Cookie: "{{ cloudstack_cookies }}"
-    return_content: true
-    status_code: [200]
-  loop: "{{ configure_kubernetes_existing_offering_list }}"
-  loop_control:
-    label: "{{ item.name }} ({{ item.id }})"
-  register: configure_kubernetes_delete_offering_results
-  when:
-    - configure_kubernetes_compute_offering_recreate | default(true)
-    - configure_kubernetes_existing_offering_list | length > 0
-  failed_when: >
-    configure_kubernetes_delete_offering_results is failed or
-    (configure_kubernetes_delete_offering_results.json.deleteserviceofferingresponse.success | default('true') | string | lower) == 'false'
-
-- name: Display delete results
-  ansible.builtin.debug:
-    msg: |
-      Delete results for '{{ configure_kubernetes_compute_offering.name }}':
-      {% for result in configure_kubernetes_delete_offering_results.results | default([]) %}
-        - {{ result.item.id }}: {{ 'Deleted' if result.json.deleteserviceofferingresponse.success | default(false) else 'FAILED - ' + (result.json.deleteserviceofferingresponse.displaytext | default('unknown error')) }}
-      {% endfor %}
-  when:
-    - configure_kubernetes_compute_offering_recreate | default(true)
-    - configure_kubernetes_existing_offering_list | length > 0
-    - configure_kubernetes_delete_offering_results.results is defined
-
 - name: Build compute offering parameters
   ansible.builtin.set_fact:
     configure_kubernetes_offering_params:

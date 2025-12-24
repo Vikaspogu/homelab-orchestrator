@@ -38,18 +38,18 @@ kubernetes_cluster_upgrade_list: []
 # Leave name empty to use CKS default SystemVM template (recommended)
 # Only set this if you have a custom CKS-ready template
 kubernetes_cluster_cks_template:
-  name: ""  # Empty = skip custom template registration
+  # name: ""  # Empty = skip custom template registration
   # Example for custom template:
-  # name: "CKS-Ubuntu-22.04"
-  # display_text: "CKS-ready Ubuntu 22.04 LTS template for Kubernetes"
-  # url: "http://download.cloudstack.org/cks/cks-ubuntu-2204.qcow2"
-  # format: "QCOW2"
-  # hypervisor: "KVM"
-  # os_type: "Ubuntu 22.04 LTS"
-  # zone: "Zone1"
-  # is_public: true
-  # password_enabled: false
-  # sshkey_enabled: true
+  name: "CKS-Ubuntu-22.04"
+  display_text: "CKS-ready Ubuntu 22.04 LTS template for Kubernetes"
+  url: "http://download.cloudstack.org/testing/custom_templates/ubuntu/22.04/cks-ubuntu-2204.qcow2.gz"
+  format: "QCOW2"
+  hypervisor: "KVM"
+  os_type: "Ubuntu 22.04 LTS"
+  zone: "Zone1"
+  is_public: true
+  password_enabled: false
+  sshkey_enabled: true
 
 # Default cluster settings
 kubernetes_cluster_defaults:

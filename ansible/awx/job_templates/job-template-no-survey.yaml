@@ -31,18 +31,18 @@
         enable_survey: true,
       }
     - {
-        name: 'CloudStack - Configure',
+        name: 'CloudStack - Ops Configuration',
         file: ansible/playbooks/cloudstack/03-configure.yaml,
         enable_survey: true,
       }
     - {
-        name: 'CloudStack - Kubernetes Setup',
-        file: ansible/playbooks/cloudstack/04-kubernetes-setup.yaml,
+        name: 'CloudStack - Kubernetes Configuration',
+        file: ansible/playbooks/cloudstack/04-kubernetes-configure.yaml,
         enable_survey: true,
       }
     - {
-        name: 'CloudStack - Kubernetes Cluster',
-        file: ansible/playbooks/cloudstack/06-kubernetes-cluster.yaml,
+        name: 'CloudStack - Deploy Kubernetes Cluster',
+        file: ansible/playbooks/cloudstack/05-kubernetes-cluster.yaml,
         enable_survey: true,
       }
     - {
