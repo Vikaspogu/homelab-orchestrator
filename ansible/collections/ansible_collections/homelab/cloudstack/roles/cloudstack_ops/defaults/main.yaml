@@ -69,7 +69,28 @@ cloudstack_ops_guest_vlan_range: ""
 cloudstack_ops_networks: []
 
 # Primary storage
+# Supports both cluster-scoped (NFS) and host-scoped (local) storage
 cloudstack_ops_primary_storages: []
+# Examples:
+#   # NFS shared storage (cluster-scoped)
+#   - name: "NFS-Primary"
+#     cluster_name: "Cluster1"
+#     url: "nfs://10.30.30.10/export/primary"
+#     scope: "cluster"
+#
+#   # Local storage on specific host (host-scoped)
+#   - name: "Local-NVMe-Host1"
+#     cluster_name: "Cluster1"
+#     host: "10.30.30.56"              # Host IP where local storage exists
+#     url: "file:///mnt/nvme-storage"  # Mount point on the host
+#     scope: "host"
+#
+#   # Local storage for multiple hosts
+#   - name: "Local-NVMe-Host2"
+#     cluster_name: "Cluster1"
+#     host: "10.30.30.57"
+#     url: "file:///mnt/nvme-storage"
+#     scope: "host"
 
 # Secondary storage
 cloudstack_ops_secondary_storages: []

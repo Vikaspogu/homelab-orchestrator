@@ -1,5 +1,40 @@
 # Setup VFIO for NVIDIA GPU Passthrough
 ---
+# Detect CPU vendor for IOMMU configuration
+- name: Detect CPU vendor
+  ansible.builtin.shell: |
+    set -o pipefail
+    grep -m1 'vendor_id' /proc/cpuinfo | awk '{print $3}'
+  args:
+    executable: /bin/bash
+  register: prepare_kvm_cpu_vendor
+  changed_when: false
+
+- name: Set IOMMU kernel parameter based on CPU
+  ansible.builtin.set_fact:
+    prepare_kvm_iommu_param: "{{ 'intel_iommu=on' if 'Intel' in prepare_kvm_cpu_vendor.stdout else 'amd_iommu=on' }}"
+
+# Configure GRUB for IOMMU
+- name: Check current GRUB configuration
+  ansible.builtin.slurp:
+    src: /etc/default/grub
+  register: prepare_kvm_grub_config
+
+- name: Enable IOMMU in GRUB
+  ansible.builtin.lineinfile:
+    path: /etc/default/grub
+    regexp: '^GRUB_CMDLINE_LINUX_DEFAULT='
+    line: 'GRUB_CMDLINE_LINUX_DEFAULT="quiet splash {{ prepare_kvm_iommu_param }} iommu=pt"'
+    backup: true
+  register: prepare_kvm_grub_updated
+  when: prepare_kvm_iommu_param not in (prepare_kvm_grub_config.content | b64decode)
+
+- name: Update GRUB  # noqa: no-handler
+  ansible.builtin.command:
+    cmd: update-grub
+  when: prepare_kvm_grub_updated.changed | default(false)
+  changed_when: true
+
 - name: Update PCI IDs database
   ansible.builtin.command:
     cmd: update-pciids
@@ -79,31 +114,94 @@
   when: prepare_kvm_root_password is defined and prepare_kvm_root_password | length > 0
   no_log: true
 
+- name: Check if reboot is required
+  ansible.builtin.set_fact:
+    prepare_kvm_vfio_needs_reboot: "{{ prepare_kvm_grub_updated.changed | default(false) or prepare_kvm_hwe_kernel_22.changed | default(false) or prepare_kvm_hwe_kernel_24.changed | default(false) }}"
+
 - name: Reboot system to apply VFIO and kernel updates
   ansible.builtin.reboot:
     reboot_timeout: 1800
-    msg: "Rebooting to apply VFIO GPU passthrough and kernel updates"
-  when: prepare_kvm_vfio_reboot | default(true) and (prepare_kvm_hwe_kernel_22.changed | default(false) or prepare_kvm_hwe_kernel_24.changed | default(false))
+    msg: "Rebooting to apply VFIO GPU passthrough, IOMMU, and kernel updates"
+  when: prepare_kvm_vfio_reboot | default(true) and prepare_kvm_vfio_needs_reboot
 
 - name: Wait for system to come back online
   ansible.builtin.wait_for_connection:
     delay: 30
     timeout: 600
-  when: prepare_kvm_vfio_reboot | default(true) and (prepare_kvm_hwe_kernel_22.changed | default(false) or prepare_kvm_hwe_kernel_24.changed | default(false))
+  when: prepare_kvm_vfio_reboot | default(true) and prepare_kvm_vfio_needs_reboot
+
+# Verify IOMMU is enabled
+- name: Check if IOMMU is enabled
+  ansible.builtin.shell: |
+    set -o pipefail
+    dmesg | grep -i -E "IOMMU|DMAR" | head -10
+  args:
+    executable: /bin/bash
+  register: prepare_kvm_iommu_status
+  changed_when: false
+  failed_when: false
 
 - name: Verify VFIO modules are loaded
-  ansible.builtin.shell: set -o pipefail && lsmod | grep vfio
+  ansible.builtin.shell: |
+    set -o pipefail
+    lsmod | grep vfio
+  args:
+    executable: /bin/bash
   register: prepare_kvm_vfio_loaded
   changed_when: false
   failed_when: false
 
-- name: Display VFIO status
+# Check GPU binding to vfio-pci
+- name: Check GPU driver binding
+  ansible.builtin.shell: |
+    set -o pipefail
+    lspci -nnk | grep -A3 -i "nvidia\|amd.*radeon\|vga"
+  args:
+    executable: /bin/bash
+  register: prepare_kvm_gpu_binding
+  changed_when: false
+  failed_when: false
+
+# Check VFIO device nodes
+- name: Check VFIO device nodes
+  ansible.builtin.shell: ls -la /dev/vfio/ 2>/dev/null || echo "No VFIO devices found"
+  register: prepare_kvm_vfio_devices
+  changed_when: false
+  failed_when: false
+
+- name: Display VFIO GPU status
   ansible.builtin.debug:
     msg: |
-      VFIO GPU Passthrough Configuration Complete!
+      ============================================
+      VFIO GPU Passthrough Configuration Status
+      ============================================
 
-      VFIO modules loaded:
-      {{ prepare_kvm_vfio_loaded.stdout | default('No VFIO modules loaded - reboot may be required') }}
+      IOMMU Status:
+      {{ prepare_kvm_iommu_status.stdout | default('IOMMU not detected - reboot may be required') }}
 
-      To verify GPU is bound to vfio-pci:
-        lspci -nnk | grep -A3 NVIDIA
+      VFIO Modules:
+      {{ prepare_kvm_vfio_loaded.stdout | default('No VFIO modules loaded') }}
+
+      GPU Driver Binding:
+      {{ prepare_kvm_gpu_binding.stdout | default('No GPU detected') }}
+
+      VFIO Devices (/dev/vfio/):
+      {{ prepare_kvm_vfio_devices.stdout | default('No VFIO devices') }}
+
+      ============================================
+      TROUBLESHOOTING
+      ============================================
+      {% if 'vfio-pci' not in (prepare_kvm_gpu_binding.stdout | default('')) %}
+      WARNING: GPU is NOT bound to vfio-pci driver!
+
+      To fix this:
+      1. Ensure IOMMU is enabled in BIOS/UEFI
+      2. Reboot the system if not done after configuration
+      3. Check /etc/modprobe.d/vfio.conf has correct GPU IDs
+      4. Run: update-initramfs -u && reboot
+      {% endif %}
+
+      For CloudStack to see GPUs:
+      1. The host must be removed and re-added to CloudStack
+      2. Or restart cloudstack-agent: systemctl restart cloudstack-agent
+      3. Check CloudStack agent logs: tail -f /var/log/cloudstack/agent/agent.log
