@@ -7,7 +7,27 @@
   gather_facts: false
   vars_files:
     - ../../vars/common.vault.yaml
+  vars:
+    ###############
+    ## Kubernetes Cluster Role Vars ##
+    ###############
+    kubernetes_cluster_list:
+      - name: "k8s-prod-1"
+        description: "Production Kubernetes Cluster"
+        zone: "Zone1"
+        kubernetes_version: "v1.32.5-x86_64"
+        service_offering: "CKS Instance"
+        network: "guest-network"
+        # template: "CKS-Ubuntu-22.04"  # Use CKS Ubuntu 22.04 for control/worker nodes
+        enable_csi: true
+        enable_gpu: true                # Enable GPU passthrough
+        gpu_service_offering: "CKS Instance"  # GPU-enabled service offering
+        size: 1
+        control_nodes: 1
+        node_root_disk_size: 50
 
+    kubernetes_cluster_wait_for_cluster: true
+    kubernetes_cluster_wait_timeout: 1800
   roles:
     - role: homelab.cloudstack.kubernetes_cluster
 

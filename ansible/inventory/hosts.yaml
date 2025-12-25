@@ -24,15 +24,10 @@ all:
 
     proxmox:
       hosts:
-        pxm-baymx:
+        pxm-baymx.a113.internal:
           ansible_user: root
 
     omv:
       hosts:
         omv-baymx.a113.internal:
-          ansible_user: vikaspogu
-
-    aap:
-      hosts:
-        aap-controller:
           ansible_user: vikaspogu
