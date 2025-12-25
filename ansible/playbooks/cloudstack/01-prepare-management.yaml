@@ -7,6 +7,7 @@
   vars_files:
     - ../../vars/common.vault.yaml
   vars:
-    prepare_management_nfs_enabled: true
+    prepare_management_nfs_enabled: false
+    prepare_management_version: "4.22"
   roles:
     - role: homelab.cloudstack.prepare_management

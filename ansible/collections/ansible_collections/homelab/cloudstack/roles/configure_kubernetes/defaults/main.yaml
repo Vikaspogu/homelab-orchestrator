@@ -6,11 +6,11 @@ configure_kubernetes_api_key: ""
 configure_kubernetes_api_secret: ""
 
 # Use admin credentials if API keys not set
-configure_kubernetes_admin_username: "admin"
+configure_kubernetes_admin_username: ""
 configure_kubernetes_admin_password: ""
 
 # Management server endpoint URL
-configure_kubernetes_endpoint_url: "http://localhost:8080/client/api"
+configure_kubernetes_endpoint_url: ""
 
 # Enable Kubernetes service
 configure_kubernetes_enabled: true
@@ -25,9 +25,9 @@ configure_kubernetes_compute_offering:
   cpu: 8
   cpu_speed: 2000
   memory: 8192
-  storage_type: "local"  # shared or local
+  storage_type: "shared"  # shared or local
   offer_ha: false
-  # host_tags: "kubernetes"  # Optional: restrict to hosts with matching tags
+  host_tags: "kubernetes"  # Optional: restrict to hosts with matching tags
 
 # Recreate compute offering if it already exists (delete and create new)
 configure_kubernetes_compute_offering_recreate: true

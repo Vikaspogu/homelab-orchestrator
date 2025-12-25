@@ -4,6 +4,22 @@
   hosts: cloudstack_kvm_hosts
   become: true
   gather_facts: true
+  vars:
+    ###############
+    ## Prepare KVM Role Vars ##
+    ###############
+    prepare_kvm_version: "4.22"
+    prepare_kvm_mgmt_interface: "enp0s25"
+    prepare_kvm_mgmt_domain: "a113.internal"
+    prepare_kvm_vfio_gpu_enabled: true
+
+    # Additional NVMe storage for CloudStack local storage
+    prepare_kvm_additional_storage:
+      - device: "/dev/nvme1n1"
+        mount_point: "/mnt/nvme-storage"
+        filesystem: "xfs"
+        mount_options: "noatime,nodiratime,discard"
+        
   vars_files:
     - ../../vars/common.vault.yaml
   roles:

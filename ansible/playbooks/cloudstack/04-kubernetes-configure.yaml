@@ -7,6 +7,39 @@
   gather_facts: false
   vars_files:
     - ../../vars/common.vault.yaml
+  vars:
+    ###############
+    ## Configure Kubernetes Role Vars ##
+    ###############
+    configure_kubernetes_enabled: true
+    configure_kubernetes_network_offering: "DefaultNetworkOfferingforKubernetesService"
+    configure_kubernetes_experimental_features: false
+
+    configure_kubernetes_compute_offering:
+      name: "CKS Instance"
+      display_text: "Compute offering for CloudStack Kubernetes Service nodes"
+      cpu: 8
+      cpu_speed: 2000
+      memory: 8192
+      storage_type: "local"
+      offer_ha: false
+      host_tags: "kubernetes"
+
+    configure_kubernetes_compute_offering_recreate: true
+
+    configure_kubernetes_versions:
+      - name: "v1.33.1-x86_64"
+        semantic_version: "1.33.1"
+        url: "http://download.cloudstack.org/cks/setup-v1.33.1-calico-x86_64.iso"
+        zone_name: "Zone1"
+        min_cpu: 8
+        min_memory: 8192
+      - name: "v1.32.5-x86_64"
+        semantic_version: "1.32.5"
+        url: "http://download.cloudstack.org/cks/setup-v1.32.5-calico-x86_64.iso"
+        zone_name: "Zone1"
+        min_cpu: 8
+        min_memory: 8192
 
   roles:
     - role: homelab.cloudstack.configure_kubernetes
