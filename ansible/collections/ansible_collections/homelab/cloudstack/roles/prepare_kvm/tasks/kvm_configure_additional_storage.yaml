@@ -73,7 +73,15 @@
     label: "{{ storage.device }}"
   register: prepare_kvm_device_uuids
   changed_when: false
-  failed_when: item.rc != 0 or item.stdout | trim == ''
+  failed_when: false
+
+- name: Validate device UUIDs
+  ansible.builtin.fail:
+    msg: "Could not retrieve UUID for {{ item.storage.device }} - ensure device has a valid filesystem"
+  loop: "{{ prepare_kvm_device_uuids.results }}"
+  loop_control:
+    label: "{{ item.storage.device }}"
+  when: item.rc != 0 or item.stdout | trim == ''
 
 - name: Mount individual storage devices
   ansible.posix.mount:
