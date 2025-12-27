@@ -27,13 +27,9 @@
   ansible.builtin.setup:
     gather_subset: [mounts]
 
-- name: Build mount status lookup
+- name: Build mounted devices list
   ansible.builtin.set_fact:
     prepare_kvm_mounted_devices: "{{ ansible_mounts | map(attribute='device') | list }}"
-    prepare_kvm_mount_status: >-
-      {{ dict(prepare_kvm_additional_storage | map(attribute='device') |
-         zip(prepare_kvm_additional_storage | map(attribute='device') |
-         map('in', ansible_mounts | map(attribute='device') | list))) }}
 
 - name: Check if devices have filesystem
   ansible.builtin.command:
@@ -56,7 +52,7 @@
     label: "{{ item.storage.device }}"
   when:
     - item.stdout | trim == ''
-    - not prepare_kvm_mount_status[item.storage.device]
+    - item.storage.device not in prepare_kvm_mounted_devices
 
 - name: Create disk mount directories
   ansible.builtin.file:
@@ -90,7 +86,7 @@
   loop_control:
     index_var: idx
     label: "{{ item.storage.device }}"
-  when: not prepare_kvm_mount_status[item.storage.device]
+  when: item.storage.device not in prepare_kvm_mounted_devices
 
 - name: Create MergeFS mount point
   ansible.builtin.file:
