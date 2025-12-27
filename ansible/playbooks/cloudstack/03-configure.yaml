@@ -18,15 +18,15 @@
 
     - name: Set CloudStack credentials from 1Password
       ansible.builtin.set_fact:
-        cloudstack_admin_password: "{{ onepassword_cloudstack_item.op_item.fields.password.value }}"
-        cloudstack_api_url: "{{ onepassword_cloudstack_item.op_item.fields.API_URL.value }}"
+        cloudstack_admin_password: '{{ onepassword_cloudstack_item.op_item.fields.password.value }}'
+        cloudstack_api_url: '{{ onepassword_cloudstack_item.op_item.fields.API_URL.value }}'
       when: onepassword_enabled | default(true) | bool
       no_log: true
 
     - name: Fetch KVM credentials from 1Password
       onepassword.connect.item_info:
         vault: "{{ lookup('env', 'OP_VAULT') }}"
-        item: "{{ onepassword_cloudstack_item | default('servers') }}"
+        item: 'server'
       delegate_to: localhost
       register: onepassword_kvm_item
       when: onepassword_enabled | default(true) | bool
@@ -34,7 +34,7 @@
 
     - name: Set KVM credentials from 1Password
       ansible.builtin.set_fact:
-        ansible_password: "{{ onepassword_kvm_item.op_item.fields.password.value }}"
+        ansible_password: '{{ onepassword_kvm_item.op_item.fields.password.value }}'
       when: onepassword_enabled | default(true) | bool
       no_log: true
   vars:
@@ -42,68 +42,68 @@
     ## CloudStack Ops Role Vars ##
     ###############
     cloudstack_ops_zone:
-      name: "Zone1"
-      dns1: "8.8.8.8"
-      internal_dns1: "10.30.30.1"
-      network_type: "Advanced"
-      guest_cidr: "10.1.0.0/16"
+      name: 'Zone1'
+      dns1: '8.8.8.8'
+      internal_dns1: '10.30.30.1'
+      network_type: 'Advanced'
+      guest_cidr: '10.1.0.0/16'
       local_storage_enabled: true
       security_groups_enabled: false
 
     cloudstack_ops_physical_networks:
-      - name: "Physical Network 1"
-        isolation_method: "VLAN"
-        vlan_range: ""
+      - name: 'Physical Network 1'
+        isolation_method: 'VLAN'
+        vlan_range: ''
         traffic_types:
-          - type: "Management"
-            label: "cloudbr0"
-          - type: "Guest"
-            label: "cloudbr0"
-          - type: "Public"
-            label: "cloudbr0"
+          - type: 'Management'
+            label: 'cloudbr0'
+          - type: 'Guest'
+            label: 'cloudbr0'
+          - type: 'Public'
+            label: 'cloudbr0'
 
     cloudstack_ops_pods:
-      - name: "Pod1"
-        gateway: "10.30.30.1"
-        netmask: "255.255.255.0"
-        start_ip: "10.30.30.60"
-        end_ip: "10.30.30.75"
+      - name: 'Pod1'
+        gateway: '10.30.30.1'
+        netmask: '255.255.255.0'
+        start_ip: '10.30.30.60'
+        end_ip: '10.30.30.75'
 
     cloudstack_ops_clusters:
-      - name: "Kubernetes-Cluster"
-        pod_name: "Pod1"
-        hypervisor: "KVM"
-        cluster_type: "CloudManaged"
+      - name: 'Kubernetes-Cluster'
+        pod_name: 'Pod1'
+        hypervisor: 'KVM'
+        cluster_type: 'CloudManaged'
 
     cloudstack_ops_hosts:
-      - hostname: "10.30.30.56"
-        cluster_name: "Kubernetes-Cluster"
-        host_tags: "kubernetes"
+      - hostname: '10.30.30.56'
+        cluster_name: 'Kubernetes-Cluster'
+        host_tags: 'kubernetes'
 
     # GPU device groups to add to hosts
     cloudstack_ops_gpu_groups:
-      - host: "10.30.30.56"
-        gpu_type: "passthrough"
-        gpu_group_name: "NVIDIA"
+      - host: '10.30.30.56'
+        gpu_type: 'passthrough'
+        gpu_group_name: 'NVIDIA'
 
     cloudstack_ops_networks:
-      - name: "guest-network"
-        display_text: "Guest Network"
-        network_offering: "DefaultSharedNetworkOffering"
-        gateway: "10.30.30.1"
-        netmask: "255.255.255.0"
-        start_ip: "10.30.30.76"
-        end_ip: "10.30.30.100"
-        vlan: "untagged"
+      - name: 'guest-network'
+        display_text: 'Guest Network'
+        network_offering: 'DefaultSharedNetworkOffering'
+        gateway: '10.30.30.1'
+        netmask: '255.255.255.0'
+        start_ip: '10.30.30.76'
+        end_ip: '10.30.30.100'
+        vlan: 'untagged'
 
     cloudstack_ops_primary_storages:
-      - name: "Local-NVMe-Host1"
-        cluster_name: "Kubernetes-Cluster"
-        host: "10.30.30.56"              # Host IP where local storage exists
-        url: "file:///mnt/cloudstack-storage"  # Mount point on the host
-        scope: "host"
+      - name: 'Local-NVMe-Host1'
+        cluster_name: 'Kubernetes-Cluster'
+        host: '10.30.30.56' # Host IP where local storage exists
+        url: 'file:///mnt/cloudstack-storage' # Mount point on the host
+        scope: 'host'
 
-    cloudstack_ops_ssh_key_name: "cloudstack-key"
+    cloudstack_ops_ssh_key_name: 'cloudstack-ssh-key'
     cloudstack_ops_enable_zone: true
   roles:
     - role: homelab.cloudstack.cloudstack_ops

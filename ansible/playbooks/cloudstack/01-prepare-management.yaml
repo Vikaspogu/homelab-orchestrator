@@ -3,12 +3,14 @@
 - name: Deploy CloudStack Management Server with Database
   hosts: cloudstack_management
   gather_facts: true
+  become: true
   vars:
     prepare_management_nfs_enabled: false
-    prepare_management_version: "4.22"
+    prepare_management_version: '4.22'
   pre_tasks:
     # Option 1: Use 1Password (set onepassword_enabled=true)
     - name: Fetch database credentials from 1Password
+      become: false
       onepassword.connect.item_info:
         vault: "{{ lookup('env', 'OP_VAULT') }}"
         item: "{{ onepassword_item_database | default('cloudstack') }}"
@@ -16,12 +18,12 @@
       register: onepassword_cloudstack_item
       when: onepassword_enabled | default(true) | bool
       no_log: true
-        
+
     - name: Set database credentials from 1Password
       ansible.builtin.set_fact:
-        prepare_management_db_password: "{{ onepassword_cloudstack_item.op_item.fields.DB_PASSWORD.value }}"
-        prepare_management_server_key: "{{ onepassword_cloudstack_item.op_item.fields.SERVER_KEY.value }}"
-        prepare_management_database_key: "{{ onepassword_cloudstack_item.op_item.fields.DATABASE_KEY.value }}"
+        prepare_management_db_password: '{{ onepassword_cloudstack_item.op_item.fields.DB_PASSWORD.value }}'
+        prepare_management_server_key: '{{ onepassword_cloudstack_item.op_item.fields.SERVER_KEY.value }}'
+        prepare_management_database_key: '{{ onepassword_cloudstack_item.op_item.fields.DATABASE_KEY.value }}'
       when: onepassword_enabled | default(true) | bool
       no_log: true
   roles:

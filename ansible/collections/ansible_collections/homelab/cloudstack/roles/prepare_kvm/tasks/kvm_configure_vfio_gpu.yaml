@@ -60,14 +60,14 @@
 
 - name: Load VFIO modules
   community.general.modprobe:
-    name: "{{ item }}"
+    name: '{{ item }}'
     state: present
   loop: [vfio, vfio_iommu_type1, vfio_pci]
   failed_when: false
 
 - name: Install HWE kernel for Ubuntu
   ansible.builtin.apt:
-    name: "linux-generic-hwe-{{ ansible_distribution_version }}"
+    name: "linux-generic-hwe-{{ ansible_facts['distribution_version'] }}"
     state: present
   when: ansible_distribution == 'Ubuntu'
   register: prepare_kvm_hwe_kernel
@@ -87,7 +87,7 @@
 - name: Reboot if required
   ansible.builtin.reboot:
     reboot_timeout: 1800
-    msg: "Rebooting to apply VFIO GPU passthrough"
+    msg: 'Rebooting to apply VFIO GPU passthrough'
   when:
     - prepare_kvm_vfio_reboot | default(true)
     - prepare_kvm_grub_updated.changed | default(false) or prepare_kvm_hwe_kernel.changed | default(false)
