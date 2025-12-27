@@ -18,11 +18,11 @@
     - name: Set Proxmox credentials from 1Password
       ansible.builtin.set_fact:
         datacenter:
-          username: "{{ (onepassword_proxmox_item.op_item.fields | selectattr('label', 'equalto', 'DATACENTER_USERNAME') | first).value }}"
-          password: "{{ (onepassword_proxmox_item.op_item.fields | selectattr('label', 'equalto', 'DATACENTER_PASSWORD') | first).value }}"
-          hass_user_password: "{{ (onepassword_proxmox_item.op_item.fields | selectattr('label', 'equalto', 'HASS_USER_PASSWORD') | first).value | default('') }}"
-        scrutiny_address: "{{ (onepassword_proxmox_item.op_item.fields | selectattr('label', 'equalto', 'SCRUTINY_ADDRESS') | first).value | default('') }}"
-        promtail_ip: "{{ (onepassword_proxmox_item.op_item.fields | selectattr('label', 'equalto', 'PROMTAIL_IP') | first).value | default('') }}"
+          username: "{{ onepassword_proxmox_item.op_item.fields.DATACENTER_USERNAME.value }}"
+          password: "{{ onepassword_proxmox_item.op_item.fields.DATACENTER_PASSWORD.value }}"
+          hass_user_password: "{{ onepassword_proxmox_item.op_item.fields.HASS_USER_PASSWORD.value | default('') }}"
+        scrutiny_address: "{{ onepassword_proxmox_item.op_item.fields.SCRUTINY_ADDRESS.value | default('') }}"
+        promtail_ip: "{{ onepassword_proxmox_item.op_item.fields.PROMTAIL_IP.value | default('') }}"
       when: onepassword_enabled | default(true) | bool
       no_log: true
   tasks:

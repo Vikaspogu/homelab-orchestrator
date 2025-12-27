@@ -32,8 +32,8 @@
 
     - name: Set KVM credentials from 1Password
       ansible.builtin.set_fact:
-        prepare_kvm_root_password: "{{ (onepassword_kvm_item.op_item.fields | selectattr('label', 'equalto', 'password') | first).value }}"
-        ansible_password: "{{ (onepassword_kvm_item.op_item.fields | selectattr('label', 'equalto', 'password') | first).value }}"
+        prepare_kvm_root_password: "{{ onepassword_kvm_item.op_item.fields.password.value }}"
+        ansible_password: "{{ onepassword_kvm_item.op_item.fields.password.value }}"
       when: onepassword_enabled | default(true) | bool
       no_log: true
   roles:

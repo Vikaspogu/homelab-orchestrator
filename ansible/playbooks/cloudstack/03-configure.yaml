@@ -18,8 +18,8 @@
 
     - name: Set CloudStack credentials from 1Password
       ansible.builtin.set_fact:
-        cloudstack_admin_password: "{{ (onepassword_cloudstack_item.op_item.fields | selectattr('label', 'equalto', 'password') | first).value }}"
-        cloudstack_api_url: "{{ (onepassword_cloudstack_item.op_item.fields | selectattr('label', 'equalto', 'API_URL') | first).value }}"
+        cloudstack_admin_password: "{{ onepassword_cloudstack_item.op_item.fields.password.value }}"
+        cloudstack_api_url: "{{ onepassword_cloudstack_item.op_item.fields.API_URL.value }}"
       when: onepassword_enabled | default(true) | bool
       no_log: true
 
@@ -34,7 +34,7 @@
 
     - name: Set KVM credentials from 1Password
       ansible.builtin.set_fact:
-        ansible_password: "{{ (onepassword_kvm_item.op_item.fields | selectattr('label', 'equalto', 'password') | first).value }}"
+        ansible_password: "{{ onepassword_kvm_item.op_item.fields.password.value }}"
       when: onepassword_enabled | default(true) | bool
       no_log: true
   vars:

@@ -15,8 +15,8 @@
 
     - name: Set Proxmox credentials from 1Password
       ansible.builtin.set_fact:
-        proxmox_api_user: "{{ (onepassword_proxmox_item.op_item.fields | selectattr('label', 'equalto', 'username') | first).value }}"
-        proxmox_api_password: "{{ (onepassword_proxmox_item.op_item.fields | selectattr('label', 'equalto', 'password') | first).value }}"
+        proxmox_api_user: "{{ onepassword_proxmox_item.op_item.fields.username.value }}"
+        proxmox_api_password: "{{ onepassword_proxmox_item.op_item.fields.password.value }}"
       when: onepassword_enabled | default(true) | bool
       no_log: true
 

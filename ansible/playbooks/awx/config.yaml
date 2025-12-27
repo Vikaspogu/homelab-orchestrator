@@ -30,12 +30,12 @@
     - name: Set AWX credentials from 1Password
       ansible.builtin.set_fact:
         awx:
-          hostname: "{{ (onepassword_awx_item.op_item.fields | selectattr('label', 'equalto', 'HOSTNAME') | first).value }}"
-          username: "{{ (onepassword_awx_item.op_item.fields | selectattr('label', 'equalto', 'username') | first).value }}"
-          password: "{{ (onepassword_awx_item.op_item.fields | selectattr('label', 'equalto', 'password') | first).value }}"
-        host_user: "{{ (onepassword_server_item.op_item.fields | selectattr('label', 'equalto', 'username') | first).value }}"
-        host_password: "{{ (onepassword_server_item.op_item.fields | selectattr('label', 'equalto', 'password') | first).value }}"
-        vault_password: "{{ (onepassword_awx_item.op_item.fields | selectattr('label', 'equalto', 'VAULT_PASSWORD') | first).value }}"
+          hostname: "{{ onepassword_awx_item.op_item.fields.HOSTNAME.value }}"
+          username: "{{ onepassword_awx_item.op_item.fields.username.value }}"
+          password: "{{ onepassword_awx_item.op_item.fields.password.value }}"
+        host_user: "{{ onepassword_server_item.op_item.fields.username.value }}"
+        host_password: "{{ onepassword_server_item.op_item.fields.password.value }}"
+        vault_password: "{{ onepassword_awx_item.op_item.fields.VAULT_PASSWORD.value }}"
       when: onepassword_enabled | default(true) | bool
       no_log: true
 
