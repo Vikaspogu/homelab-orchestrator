@@ -4,6 +4,17 @@
   ansible.builtin.setup:
   when: ansible_facts['fqdn'] is not defined
 
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Upgrade all packages
+  ansible.builtin.apt:
+    upgrade: dist
+    autoremove: true
+    autoclean: true
+
 - name: Set hostname
   ansible.builtin.hostname:
     name: "{{ prepare_kvm_hostname }}"

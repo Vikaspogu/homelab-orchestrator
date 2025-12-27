@@ -36,48 +36,18 @@
   register: cloudstack_ops_gpu_groups_list
   failed_when: false
 
-<<<<<<< Updated upstream
-- name: Display available GPU groups
-  ansible.builtin.debug:
-    msg: |
-      GPU Groups in Zone {{ cloudstack_ops_zone.name }}:
-      {{ cloudstack_ops_gpu_groups_list.json.listgpugroupsresponse.gpugroup | default([]) | to_nice_yaml }}
-  when: cloudstack_ops_gpu_groups_list.json is defined
-
-# List vGPU types if available
-- name: List vGPU types
-=======
 - name: Check for existing GPU compute offering
->>>>>>> Stashed changes
   ansible.builtin.uri:
     url: "{{ cloudstack_api_url }}"
     method: POST
     body_format: form-urlencoded
     body:
-<<<<<<< Updated upstream
-      command: listVGpuTypes
-      zoneid: "{{ cloudstack_ops_gpu_zone_id }}"
-=======
       command: listServiceOfferings
       name: "{{ cloudstack_ops_gpu_offering.name | default('GPU Instance') }}"
->>>>>>> Stashed changes
       response: json
       sessionkey: "{{ cloudstack_session_key }}"
     headers:
       Cookie: "{{ cloudstack_cookies }}"
-<<<<<<< Updated upstream
-    return_content: true
-    timeout: "{{ cloudstack_ops_async_timeout }}"
-  register: cloudstack_ops_vgpu_types_list
-  failed_when: false
-
-- name: Display available vGPU types
-  ansible.builtin.debug:
-    msg: |
-      vGPU Types available:
-      {{ cloudstack_ops_vgpu_types_list.json.listvgputypesresponse.vgputype | default([]) | to_nice_yaml }}
-  when: cloudstack_ops_vgpu_types_list.json is defined
-=======
     timeout: "{{ cloudstack_ops_async_timeout }}"
   register: cloudstack_ops_gpu_offering_check
   when: cloudstack_ops_gpu_offering is defined
@@ -104,4 +74,3 @@
   when:
     - cloudstack_ops_gpu_offering is defined
     - cloudstack_ops_gpu_offering_check.json.listserviceofferingsresponse.serviceoffering | default([]) | length == 0
->>>>>>> Stashed changes
