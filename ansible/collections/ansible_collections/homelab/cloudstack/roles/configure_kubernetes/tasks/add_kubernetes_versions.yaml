@@ -1,6 +1,6 @@
-# Add Kubernetes Supported Versions
+# Add Kubernetes Versions
 ---
-- name: List all zones
+- name: List zones
   ansible.builtin.uri:
     url: "{{ cloudstack_api_url }}"
     method: POST
@@ -11,20 +11,13 @@
       sessionkey: "{{ cloudstack_session_key }}"
     headers:
       Cookie: "{{ cloudstack_cookies }}"
-    return_content: true
   register: configure_kubernetes_zones_info_response
 
-- name: Set zones info
+- name: Build zone ID map
   ansible.builtin.set_fact:
-    configure_kubernetes_zones_info:
-      zones: "{{ configure_kubernetes_zones_info_response.json.listzonesresponse.zone | default([]) }}"
+    configure_kubernetes_zone_id_map: "{{ dict(configure_kubernetes_zones_info_response.json.listzonesresponse.zone | default([]) | map(attribute='name') | zip(configure_kubernetes_zones_info_response.json.listzonesresponse.zone | default([]) | map(attribute='id'))) }}"
 
-- name: Build zone name to ID mapping
-  ansible.builtin.set_fact:
-    configure_kubernetes_zone_id_map: "{{ configure_kubernetes_zone_id_map | default({}) | combine({item.name: item.id}) }}"
-  loop: "{{ configure_kubernetes_zones_info.zones | default([]) }}"
-
-- name: List existing Kubernetes supported versions
+- name: List existing versions
   ansible.builtin.uri:
     url: "{{ cloudstack_api_url }}"
     method: POST
@@ -35,16 +28,13 @@
       sessionkey: "{{ cloudstack_session_key }}"
     headers:
       Cookie: "{{ cloudstack_cookies }}"
-    return_content: true
   register: configure_kubernetes_existing_versions
 
-- name: Build list of existing semantic versions
+- name: Build existing versions list
   ansible.builtin.set_fact:
-    configure_kubernetes_existing_semantic_versions: >-
-      {{ configure_kubernetes_existing_versions.json.listkubernetessupportedversionsresponse.kubernetessupportedversion |
-         default([]) | map(attribute='semanticversion') | list }}
+    configure_kubernetes_existing_semantic_versions: "{{ configure_kubernetes_existing_versions.json.listkubernetessupportedversionsresponse.kubernetessupportedversion | default([]) | map(attribute='semanticversion') | list }}"
 
-- name: Add Kubernetes supported versions
+- name: Add Kubernetes versions
   ansible.builtin.uri:
     url: "{{ cloudstack_api_url }}"
     method: POST
@@ -62,18 +52,8 @@
       sessionkey: "{{ cloudstack_session_key }}"
     headers:
       Cookie: "{{ cloudstack_cookies }}"
-    return_content: true
   loop: "{{ configure_kubernetes_versions }}"
-  register: configure_kubernetes_add_version_results
+  loop_control:
+    label: "{{ item.name }}"
   when: item.semantic_version not in configure_kubernetes_existing_semantic_versions
-  failed_when: >
-    configure_kubernetes_add_version_results is failed and
-    'already exists' not in (configure_kubernetes_add_version_results.json.addkubernetessupportedversionresponse.errortext | default(''))
-
-- name: Display added Kubernetes versions
-  ansible.builtin.debug:
-    msg: |
-      Kubernetes versions processed:
-      {% for version in configure_kubernetes_versions %}
-      - {{ version.name }} ({{ version.semantic_version }}): {{ 'Added' if version.semantic_version not in configure_kubernetes_existing_semantic_versions else 'Already exists' }}
-      {% endfor %}
+  failed_when: false

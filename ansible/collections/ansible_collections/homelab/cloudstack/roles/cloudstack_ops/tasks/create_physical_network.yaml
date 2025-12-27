@@ -1,4 +1,4 @@
-# Create a single Physical Network
+# Create Physical Network
 ---
 - name: Check if physical network exists
   ansible.builtin.set_fact:
@@ -25,12 +25,12 @@
   register: cloudstack_ops_physical_network_result
   when: not cloudstack_ops_network_exists
 
-- name: Set physical network ID from creation
+- name: Set physical network ID
   ansible.builtin.set_fact:
     cloudstack_ops_physical_network_id: "{{ cloudstack_ops_physical_network_result.id }}"
   when: not cloudstack_ops_network_exists and cloudstack_ops_physical_network_result.id is defined
 
-- name: Add traffic types to physical network
+- name: Add traffic types
   ngine_io.cloudstack.traffic_type:
     api_url: "{{ cloudstack_api_url }}"
     api_key: "{{ cloudstack_api_key }}"
@@ -44,28 +44,16 @@
   loop: "{{ physical_network.traffic_types }}"
   loop_control:
     loop_var: traffic_type
-  register: cloudstack_ops_traffic_type_result
+    label: "{{ traffic_type.type }}"
   failed_when: false
 
-- name: Display traffic type results
-  ansible.builtin.debug:
-    msg: "Traffic type '{{ item.traffic_type.type }}' - {{ 'configured' if not item.failed else 'already exists or skipped' }}"
-  loop: "{{ cloudstack_ops_traffic_type_result.results }}"
-  when: cloudstack_ops_traffic_type_result.results is defined
-
-- name: Enable physical network with service providers
+- name: Enable physical network
   ngine_io.cloudstack.physical_network:
     api_url: "{{ cloudstack_api_url }}"
     api_key: "{{ cloudstack_api_key }}"
     api_secret: "{{ cloudstack_api_secret }}"
     name: "{{ physical_network.name }}"
     zone: "{{ cloudstack_ops_zone.name }}"
-    nsps_enabled:
-      - VirtualRouter
-      - SecurityGroupProvider
+    nsps_enabled: [VirtualRouter, SecurityGroupProvider]
     state: enabled
     api_timeout: 300
-
-- name: Display physical network info
-  ansible.builtin.debug:
-    msg: "Physical network '{{ physical_network.name }}' configured and enabled"

@@ -1,4 +1,4 @@
-# Enable CloudStack Kubernetes Service using ngine_io.cloudstack collection
+# Enable CloudStack Kubernetes Service
 ---
 - name: Enable Kubernetes service
   ngine_io.cloudstack.configuration:
@@ -8,12 +8,6 @@
     name: "cloud.kubernetes.service.enabled"
     value: "{{ 'true' if configure_kubernetes_enabled else 'false' }}"
     api_timeout: 300
-  register: configure_kubernetes_enabled_result
-
-- name: Display Kubernetes service status  # noqa: no-handler
-  ansible.builtin.debug:
-    msg: "Kubernetes service {{ 'enabled' if configure_kubernetes_enabled else 'disabled' }}. Management server restart required."
-  when: configure_kubernetes_enabled_result.changed
 
 - name: Set endpoint URL
   ngine_io.cloudstack.configuration:
@@ -23,9 +17,3 @@
     name: "endpoint.url"
     value: "{{ configure_kubernetes_endpoint_url }}"
     api_timeout: 300
-  register: configure_kubernetes_endpoint_result
-
-- name: Display endpoint URL status  # noqa: no-handler
-  ansible.builtin.debug:
-    msg: "Endpoint URL set to: {{ configure_kubernetes_endpoint_url }}"
-  when: configure_kubernetes_endpoint_result.changed

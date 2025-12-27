@@ -1,49 +1,33 @@
 # Cleanup CloudStack Management Server
 ---
-- name: Stop CloudStack management service
+- name: Stop CloudStack management
   ansible.builtin.systemd:
     name: cloudstack-management
     state: stopped
   failed_when: false
-  tags:
-    - services
 
-- name: Stop MySQL service
+- name: Stop MySQL
   ansible.builtin.systemd:
     name: mysql
     state: stopped
   failed_when: false
   when: cleanup_database
-  tags:
-    - services
-    - database
 
-- name: Remove CloudStack management packages
+- name: Remove CloudStack packages
   ansible.builtin.apt:
-    name:
-      - cloudstack-management
-      - cloudstack-common
-      - cloudstack-ui
+    name: [cloudstack-management, cloudstack-common, cloudstack-ui]
     state: absent
     purge: true
   when: cleanup_packages
-  tags:
-    - packages
 
 - name: Remove MySQL packages
   ansible.builtin.apt:
-    name:
-      - mysql-server
-      - mysql-client
-      - mysql-common
+    name: [mysql-server, mysql-client, mysql-common]
     state: absent
     purge: true
   when: cleanup_packages and cleanup_database
-  tags:
-    - packages
-    - database
 
-- name: Remove CloudStack configuration directories
+- name: Remove CloudStack directories
   ansible.builtin.file:
     path: "{{ item }}"
     state: absent
@@ -53,58 +37,31 @@
     - /usr/share/cloudstack-management
     - /usr/share/cloudstack-common
   when: cleanup_config
-  tags:
-    - config
 
-- name: Remove MySQL data directories
+- name: Remove MySQL directories
   ansible.builtin.file:
     path: "{{ item }}"
     state: absent
-  loop:
-    - /var/lib/mysql
-    - /etc/mysql
-    - /var/log/mysql
+  loop: [/var/lib/mysql, /etc/mysql, /var/log/mysql]
   when: cleanup_database
-  tags:
-    - database
 
-- name: Remove CloudStack log files
+- name: Remove logs
   ansible.builtin.file:
     path: /var/log/cloudstack
     state: absent
   when: cleanup_logs
-  tags:
-    - logs
 
-- name: Remove CloudStack APT repository
+- name: Remove APT repository
   ansible.builtin.file:
-    path: /etc/apt/sources.list.d/cloudstack.list
+    path: "{{ item }}"
     state: absent
+  loop:
+    - /etc/apt/sources.list.d/cloudstack.list
+    - /etc/apt/keyrings/cloudstack.gpg
   when: cleanup_repo
-  tags:
-    - repo
 
-- name: Remove CloudStack GPG key
-  ansible.builtin.file:
-    path: /etc/apt/keyrings/cloudstack.gpg
-    state: absent
-  when: cleanup_repo
-  tags:
-    - repo
-
-- name: Update APT cache
+- name: Update APT and autoremove
   ansible.builtin.apt:
     update_cache: true
-  tags:
-    - repo
-
-- name: Autoremove unused packages
-  ansible.builtin.apt:
     autoremove: true
     purge: true
-  tags:
-    - packages
-
-- name: Display management cleanup complete
-  ansible.builtin.debug:
-    msg: "CloudStack Management Server cleanup completed on {{ inventory_hostname }}"

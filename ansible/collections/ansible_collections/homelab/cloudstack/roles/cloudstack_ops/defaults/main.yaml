@@ -78,18 +78,18 @@ cloudstack_ops_primary_storages: []
 #     url: "nfs://10.30.30.10/export/primary"
 #     scope: "cluster"
 #
-#   # Local storage on specific host (host-scoped)
-#   - name: "Local-NVMe-Host1"
+#   # Local MergeFS storage on specific host (host-scoped)
+#   # Uses the unified MergeFS mount point that combines multiple disks
+#   - name: "Local-MergeFS-Host1"
 #     cluster_name: "Cluster1"
-#     host: "10.30.30.56"              # Host IP where local storage exists
-#     url: "file:///mnt/nvme-storage"  # Mount point on the host
+#     host: "10.30.30.56"
+#     url: "file:///mnt/cloudstack-storage"  # MergeFS unified mount point
 #     scope: "host"
 #
-#   # Local storage for multiple hosts
-#   - name: "Local-NVMe-Host2"
+#   - name: "Local-MergeFS-Host2"
 #     cluster_name: "Cluster1"
 #     host: "10.30.30.57"
-#     url: "file:///mnt/nvme-storage"
+#     url: "file:///mnt/cloudstack-storage"
 #     scope: "host"
 
 # Secondary storage
@@ -120,3 +120,23 @@ cloudstack_ops_enable_zone: true
 
 # Wait for async jobs timeout (seconds)
 cloudstack_ops_async_timeout: 300
+
+# Proxmox Orchestrator Extension
+# CloudStack 4.19+ includes built-in Proxmox extension at /usr/share/cloudstack-management/extensions/Proxmox/
+cloudstack_ops_proxmox_extension:
+  enabled: false
+  # Proxmox hosts to register
+  hosts: []
+  # Example:
+  #   - name: "pve01"
+  #     url: "https://10.0.0.5:8006"
+  #     username: "root@pam"
+  #     token_id: "cloudstack"
+  #     token_secret: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  #     verify_ssl: false
+  #     node: "pve01"  # Proxmox node name
+  #   - name: "pve02"
+  #     url: "https://10.0.0.6:8006"
+  #     username: "root@pam"
+  #     token_id: "cloudstack"
+  #     token_secret: "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy"

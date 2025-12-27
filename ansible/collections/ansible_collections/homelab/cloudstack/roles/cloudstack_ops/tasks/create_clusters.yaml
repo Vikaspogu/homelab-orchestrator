@@ -15,10 +15,4 @@
   loop: "{{ cloudstack_ops_clusters }}"
   loop_control:
     loop_var: cluster
-  register: cloudstack_ops_clusters_result
-
-- name: Display cluster information
-  ansible.builtin.debug:
-    msg: "Cluster '{{ item.cluster.name }}' {{ 'created' if item.changed else 'already exists' }}"
-  loop: "{{ cloudstack_ops_clusters_result.results }}"
-  when: cloudstack_ops_clusters_result.results is defined
+    label: "{{ cluster.name }}"

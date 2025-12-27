@@ -16,10 +16,4 @@
   loop: "{{ cloudstack_ops_pods }}"
   loop_control:
     loop_var: pod
-  register: cloudstack_ops_pods_result
-
-- name: Display pod information
-  ansible.builtin.debug:
-    msg: "Pod '{{ item.pod.name }}' {{ 'created' if item.changed else 'already exists' }}"
-  loop: "{{ cloudstack_ops_pods_result.results }}"
-  when: cloudstack_ops_pods_result.results is defined
+    label: "{{ pod.name }}"

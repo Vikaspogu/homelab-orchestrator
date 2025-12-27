@@ -1,19 +1,15 @@
-# Prepare the Operating System for CloudStack KVM Host
+# Prepare OS for CloudStack KVM Host
 ---
-- name: Gather facts if not already done
+- name: Gather facts
   ansible.builtin.setup:
   when: ansible_facts['fqdn'] is not defined
 
-- name: Display current hostname
-  ansible.builtin.debug:
-    msg: "Current FQDN: {{ ansible_facts['fqdn'] | default('not set') }}"
-
-- name: Ensure hostname is set correctly
+- name: Set hostname
   ansible.builtin.hostname:
     name: "{{ prepare_kvm_hostname }}"
   when: prepare_kvm_hostname != ansible_facts['hostname']
 
-- name: Ensure FQDN is resolvable in /etc/hosts
+- name: Configure /etc/hosts
   ansible.builtin.lineinfile:
     path: /etc/hosts
     regexp: "^{{ ansible_facts['default_ipv4']['address'] | default('127.0.1.1') }}.*{{ prepare_kvm_hostname }}.*"
@@ -22,66 +18,37 @@
     backup: true
   when: prepare_kvm_hostname is defined
 
-- name: Ensure localhost entries exist in /etc/hosts
+- name: Ensure localhost entry
   ansible.builtin.lineinfile:
     path: /etc/hosts
     regexp: "^127\\.0\\.0\\.1"
     line: "127.0.0.1 localhost localhost.localdomain"
     state: present
 
-- name: Check internet connectivity
-  ansible.builtin.uri:
-    url: "https://www.cloudstack.org"
-    method: HEAD
-    timeout: 10
-  register: prepare_kvm_internet_check
-  failed_when: false
-  changed_when: false
-
-- name: Warn if internet connectivity check failed
-  ansible.builtin.debug:
-    msg: "WARNING: Unable to reach www.cloudstack.org. Ensure the server has internet access."
-  when: prepare_kvm_internet_check.status is not defined or prepare_kvm_internet_check.status != 200
-
-# Install chrony for NTP synchronization
 - name: Install chrony
   ansible.builtin.apt:
     name: "{{ prepare_kvm_chrony_packages }}"
     state: present
     update_cache: true
 
-- name: Enable and start chrony service
+- name: Enable chrony
   ansible.builtin.systemd:
     name: "{{ prepare_kvm_chrony_service }}"
     enabled: true
     state: started
 
-- name: Verify chrony is synchronized
-  ansible.builtin.command: chronyc tracking
-  register: prepare_kvm_chrony_status
-  changed_when: false
-  failed_when: false
-
-- name: Display chrony synchronization status
-  ansible.builtin.debug:
-    msg: "{{ prepare_kvm_chrony_status.stdout_lines }}"
-  when: prepare_kvm_chrony_status.stdout_lines is defined
-
-# Install UEFI support packages
-- name: Install UEFI support packages (ovmf)
+- name: Install UEFI packages
   ansible.builtin.apt:
     name: "{{ prepare_kvm_uefi_packages }}"
     state: present
   when: prepare_kvm_uefi_support
 
-# Install aria2 for secondary storage bypass
-- name: Install aria2 for secondary storage bypass
+- name: Install aria2
   ansible.builtin.apt:
     name: "{{ prepare_kvm_aria2_packages }}"
     state: present
   when: prepare_kvm_aria2_support
 
-# Configure SSH access for CloudStack management
 - name: Enable root SSH login
   ansible.builtin.lineinfile:
     path: /etc/ssh/sshd_config
@@ -91,7 +58,7 @@
   notify: Restart SSH
   when: prepare_kvm_enable_pass_auth | default(true)
 
-- name: Enable SSH password authentication
+- name: Enable SSH password auth
   ansible.builtin.lineinfile:
     path: "{{ item }}"
     regexp: "^#?PasswordAuthentication"
@@ -101,8 +68,9 @@
     - /etc/ssh/sshd_config
     - /etc/ssh/sshd_config.d/50-cloud-init.conf
   when: prepare_kvm_enable_pass_auth | default(true)
+  failed_when: false
 
-- name: Configure passwordless sudo for Ansible user
+- name: Configure passwordless sudo
   ansible.builtin.lineinfile:
     path: "/etc/sudoers.d/{{ ansible_user }}"
     line: "{{ ansible_user }} ALL=(ALL) NOPASSWD: ALL"

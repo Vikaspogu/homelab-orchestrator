@@ -1,6 +1,6 @@
 # Create CloudStack Zone
 ---
-- name: Check if zone already exists
+- name: Check if zone exists
   ansible.builtin.uri:
     url: "{{ cloudstack_api_url }}"
     method: POST
@@ -12,7 +12,6 @@
       sessionkey: "{{ cloudstack_session_key }}"
     headers:
       Cookie: "{{ cloudstack_cookies }}"
-    return_content: true
   register: cloudstack_ops_zone_info_response
   failed_when: false
 
@@ -39,12 +38,8 @@
     state: present
     api_timeout: 300
   register: cloudstack_ops_zone_result
-  when: cloudstack_ops_zone_info.zones is not defined or cloudstack_ops_zone_info.zones | length == 0
+  when: cloudstack_ops_zone_info.zones | length == 0
 
-- name: Get zone ID
+- name: Set zone ID
   ansible.builtin.set_fact:
     cloudstack_ops_zone_id: "{{ cloudstack_ops_zone_result.id | default(cloudstack_ops_zone_info.zones[0].id) }}"
-
-- name: Display zone information
-  ansible.builtin.debug:
-    msg: "Zone '{{ cloudstack_ops_zone.name }}' {{ 'created' if cloudstack_ops_zone_result.changed | default(false) else 'already exists' }} with ID: {{ cloudstack_ops_zone_id }}"

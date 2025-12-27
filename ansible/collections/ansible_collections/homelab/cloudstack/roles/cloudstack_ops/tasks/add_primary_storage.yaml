@@ -1,14 +1,11 @@
 # Add Primary Storage to CloudStack
-# Supports both cluster-scoped (NFS) and host-scoped (local) storage
 ---
-# Separate storage lists by scope
 - name: Set storage lists by scope
   ansible.builtin.set_fact:
     cloudstack_ops_cluster_storages: "{{ cloudstack_ops_primary_storages | selectattr('scope', 'undefined') | list + cloudstack_ops_primary_storages | selectattr('scope', 'defined') | selectattr('scope', 'ne', 'host') | list }}"
     cloudstack_ops_host_storages: "{{ cloudstack_ops_primary_storages | selectattr('scope', 'defined') | selectattr('scope', 'eq', 'host') | list }}"
 
-# Cluster-scoped storage (NFS, shared) - uses the Ansible module
-- name: Add cluster-scoped primary storage pools
+- name: Add cluster-scoped primary storage
   ngine_io.cloudstack.storage_pool:
     api_url: "{{ cloudstack_api_url }}"
     api_key: "{{ cloudstack_api_key }}"
@@ -26,10 +23,8 @@
   loop_control:
     loop_var: storage
     label: "{{ storage.name }}"
-  register: cloudstack_ops_cluster_storage_result
   when: cloudstack_ops_cluster_storages | length > 0
 
-# Host-scoped storage (local filesystem) - requires API calls with hostid
 - name: Add host-scoped local storage
   when: cloudstack_ops_host_storages | length > 0
   block:
@@ -45,7 +40,6 @@
           sessionkey: "{{ cloudstack_session_key }}"
         headers:
           Cookie: "{{ cloudstack_cookies }}"
-        return_content: true
       register: add_primary_storage_zone_response
 
     - name: Get pod ID
@@ -61,7 +55,6 @@
           sessionkey: "{{ cloudstack_session_key }}"
         headers:
           Cookie: "{{ cloudstack_cookies }}"
-        return_content: true
       register: add_primary_storage_pod_response
 
     - name: Get cluster IDs
@@ -76,17 +69,13 @@
           sessionkey: "{{ cloudstack_session_key }}"
         headers:
           Cookie: "{{ cloudstack_cookies }}"
-        return_content: true
       register: add_primary_storage_clusters_response
 
     - name: Build cluster ID lookup
       ansible.builtin.set_fact:
-        add_primary_storage_cluster_ids: "{{ add_primary_storage_cluster_ids | default({}) | combine({item.name: item.id}) }}"
-      loop: "{{ add_primary_storage_clusters_response.json.listclustersresponse.cluster }}"
-      loop_control:
-        label: "{{ item.name }}"
+        add_primary_storage_cluster_ids: "{{ dict(add_primary_storage_clusters_response.json.listclustersresponse.cluster | map(attribute='name') | zip(add_primary_storage_clusters_response.json.listclustersresponse.cluster | map(attribute='id'))) }}"
 
-    - name: Get host IDs for local storage
+    - name: Get hosts
       ansible.builtin.uri:
         url: "{{ cloudstack_api_url }}"
         method: POST
@@ -99,17 +88,18 @@
           sessionkey: "{{ cloudstack_session_key }}"
         headers:
           Cookie: "{{ cloudstack_cookies }}"
-        return_content: true
       register: add_primary_storage_hosts_response
 
     - name: Build host ID lookup
       ansible.builtin.set_fact:
-        add_primary_storage_host_ids: "{{ add_primary_storage_host_ids | default({}) | combine({item.name: item.id, item.ipaddress: item.id}) }}"
-      loop: "{{ add_primary_storage_hosts_response.json.listhostsresponse.host | default([]) }}"
-      loop_control:
-        label: "{{ item.name }}"
+        add_primary_storage_host_ids: >-
+          {{ dict(
+            (add_primary_storage_hosts_response.json.listhostsresponse.host | default([]) | map(attribute='name') | list +
+             add_primary_storage_hosts_response.json.listhostsresponse.host | default([]) | map(attribute='ipaddress') | list) |
+            zip(add_primary_storage_hosts_response.json.listhostsresponse.host | default([]) | map(attribute='id') | list * 2)
+          ) }}
 
-    - name: Check existing storage pools
+    - name: Get existing storage pools
       ansible.builtin.uri:
         url: "{{ cloudstack_api_url }}"
         method: POST
@@ -121,14 +111,13 @@
           sessionkey: "{{ cloudstack_session_key }}"
         headers:
           Cookie: "{{ cloudstack_cookies }}"
-        return_content: true
       register: add_primary_storage_existing_pools
 
-    - name: Build existing storage pool names
+    - name: Build existing pool names
       ansible.builtin.set_fact:
         add_primary_storage_existing_names: "{{ add_primary_storage_existing_pools.json.liststoragepoolsresponse.storagepool | default([]) | map(attribute='name') | list }}"
 
-    - name: Create host-scoped local storage pools
+    - name: Create host-scoped local storage
       ansible.builtin.uri:
         url: "{{ cloudstack_api_url }}"
         method: POST
@@ -140,40 +129,20 @@
           podid: "{{ add_primary_storage_pod_response.json.listpodsresponse.pod[0].id }}"
           clusterid: "{{ add_primary_storage_cluster_ids[storage.cluster_name] }}"
           url: "{{ storage.url }}"
-          scope: "HOST"
+          scope: "host"
+          provider: "DefaultPrimary"
           hypervisor: "{{ storage.hypervisor | default('KVM') }}"
           hostid: "{{ add_primary_storage_host_ids[storage.host] }}"
           response: json
           sessionkey: "{{ cloudstack_session_key }}"
         headers:
           Cookie: "{{ cloudstack_cookies }}"
-        return_content: true
         status_code: [200]
       loop: "{{ cloudstack_ops_host_storages }}"
       loop_control:
         loop_var: storage
         label: "{{ storage.name }}"
-      register: cloudstack_ops_local_storage_result
-      when: storage.name not in add_primary_storage_existing_names
-      failed_when:
-        - cloudstack_ops_local_storage_result.json is defined
-        - cloudstack_ops_local_storage_result.json.createstoragepoolresponse is not defined
-        - "'already exists' not in (cloudstack_ops_local_storage_result.json.errorresponse.errortext | default(''))"
-
-- name: Display cluster storage results
-  ansible.builtin.debug:
-    msg: "Primary storage '{{ item.storage.name }}' (cluster-scoped): {{ 'created' if item.changed else 'already exists' }}"
-  loop: "{{ cloudstack_ops_cluster_storage_result.results | default([]) }}"
-  loop_control:
-    label: "{{ item.storage.name }}"
-  when: cloudstack_ops_cluster_storage_result.results is defined
-
-- name: Display local storage results
-  ansible.builtin.debug:
-    msg: "Primary storage '{{ item.storage.name }}' (host-scoped on {{ item.storage.host }}): {{ 'created' if item.json.createstoragepoolresponse is defined else 'skipped/exists' }}"
-  loop: "{{ cloudstack_ops_local_storage_result.results | default([]) }}"
-  loop_control:
-    label: "{{ item.storage.name }}"
-  when:
-    - cloudstack_ops_local_storage_result.results is defined
-    - item.storage is defined
+      when:
+        - storage.name not in add_primary_storage_existing_names
+        - storage.host in add_primary_storage_host_ids
+      failed_when: false

@@ -1,4 +1,4 @@
-# Kubernetes Cluster Role - Main Tasks (CloudStack CKS)
+# Kubernetes Cluster Role (CloudStack CKS)
 ---
 - name: Get CloudStack API authentication
   ansible.builtin.include_role:
@@ -11,20 +11,21 @@
 - name: Register CKS-ready template
   ansible.builtin.include_tasks: register_template.yaml
   when: kubernetes_cluster_cks_template.name | default('') | length > 0
-  tags:
-    - template
+  tags: [template]
 
 - name: Create Kubernetes clusters
   ansible.builtin.include_tasks: create_cluster.yaml
   loop: "{{ kubernetes_cluster_list }}"
   loop_control:
     loop_var: cluster
+    label: "{{ cluster.name }}"
 
-- name: Wait for clusters to be ready
+- name: Wait for clusters
   ansible.builtin.include_tasks: wait_cluster.yaml
   loop: "{{ kubernetes_cluster_list }}"
   loop_control:
     loop_var: cluster
+    label: "{{ cluster.name }}"
   when: kubernetes_cluster_wait_for_cluster
 
 - name: Upgrade Kubernetes clusters
@@ -32,27 +33,9 @@
   loop: "{{ kubernetes_cluster_upgrade_list }}"
   loop_control:
     loop_var: cluster
+    label: "{{ cluster.name }}"
   when: kubernetes_cluster_upgrade_list | length > 0
-  tags:
-    - upgrade
+  tags: [upgrade]
 
 - name: Get cluster information
   ansible.builtin.include_tasks: get_cluster_info.yaml
-
-- name: Display cluster information
-  ansible.builtin.debug:
-    msg: |
-      ============================================
-      CloudStack Kubernetes Clusters
-      ============================================
-      {% for cluster in kubernetes_cluster_list %}
-      {{ cluster.name }}:
-        State: {{ kubernetes_cluster_states[cluster.name] | default('Unknown') }}
-        Endpoint: {{ kubernetes_cluster_endpoints[cluster.name] | default('Pending') }}
-        Zone: {{ cluster.zone }}
-        Workers: {{ cluster.size | default(kubernetes_cluster_defaults.size) }}
-        Control Nodes: {{ cluster.control_nodes | default(kubernetes_cluster_defaults.control_nodes) }}
-      {% endfor %}
-
-      To get kubeconfig:
-        cloudmonkey get kubernetesclusterconfig id=<cluster-id>

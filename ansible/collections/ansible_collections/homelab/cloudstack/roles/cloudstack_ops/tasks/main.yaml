@@ -82,6 +82,13 @@
   tags:
     - ssh_key
 
+- name: Configure Proxmox Extension
+  ansible.builtin.include_tasks: configure_proxmox_extension.yaml
+  when: cloudstack_ops_proxmox_extension.enabled | default(false)
+  tags:
+    - proxmox
+    - extension
+
 - name: Enable Zone
   ansible.builtin.include_tasks: enable_zone.yaml
   when: cloudstack_ops_enable_zone

@@ -1,6 +1,6 @@
 # Add Secondary Storage to CloudStack
 ---
-- name: Add secondary storage (Image Store)
+- name: Add secondary storage
   ngine_io.cloudstack.image_store:
     api_url: "{{ cloudstack_api_url }}"
     api_key: "{{ cloudstack_api_key }}"
@@ -14,10 +14,4 @@
   loop: "{{ cloudstack_ops_secondary_storages }}"
   loop_control:
     loop_var: storage
-  register: cloudstack_ops_secondary_storage_result
-
-- name: Display secondary storage information
-  ansible.builtin.debug:
-    msg: "Secondary storage '{{ item.storage.name }}' {{ 'created' if item.changed else 'already exists' }}"
-  loop: "{{ cloudstack_ops_secondary_storage_result.results }}"
-  when: cloudstack_ops_secondary_storage_result.results is defined
+    label: "{{ storage.name }}"

@@ -1,6 +1,6 @@
 # Create CloudStack SSH Key Pair
 ---
-- name: Check if SSH key already exists
+- name: Create SSH key
   ngine_io.cloudstack.ssh_key:
     api_url: "{{ cloudstack_api_url }}"
     api_key: "{{ cloudstack_api_key }}"
@@ -17,7 +17,7 @@
     mode: "0700"
   delegate_to: localhost
 
-- name: Save private key to local machine
+- name: Save private key
   ansible.builtin.copy:
     content: "{{ cloudstack_ops_ssh_key_result.private_key }}"
     dest: "~/.ssh/{{ cloudstack_ops_ssh_key_name }}"
@@ -25,14 +25,3 @@
   delegate_to: localhost
   when: cloudstack_ops_ssh_key_result.private_key is defined
   no_log: true
-
-- name: Display SSH key information
-  ansible.builtin.debug:
-    msg: |
-      SSH Key '{{ cloudstack_ops_ssh_key_name }}' {{ 'created' if cloudstack_ops_ssh_key_result.changed else 'already exists' }}
-      {% if cloudstack_ops_ssh_key_result.private_key is defined %}
-      Private key saved to: ~/.ssh/{{ cloudstack_ops_ssh_key_name }}
-      {% else %}
-      Note: Private key only available on first creation
-      {% endif %}
-      Fingerprint: {{ cloudstack_ops_ssh_key_result.fingerprint | default('N/A') }}

@@ -19,12 +19,4 @@
   loop: "{{ cloudstack_ops_networks }}"
   loop_control:
     loop_var: network
-  register: cloudstack_ops_networks_result
-
-- name: Display network information
-  ansible.builtin.debug:
-    msg: |
-      Network '{{ item.network.name }}' {{ 'created' if item.changed else 'already exists' }}
-      {% if item.id is defined %}ID: {{ item.id }}{% endif %}
-  loop: "{{ cloudstack_ops_networks_result.results }}"
-  when: cloudstack_ops_networks_result.results is defined
+    label: "{{ network.name }}"

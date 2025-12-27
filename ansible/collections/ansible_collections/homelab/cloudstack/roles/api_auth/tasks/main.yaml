@@ -1,8 +1,6 @@
-# CloudStack API Authentication - Main Tasks
-# This role retrieves or generates CloudStack API keys
-# Sets shared vars: cloudstack_api_key, cloudstack_api_secret, cloudstack_session_key, cloudstack_cookies
+# CloudStack API Authentication
 ---
-- name: Login to CloudStack and get session  # noqa: var-naming[no-role-prefix]
+- name: Login to CloudStack  # noqa: var-naming[no-role-prefix]
   ansible.builtin.uri:
     url: "{{ cloudstack_api_url }}"
     method: POST
@@ -12,18 +10,17 @@
       username: "{{ cloudstack_admin_username }}"
       password: "{{ cloudstack_admin_password }}"
       response: json
-    return_content: true
     status_code: [200]
   register: api_auth_login_response
-  no_log: false
+  no_log: true
 
-- name: Extract session key and cookies  # noqa: var-naming[no-role-prefix]
+- name: Extract session  # noqa: var-naming[no-role-prefix]
   ansible.builtin.set_fact:
     cloudstack_session_key: "{{ api_auth_login_response.json.loginresponse.sessionkey }}"
     cloudstack_cookies: "{{ api_auth_login_response.cookies_string }}"
   no_log: true
 
-- name: Get user account details  # noqa: var-naming[no-role-prefix]
+- name: Get users  # noqa: var-naming[no-role-prefix]
   ansible.builtin.uri:
     url: "{{ cloudstack_api_url }}"
     method: POST
@@ -34,7 +31,6 @@
       sessionkey: "{{ cloudstack_session_key }}"
     headers:
       Cookie: "{{ cloudstack_cookies }}"
-    return_content: true
   register: api_auth_users_response
 
 - name: Find admin user
@@ -43,7 +39,7 @@
 
 - name: Check if API keys exist
   ansible.builtin.set_fact:
-    api_auth_keys_exist: "{{ api_auth_admin_user.apikey is defined and api_auth_admin_user.apikey | default('') | length > 0 }}"
+    api_auth_keys_exist: "{{ api_auth_admin_user.apikey | default('') | length > 0 }}"
 
 - name: Get existing API keys
   when: api_auth_keys_exist
@@ -60,20 +56,19 @@
           sessionkey: "{{ cloudstack_session_key }}"
         headers:
           Cookie: "{{ cloudstack_cookies }}"
-        return_content: true
       register: api_auth_get_keys_response
       no_log: true
 
-    - name: Set API keys from existing keys  # noqa: var-naming[no-role-prefix]
+    - name: Set API keys  # noqa: var-naming[no-role-prefix]
       ansible.builtin.set_fact:
         cloudstack_api_key: "{{ api_auth_get_keys_response.json.getuserkeysresponse.userkeys.apikey }}"
         cloudstack_api_secret: "{{ api_auth_get_keys_response.json.getuserkeysresponse.userkeys.secretkey }}"
       no_log: true
 
-- name: Generate API keys if they don't exist
+- name: Generate API keys
   when: not api_auth_keys_exist
   block:
-    - name: Generate new API keys
+    - name: Register new keys
       ansible.builtin.uri:
         url: "{{ cloudstack_api_url }}"
         method: POST
@@ -85,15 +80,10 @@
           sessionkey: "{{ cloudstack_session_key }}"
         headers:
           Cookie: "{{ cloudstack_cookies }}"
-        return_content: true
       register: api_auth_keys_response
 
-    - name: Set API keys from response  # noqa: var-naming[no-role-prefix]
+    - name: Set API keys  # noqa: var-naming[no-role-prefix]
       ansible.builtin.set_fact:
         cloudstack_api_key: "{{ api_auth_keys_response.json.registeruserkeysresponse.userkeys.apikey }}"
         cloudstack_api_secret: "{{ api_auth_keys_response.json.registeruserkeysresponse.userkeys.secretkey }}"
       no_log: true
-
-- name: Display API key info
-  ansible.builtin.debug:
-    msg: "CloudStack API keys configured successfully"

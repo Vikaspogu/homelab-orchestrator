@@ -84,17 +84,29 @@ prepare_kvm_local_storage_group: "root"
 prepare_kvm_local_storage_mode: "0755"
 
 # Additional storage devices (NVMe, SSD, etc.)
-# These will be formatted, mounted, and configured for CloudStack
+# Multiple disks are merged into a single pool using MergeFS
 prepare_kvm_additional_storage: []
-# Example:
-#   - device: "/dev/nvme0n1"           # Block device path
-#     mount_point: "/mnt/nvme-storage" # Where to mount
-#     filesystem: "xfs"                # xfs or ext4 (xfs recommended for performance)
-#     mount_options: "noatime,nodiratime,discard"  # Mount options
-#     label: "nvme-local"              # Optional filesystem label
-#   - device: "/dev/nvme1n1"
-#     mount_point: "/mnt/nvme-storage2"
+# Example - multiple disks merged into one:
+#   - device: "/dev/nvme0n1"
 #     filesystem: "xfs"
+#     mount_options: "noatime,nodiratime,discard"
+#     label: "nvme-disk0"
+#   - device: "/dev/nvme1n1"
+#     filesystem: "xfs"
+#     label: "nvme-disk1"
+#   - device: "/dev/sdb"
+#     filesystem: "xfs"
+#     label: "ssd-disk0"
+
+# MergeFS configuration - combines all additional_storage disks into one pool
+prepare_kvm_mergefs_mount_point: "/mnt/cloudstack-storage"  # Unified mount point for CloudStack
+prepare_kvm_mergefs_branch_path: "/mnt/disks"               # Where individual disks are mounted
+# MergeFS policy options:
+#   - mfs (most free space) - writes to disk with most free space
+#   - lfs (least free space) - writes to disk with least free space  
+#   - epmfs (existing path, most free space) - keeps files together, balances new writes
+#   - rand - random distribution
+prepare_kvm_mergefs_options: "defaults,allow_other,use_ino,cache.files=partial,dropcacheonclose=true,category.create=mfs"
 
 # UEFI support
 prepare_kvm_uefi_support: false

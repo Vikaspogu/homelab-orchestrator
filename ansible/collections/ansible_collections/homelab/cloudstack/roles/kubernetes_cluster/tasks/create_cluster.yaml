@@ -1,6 +1,6 @@
 # Create a CloudStack Kubernetes cluster
 ---
-- name: Validate required parameters for cluster {{ cluster.name }}
+- name: Validate required parameters
   ansible.builtin.assert:
     that:
       - cluster.zone is defined
@@ -9,13 +9,9 @@
       - kubernetes_cluster_zone_ids[cluster.zone] is defined
       - kubernetes_cluster_k8s_version_ids[cluster.kubernetes_version] is defined
       - kubernetes_cluster_offering_ids[cluster.service_offering] is defined
-    fail_msg: |
-      Missing or invalid parameters for cluster {{ cluster.name }}:
-      - Zone '{{ cluster.zone }}' ID: {{ kubernetes_cluster_zone_ids[cluster.zone] | default('NOT FOUND') }}
-      - K8s Version '{{ cluster.kubernetes_version }}' ID: {{ kubernetes_cluster_k8s_version_ids[cluster.kubernetes_version] | default('NOT FOUND') }}
-      - Service Offering '{{ cluster.service_offering }}' ID: {{ kubernetes_cluster_offering_ids[cluster.service_offering] | default('NOT FOUND') }}
+    fail_msg: "Missing or invalid parameters for cluster {{ cluster.name }}"
 
-- name: Check if cluster exists - {{ cluster.name }}
+- name: Check if cluster exists
   ansible.builtin.uri:
     url: "{{ cloudstack_api_url }}"
     method: POST
@@ -27,197 +23,91 @@
       sessionkey: "{{ cloudstack_session_key }}"
     headers:
       Cookie: "{{ cloudstack_cookies }}"
-    return_content: true
     timeout: "{{ kubernetes_cluster_api_timeout }}"
   register: kubernetes_cluster_existing
 
-- name: Set cluster exists flag for {{ cluster.name }}
+- name: Set cluster exists flag
   ansible.builtin.set_fact:
     kubernetes_cluster_exists: "{{ (kubernetes_cluster_existing.json.listkubernetesclustersresponse.kubernetescluster | default([]) | length) > 0 }}"
 
-- name: Determine service offering for {{ cluster.name }}
-  ansible.builtin.set_fact:
-    kubernetes_cluster_effective_offering: >-
-      {{
-        cluster.gpu_service_offering
-        if (cluster.enable_gpu | default(false) | bool and cluster.gpu_service_offering is defined and cluster.gpu_service_offering | length > 0)
-        else cluster.service_offering
-      }}
+- name: Configure cluster creation
   when: not kubernetes_cluster_exists
+  block:
+    - name: Determine service offering
+      ansible.builtin.set_fact:
+        kubernetes_cluster_effective_offering: >-
+          {{ cluster.gpu_service_offering
+             if (cluster.enable_gpu | default(false) and cluster.gpu_service_offering is defined)
+             else cluster.service_offering }}
 
-- name: Display GPU configuration for {{ cluster.name }}
-  ansible.builtin.debug:
-    msg: |
-      GPU Configuration:
-        GPU Enabled: {{ cluster.enable_gpu | default(false) }}
-        Service Offering: {{ kubernetes_cluster_effective_offering }}
-        {% if cluster.enable_gpu | default(false) | bool %}
-        Note: Ensure the service offering '{{ kubernetes_cluster_effective_offering }}' has GPU/host_tags configured
-        {% endif %}
-  when: not kubernetes_cluster_exists
+    - name: Build create cluster parameters
+      ansible.builtin.set_fact:
+        kubernetes_cluster_create_params:
+          command: createKubernetesCluster
+          name: "{{ cluster.name }}"
+          description: "{{ cluster.description | default(kubernetes_cluster_defaults.description) }}"
+          zoneid: "{{ kubernetes_cluster_zone_ids[cluster.zone] }}"
+          kubernetesversionid: "{{ kubernetes_cluster_k8s_version_ids[cluster.kubernetes_version] }}"
+          serviceofferingid: "{{ kubernetes_cluster_offering_ids[kubernetes_cluster_effective_offering] }}"
+          size: "{{ cluster.size | default(kubernetes_cluster_defaults.size) }}"
+          controlnodes: "{{ cluster.control_nodes | default(kubernetes_cluster_defaults.control_nodes) }}"
+          noderootdisksize: "{{ cluster.node_root_disk_size | default(kubernetes_cluster_defaults.node_root_disk_size) }}"
+          response: json
+          sessionkey: "{{ cloudstack_session_key }}"
 
-- name: Build create cluster parameters for {{ cluster.name }}
-  ansible.builtin.set_fact:
-    kubernetes_cluster_create_params:
-      command: createKubernetesCluster
-      name: "{{ cluster.name }}"
-      description: "{{ cluster.description | default(kubernetes_cluster_defaults.description) }}"
-      zoneid: "{{ kubernetes_cluster_zone_ids[cluster.zone] }}"
-      kubernetesversionid: "{{ kubernetes_cluster_k8s_version_ids[cluster.kubernetes_version] }}"
-      serviceofferingid: "{{ kubernetes_cluster_offering_ids[kubernetes_cluster_effective_offering] }}"
-      size: "{{ cluster.size | default(kubernetes_cluster_defaults.size) }}"
-      controlnodes: "{{ cluster.control_nodes | default(kubernetes_cluster_defaults.control_nodes) }}"
-      noderootdisksize: "{{ cluster.node_root_disk_size | default(kubernetes_cluster_defaults.node_root_disk_size) }}"
-      response: json
-      sessionkey: "{{ cloudstack_session_key }}"
-  when: not kubernetes_cluster_exists
+    - name: Set CKS template name
+      ansible.builtin.set_fact:
+        kubernetes_cluster_template: "{{ cluster.template | default(kubernetes_cluster_defaults.template) | default('') }}"
 
-- name: Set CKS template name for {{ cluster.name }}
-  ansible.builtin.set_fact:
-    kubernetes_cluster_template: "{{ cluster.template | default(kubernetes_cluster_defaults.template) | default('') }}"
-  when: not kubernetes_cluster_exists
+    - name: Validate custom template exists
+      ansible.builtin.assert:
+        that:
+          - kubernetes_cluster_template_ids[kubernetes_cluster_template] is defined
+        fail_msg: "Template '{{ kubernetes_cluster_template }}' not found"
+      when: kubernetes_cluster_template | length > 0
 
-- name: Using default CKS SystemVM template for {{ cluster.name }}
-  ansible.builtin.debug:
-    msg: "No custom template specified - CKS will use its default SystemVM template"
-  when:
-    - not kubernetes_cluster_exists
-    - kubernetes_cluster_template | length == 0
+    - name: Add custom template
+      ansible.builtin.set_fact:
+        kubernetes_cluster_create_params: "{{ kubernetes_cluster_create_params | combine({'templateid': kubernetes_cluster_template_ids[kubernetes_cluster_template]}) }}"
+      when:
+        - kubernetes_cluster_template | length > 0
+        - kubernetes_cluster_template_ids[kubernetes_cluster_template] is defined
 
-- name: Debug template lookup for {{ cluster.name }}
-  ansible.builtin.debug:
-    msg: |
-      Looking for template: '{{ kubernetes_cluster_template }}'
-      Available templates: {{ kubernetes_cluster_template_ids.keys() | list }}
-      Template found: {{ kubernetes_cluster_template_ids[kubernetes_cluster_template] is defined }}
-  when:
-    - not kubernetes_cluster_exists
-    - kubernetes_cluster_template | length > 0
+    - name: Enable CSI driver
+      ansible.builtin.set_fact:
+        kubernetes_cluster_create_params: "{{ kubernetes_cluster_create_params | combine({'csi': 'true'}) }}"
+      when: cluster.enable_csi | default(kubernetes_cluster_defaults.enable_csi) | default(true) | bool
 
-- name: Validate custom template exists for {{ cluster.name }}
-  ansible.builtin.assert:
-    that:
-      - kubernetes_cluster_template_ids[kubernetes_cluster_template] is defined
-    fail_msg: |
-      Template '{{ kubernetes_cluster_template }}' not found in CloudStack!
-      Available templates: {{ kubernetes_cluster_template_ids.keys() | list | join(', ') }}
+    - name: Add network if specified
+      ansible.builtin.set_fact:
+        kubernetes_cluster_create_params: "{{ kubernetes_cluster_create_params | combine({'networkid': kubernetes_cluster_network_ids[cluster.network]}) }}"
+      when:
+        - cluster.network is defined
+        - kubernetes_cluster_network_ids[cluster.network] is defined
 
-      Either:
-      1. Remove the 'template' setting to use CKS default SystemVM template
-      2. Or ensure the template is registered and ready
-  when:
-    - not kubernetes_cluster_exists
-    - kubernetes_cluster_template | length > 0
+    - name: Add external load balancer
+      ansible.builtin.set_fact:
+        kubernetes_cluster_create_params: "{{ kubernetes_cluster_create_params | combine({'externalloadbalanceripaddress': cluster.external_load_balancer}) }}"
+      when: cluster.external_load_balancer | default('') | length > 0
 
-- name: Add custom template for cluster nodes for {{ cluster.name }}
-  ansible.builtin.set_fact:
-    kubernetes_cluster_create_params: >-
-      {{ kubernetes_cluster_create_params | combine({
-        'templateid': kubernetes_cluster_template_ids[kubernetes_cluster_template]
-      }) }}
-  when:
-    - not kubernetes_cluster_exists
-    - kubernetes_cluster_template | length > 0
-    - kubernetes_cluster_template_ids[kubernetes_cluster_template] is defined
+    - name: Add docker registry
+      ansible.builtin.set_fact:
+        kubernetes_cluster_create_params: >-
+          {{ kubernetes_cluster_create_params | combine({
+            'dockerregistryusername': cluster.docker_registry_username,
+            'dockerregistrypassword': cluster.docker_registry_password,
+            'dockerregistryurl': cluster.docker_registry_url
+          }) }}
+      when: cluster.docker_registry_url | default('') | length > 0
+      no_log: true
 
-- name: Display template being used for {{ cluster.name }}
-  ansible.builtin.debug:
-    msg: "Using custom template '{{ kubernetes_cluster_template }}' (ID: {{ kubernetes_cluster_template_ids[kubernetes_cluster_template] }}) for cluster nodes"
-  when:
-    - not kubernetes_cluster_exists
-    - kubernetes_cluster_template | length > 0
-    - kubernetes_cluster_template_ids[kubernetes_cluster_template] is defined
-
-- name: Enable CSI driver for {{ cluster.name }}
-  ansible.builtin.set_fact:
-    kubernetes_cluster_create_params: "{{ kubernetes_cluster_create_params | combine({'csi': 'true'}) }}"
-  when:
-    - not kubernetes_cluster_exists
-    - cluster.enable_csi | default(kubernetes_cluster_defaults.enable_csi) | default(true) | bool
-
-- name: Warn if network not found for {{ cluster.name }}
-  ansible.builtin.debug:
-    msg: |
-      WARNING: Network '{{ cluster.network }}' not found!
-      Available networks: {{ kubernetes_cluster_network_ids.keys() | list | join(', ') }}
-      CKS will auto-create a network for the cluster.
-  when:
-    - not kubernetes_cluster_exists
-    - cluster.network is defined
-    - cluster.network | length > 0
-    - kubernetes_cluster_network_ids[cluster.network] is not defined
-
-- name: Add network if specified for {{ cluster.name }}
-  ansible.builtin.set_fact:
-    kubernetes_cluster_create_params: "{{ kubernetes_cluster_create_params | combine({'networkid': kubernetes_cluster_network_ids[cluster.network]}) }}"
-  when:
-    - not kubernetes_cluster_exists
-    - cluster.network is defined
-    - cluster.network | length > 0
-    - kubernetes_cluster_network_ids[cluster.network] is defined
-
-- name: Add external load balancer if specified for {{ cluster.name }}
-  ansible.builtin.set_fact:
-    kubernetes_cluster_create_params: "{{ kubernetes_cluster_create_params | combine({'externalloadbalanceripaddress': cluster.external_load_balancer}) }}"
-  when:
-    - not kubernetes_cluster_exists
-    - cluster.external_load_balancer is defined
-    - cluster.external_load_balancer | length > 0
-
-- name: Add docker registry if specified for {{ cluster.name }}
-  ansible.builtin.set_fact:
-    kubernetes_cluster_create_params: >-
-      {{ kubernetes_cluster_create_params | combine({
-        'dockerregistryusername': cluster.docker_registry_username,
-        'dockerregistrypassword': cluster.docker_registry_password,
-        'dockerregistryurl': cluster.docker_registry_url
-      }) }}
-  when:
-    - not kubernetes_cluster_exists
-    - cluster.docker_registry_url is defined
-    - cluster.docker_registry_url | length > 0
-  no_log: true
-
-- name: Debug cluster creation parameters for {{ cluster.name }}
-  ansible.builtin.debug:
-    msg: |
-      Creating cluster with parameters:
-        Name: {{ kubernetes_cluster_create_params.name }}
-        Zone ID: {{ kubernetes_cluster_create_params.zoneid }}
-        K8s Version ID: {{ kubernetes_cluster_create_params.kubernetesversionid }}
-        Service Offering ID: {{ kubernetes_cluster_create_params.serviceofferingid }}
-        Template ID: {{ kubernetes_cluster_create_params.templateid | default('SystemVM (default)') }}
-        Network ID: {{ kubernetes_cluster_create_params.networkid | default('AUTO-CREATE') }}
-        CSI Enabled: {{ kubernetes_cluster_create_params.csi | default('false') }}
-        Size: {{ kubernetes_cluster_create_params.size }}
-        Control Nodes: {{ kubernetes_cluster_create_params.controlnodes }}
-  when: not kubernetes_cluster_exists
-
-- name: Create Kubernetes cluster {{ cluster.name }}
-  ansible.builtin.uri:
-    url: "{{ cloudstack_api_url }}"
-    method: POST
-    body_format: form-urlencoded
-    body: "{{ kubernetes_cluster_create_params }}"
-    headers:
-      Cookie: "{{ cloudstack_cookies }}"
-    return_content: true
-    timeout: "{{ kubernetes_cluster_api_timeout }}"
-  register: kubernetes_cluster_create_result
-  when: not kubernetes_cluster_exists
-
-- name: Display creation result for {{ cluster.name }}
-  ansible.builtin.debug:
-    msg: |
-      Cluster '{{ cluster.name }}' creation initiated.
-      {% if kubernetes_cluster_create_result.json.createkubernetesclusterresponse.kubernetescluster is defined %}
-      Cluster ID: {{ kubernetes_cluster_create_result.json.createkubernetesclusterresponse.kubernetescluster.id }}
-      {% elif kubernetes_cluster_create_result.json.createkubernetesclusterresponse.jobid is defined %}
-      Job ID: {{ kubernetes_cluster_create_result.json.createkubernetesclusterresponse.jobid }}
-      {% endif %}
-  when: not kubernetes_cluster_exists and kubernetes_cluster_create_result is defined
-
-- name: Cluster already exists - {{ cluster.name }}
-  ansible.builtin.debug:
-    msg: "Cluster '{{ cluster.name }}' already exists, skipping creation."
-  when: kubernetes_cluster_exists
+    - name: Create Kubernetes cluster
+      ansible.builtin.uri:
+        url: "{{ cloudstack_api_url }}"
+        method: POST
+        body_format: form-urlencoded
+        body: "{{ kubernetes_cluster_create_params }}"
+        headers:
+          Cookie: "{{ cloudstack_cookies }}"
+        timeout: "{{ kubernetes_cluster_api_timeout }}"
+      register: kubernetes_cluster_create_result

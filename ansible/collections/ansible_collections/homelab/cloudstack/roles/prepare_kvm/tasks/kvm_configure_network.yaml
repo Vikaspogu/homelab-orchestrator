@@ -1,4 +1,4 @@
-# Configure Network Bridges for CloudStack KVM Host (Native Linux Bridges)
+# Configure Network Bridges for CloudStack KVM Host
 ---
 - name: Disable bridge netfilter for CloudStack networking
   ansible.posix.sysctl:
@@ -26,12 +26,10 @@
 - name: Configure network bridges using Netplan
   when: prepare_kvm_use_netplan
   block:
-    - name: Create Netplan configuration for CloudStack bridges
+    - name: Create Netplan configuration
       ansible.builtin.template:
         src: netplan-bridges.yaml.j2
         dest: "{{ prepare_kvm_netplan_config_file }}"
-        owner: root
-        group: root
         mode: "0600"
         backup: true
       register: prepare_kvm_netplan_config
@@ -41,42 +39,13 @@
       when: prepare_kvm_netplan_config.changed
       changed_when: true
 
-# Configure using /etc/network/interfaces (older Ubuntu/Debian)
+# Configure using /etc/network/interfaces (older systems)
 - name: Configure network bridges using interfaces file
   when: not prepare_kvm_use_netplan
   block:
-    - name: Backup existing interfaces file
-      ansible.builtin.copy:
-        src: "{{ prepare_kvm_interfaces_config_file }}"
-        dest: "{{ prepare_kvm_interfaces_config_file }}.backup.{{ ansible_facts['date_time']['epoch'] }}"
-        remote_src: true
-        mode: "0644"
-      failed_when: false
-
-    - name: Configure network interfaces for CloudStack bridges
+    - name: Configure network interfaces
       ansible.builtin.template:
         src: interfaces.j2
         dest: "{{ prepare_kvm_interfaces_config_file }}"
-        owner: root
-        group: root
         mode: "0644"
         backup: true
-      register: prepare_kvm_interfaces_config
-
-    - name: Display network restart warning  # noqa: no-handler
-      ansible.builtin.debug:
-        msg: >
-          Network configuration has been updated. A network restart or reboot
-          is required to apply the changes. Run 'systemctl restart networking'
-          or reboot the system.
-      when: prepare_kvm_interfaces_config.changed
-
-- name: Display network configuration info
-  ansible.builtin.debug:
-    msg: |
-      Network bridges configured:
-        Management bridge: {{ prepare_kvm_mgmt_bridge }} ({{ prepare_kvm_mgmt_interface }})
-        Guest bridge: {{ prepare_kvm_guest_bridge }} ({{ prepare_kvm_guest_interface }})
-        Single NIC mode: {{ prepare_kvm_mgmt_bridge == prepare_kvm_guest_bridge }}
-        Network mode: {{ prepare_kvm_network_mode }}
-        Using Netplan: {{ prepare_kvm_use_netplan }}

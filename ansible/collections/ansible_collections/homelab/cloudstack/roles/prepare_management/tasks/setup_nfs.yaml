@@ -1,46 +1,32 @@
-# Setup NFS Storage on Management Server
-# For primary and secondary storage
+# Setup NFS Storage
 ---
 - name: Install NFS packages
   ansible.builtin.apt:
-    name:
-      - nfs-kernel-server
-      - nfs-common
+    name: [nfs-kernel-server, nfs-common]
     state: present
     update_cache: true
 
-- name: Create primary storage directory
+- name: Create storage directories
   ansible.builtin.file:
-    path: "{{ prepare_management_nfs_primary_path }}"
+    path: "{{ item }}"
     state: directory
     mode: "0755"
     owner: nobody
     group: nogroup
+  loop:
+    - "{{ prepare_management_nfs_primary_path }}"
+    - "{{ prepare_management_nfs_secondary_path }}"
 
-- name: Create secondary storage directory
-  ansible.builtin.file:
-    path: "{{ prepare_management_nfs_secondary_path }}"
-    state: directory
-    mode: "0755"
-    owner: nobody
-    group: nogroup
-
-- name: Configure NFS exports for primary storage
+- name: Configure NFS exports
   ansible.builtin.lineinfile:
     path: /etc/exports
-    regexp: "^{{ prepare_management_nfs_primary_path | regex_escape }}\\s"
-    line: "{{ prepare_management_nfs_primary_path }} *({{ prepare_management_nfs_export_options }})"
+    regexp: "^{{ item | regex_escape }}\\s"
+    line: "{{ item }} *({{ prepare_management_nfs_export_options }})"
     create: true
     mode: "0644"
-  notify: reload nfs exports
-
-- name: Configure NFS exports for secondary storage
-  ansible.builtin.lineinfile:
-    path: /etc/exports
-    regexp: "^{{ prepare_management_nfs_secondary_path | regex_escape }}\\s"
-    line: "{{ prepare_management_nfs_secondary_path }} *({{ prepare_management_nfs_export_options }})"
-    create: true
-    mode: "0644"
+  loop:
+    - "{{ prepare_management_nfs_primary_path }}"
+    - "{{ prepare_management_nfs_secondary_path }}"
   notify: reload nfs exports
 
 - name: Configure idmapd domain
@@ -52,34 +38,36 @@
   when: prepare_management_nfs_domain | length > 0
   notify: restart nfs
 
-- name: Configure UFW firewall for NFS
+- name: Configure UFW for NFS
   community.general.ufw:
     rule: allow
     port: "{{ item.port | string }}"
     proto: "{{ item.proto }}"
     from_ip: "{{ prepare_management_nfs_allowed_network }}"
   loop:
-    - { port: 111, proto: "tcp" }
-    - { port: 111, proto: "udp" }
-    - { port: 2049, proto: "tcp" }
-    - { port: 2049, proto: "udp" }
-    - { port: 32803, proto: "tcp" }
-    - { port: 32769, proto: "udp" }
-    - { port: 892, proto: "tcp" }
-    - { port: 892, proto: "udp" }
-    - { port: 875, proto: "tcp" }
-    - { port: 875, proto: "udp" }
-    - { port: 662, proto: "tcp" }
-    - { port: 662, proto: "udp" }
+    - {port: 111, proto: "tcp"}
+    - {port: 111, proto: "udp"}
+    - {port: 2049, proto: "tcp"}
+    - {port: 2049, proto: "udp"}
+    - {port: 32803, proto: "tcp"}
+    - {port: 32769, proto: "udp"}
+    - {port: 892, proto: "tcp"}
+    - {port: 892, proto: "udp"}
+    - {port: 875, proto: "tcp"}
+    - {port: 875, proto: "udp"}
+    - {port: 662, proto: "tcp"}
+    - {port: 662, proto: "udp"}
+  loop_control:
+    label: "{{ item.port }}/{{ item.proto }}"
   failed_when: false
 
-- name: Enable and start rpcbind
+- name: Enable rpcbind
   ansible.builtin.service:
     name: rpcbind
     state: started
     enabled: true
 
-- name: Enable and start NFS server
+- name: Enable NFS server
   ansible.builtin.service:
     name: nfs-kernel-server
     state: started
@@ -88,11 +76,3 @@
 - name: Export NFS shares
   ansible.builtin.command: exportfs -ra
   changed_when: true
-
-- name: Display NFS configuration
-  ansible.builtin.debug:
-    msg: |
-      NFS Storage configured successfully!
-
-      Primary Storage:   nfs://{{ ansible_facts['default_ipv4']['address'] | default(inventory_hostname) }}{{ prepare_management_nfs_primary_path }}
-      Secondary Storage: nfs://{{ ansible_facts['default_ipv4']['address'] | default(inventory_hostname) }}{{ prepare_management_nfs_secondary_path }}

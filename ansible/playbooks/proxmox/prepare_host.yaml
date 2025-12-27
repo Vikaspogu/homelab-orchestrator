@@ -118,20 +118,20 @@
         - name: Add scrutiny collector to hosts
           block:
             - name: Software - Install dependencies (base)
-              apt:
+              ansible.builtin.apt:
                 name: cron
                 state: present
 
             # Directory structure
             - name: Files - Create a directory to hold Scrutiny-related stuff
-              file: path=/opt/scrutiny state=directory
+              ansible.builtin.file: path=/opt/scrutiny state=directory
 
             - name: Files - Create a directory to store binaries
-              file: path=/opt/scrutiny/bin state=directory
+              ansible.builtin.file: path=/opt/scrutiny/bin state=directory
 
             # Binary (autodetects architecture)
             - name: Binary - Install the collector binary (amd64)
-              get_url:
+              ansible.builtin.get_url:
                 url: https://github.com/AnalogJ/scrutiny/releases/download/{{ scrutiny_version }}/scrutiny-collector-metrics-linux-amd64
                 dest: /opt/scrutiny/bin/scrutiny-collector-metrics-linux
                 mode: '0755'
@@ -139,7 +139,7 @@
 
             # Cron
             - name: Cron - Create a root crontab entry to run the collector periodically
-              cron:
+              ansible.builtin.cron:
                 name: 'Scrutiny - Run the Collector'
                 minute: '0'
                 hour: '1'

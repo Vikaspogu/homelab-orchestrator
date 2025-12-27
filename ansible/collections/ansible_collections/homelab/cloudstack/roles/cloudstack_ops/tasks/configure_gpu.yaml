@@ -1,24 +1,6 @@
 # Configure GPU devices on CloudStack hosts
 ---
-# List hosts with GPU capabilities
-- name: List hosts with GPU devices
-  ansible.builtin.uri:
-    url: "{{ cloudstack_api_url }}"
-    method: POST
-    body_format: form-urlencoded
-    body:
-      command: listHosts
-      type: Routing
-      zoneid: "{{ cloudstack_ops_zone_id }}"
-      response: json
-      sessionkey: "{{ cloudstack_session_key }}"
-    headers:
-      Cookie: "{{ cloudstack_cookies }}"
-    return_content: true
-    timeout: "{{ cloudstack_ops_async_timeout }}"
-  register: cloudstack_ops_all_hosts
-
-- name: Get zone ID for GPU configuration
+- name: Get zone ID
   ansible.builtin.uri:
     url: "{{ cloudstack_api_url }}"
     method: POST
@@ -30,18 +12,14 @@
       sessionkey: "{{ cloudstack_session_key }}"
     headers:
       Cookie: "{{ cloudstack_cookies }}"
-    return_content: true
     timeout: "{{ cloudstack_ops_async_timeout }}"
   register: cloudstack_ops_zone_for_gpu
 
 - name: Set zone ID
   ansible.builtin.set_fact:
     cloudstack_ops_gpu_zone_id: "{{ cloudstack_ops_zone_for_gpu.json.listzonesresponse.zone[0].id }}"
-  when:
-    - cloudstack_ops_zone_for_gpu.json.listzonesresponse.zone is defined
-    - cloudstack_ops_zone_for_gpu.json.listzonesresponse.zone | length > 0
+  when: cloudstack_ops_zone_for_gpu.json.listzonesresponse.zone | default([]) | length > 0
 
-# Check for GPU groups on hosts
 - name: List GPU groups in zone
   ansible.builtin.uri:
     url: "{{ cloudstack_api_url }}"
@@ -54,11 +32,11 @@
       sessionkey: "{{ cloudstack_session_key }}"
     headers:
       Cookie: "{{ cloudstack_cookies }}"
-    return_content: true
     timeout: "{{ cloudstack_ops_async_timeout }}"
   register: cloudstack_ops_gpu_groups_list
   failed_when: false
 
+<<<<<<< Updated upstream
 - name: Display available GPU groups
   ansible.builtin.debug:
     msg: |
@@ -68,17 +46,26 @@
 
 # List vGPU types if available
 - name: List vGPU types
+=======
+- name: Check for existing GPU compute offering
+>>>>>>> Stashed changes
   ansible.builtin.uri:
     url: "{{ cloudstack_api_url }}"
     method: POST
     body_format: form-urlencoded
     body:
+<<<<<<< Updated upstream
       command: listVGpuTypes
       zoneid: "{{ cloudstack_ops_gpu_zone_id }}"
+=======
+      command: listServiceOfferings
+      name: "{{ cloudstack_ops_gpu_offering.name | default('GPU Instance') }}"
+>>>>>>> Stashed changes
       response: json
       sessionkey: "{{ cloudstack_session_key }}"
     headers:
       Cookie: "{{ cloudstack_cookies }}"
+<<<<<<< Updated upstream
     return_content: true
     timeout: "{{ cloudstack_ops_async_timeout }}"
   register: cloudstack_ops_vgpu_types_list
@@ -90,3 +77,31 @@
       vGPU Types available:
       {{ cloudstack_ops_vgpu_types_list.json.listvgputypesresponse.vgputype | default([]) | to_nice_yaml }}
   when: cloudstack_ops_vgpu_types_list.json is defined
+=======
+    timeout: "{{ cloudstack_ops_async_timeout }}"
+  register: cloudstack_ops_gpu_offering_check
+  when: cloudstack_ops_gpu_offering is defined
+
+- name: Create GPU-enabled compute offering
+  ansible.builtin.uri:
+    url: "{{ cloudstack_api_url }}"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      command: createServiceOffering
+      name: "{{ cloudstack_ops_gpu_offering.name | default('GPU Instance') }}"
+      displaytext: "{{ cloudstack_ops_gpu_offering.display_text | default('Compute offering with GPU passthrough') }}"
+      cpunumber: "{{ cloudstack_ops_gpu_offering.cpu | default(4) }}"
+      cpuspeed: "{{ cloudstack_ops_gpu_offering.cpu_speed | default(2000) }}"
+      memory: "{{ cloudstack_ops_gpu_offering.memory | default(8192) }}"
+      storagetype: "{{ cloudstack_ops_gpu_offering.storage_type | default('local') }}"
+      hosttags: "{{ cloudstack_ops_gpu_offering.host_tags | default('') }}"
+      response: json
+      sessionkey: "{{ cloudstack_session_key }}"
+    headers:
+      Cookie: "{{ cloudstack_cookies }}"
+    timeout: "{{ cloudstack_ops_async_timeout }}"
+  when:
+    - cloudstack_ops_gpu_offering is defined
+    - cloudstack_ops_gpu_offering_check.json.listserviceofferingsresponse.serviceoffering | default([]) | length == 0
+>>>>>>> Stashed changes

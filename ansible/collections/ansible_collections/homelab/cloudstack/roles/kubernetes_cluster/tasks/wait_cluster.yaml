@@ -1,6 +1,6 @@
-# Wait for Kubernetes cluster to be ready
+# Wait for Kubernetes cluster
 ---
-- name: Get initial cluster status for {{ cluster.name }}
+- name: Get cluster status
   ansible.builtin.uri:
     url: "{{ cloudstack_api_url }}"
     method: POST
@@ -12,43 +12,22 @@
       sessionkey: "{{ cloudstack_session_key }}"
     headers:
       Cookie: "{{ cloudstack_cookies }}"
-    return_content: true
     timeout: "{{ kubernetes_cluster_api_timeout }}"
   register: kubernetes_cluster_initial_status
 
-- name: Set cluster state for {{ cluster.name }}
+- name: Set cluster state
   ansible.builtin.set_fact:
     kubernetes_cluster_state: "{{ kubernetes_cluster_initial_status.json.listkubernetesclustersresponse.kubernetescluster[0].state | default('Unknown') }}"
-  when:
-    - kubernetes_cluster_initial_status.json.listkubernetesclustersresponse.kubernetescluster is defined
-    - kubernetes_cluster_initial_status.json.listkubernetesclustersresponse.kubernetescluster | length > 0
+  when: kubernetes_cluster_initial_status.json.listkubernetesclustersresponse.kubernetescluster | default([]) | length > 0
 
-- name: Fail if cluster is in error state - {{ cluster.name }}
+- name: Fail if cluster errored
   ansible.builtin.fail:
-    msg: |
-      Cluster '{{ cluster.name }}' is in ERROR state!
-
-      Check CloudStack UI or logs for details:
-        - CloudStack UI: Compute > Kubernetes > {{ cluster.name }} > Events
-        - Management logs: /var/log/cloudstack/management/management-server.log
-
-      Common causes:
-        - Template not ready or incompatible
-        - Insufficient resources (CPU/RAM/Storage)
-        - Network configuration issue
-        - Service offering too small
+    msg: "Cluster '{{ cluster.name }}' is in {{ kubernetes_cluster_state }} state"
   when:
     - kubernetes_cluster_state is defined
     - kubernetes_cluster_state in ['Error', 'Failed', 'Destroyed']
 
-- name: Skip waiting if cluster already running - {{ cluster.name }}
-  ansible.builtin.debug:
-    msg: "Cluster '{{ cluster.name }}' is already Running!"
-  when:
-    - kubernetes_cluster_state is defined
-    - kubernetes_cluster_state == 'Running'
-
-- name: Wait for cluster to be running - {{ cluster.name }}
+- name: Wait for cluster to be running
   ansible.builtin.uri:
     url: "{{ cloudstack_api_url }}"
     method: POST
@@ -60,7 +39,6 @@
       sessionkey: "{{ cloudstack_session_key }}"
     headers:
       Cookie: "{{ cloudstack_cookies }}"
-    return_content: true
     timeout: "{{ kubernetes_cluster_api_timeout }}"
   register: kubernetes_cluster_status
   until: >
@@ -71,24 +49,9 @@
     - kubernetes_cluster_state is defined
     - kubernetes_cluster_state in ['Starting', 'Created', 'Creating']
 
-- name: Check final cluster state for {{ cluster.name }}
-  ansible.builtin.set_fact:
-    kubernetes_cluster_final_state: "{{ kubernetes_cluster_status.json.listkubernetesclustersresponse.kubernetescluster[0].state | default(kubernetes_cluster_state) }}"
-  when: kubernetes_cluster_status is defined and kubernetes_cluster_status.json is defined
-
-- name: Fail if cluster ended in error state - {{ cluster.name }}
+- name: Fail if cluster ended in error
   ansible.builtin.fail:
-    msg: |
-      Cluster '{{ cluster.name }}' provisioning FAILED!
-      Final state: {{ kubernetes_cluster_final_state | default(kubernetes_cluster_state) }}
-
-      Check CloudStack for error details.
+    msg: "Cluster '{{ cluster.name }}' provisioning failed"
   when:
-    - kubernetes_cluster_final_state is defined or kubernetes_cluster_state is defined
-    - (kubernetes_cluster_final_state | default(kubernetes_cluster_state)) in ['Error', 'Failed', 'Destroyed']
-
-- name: Display cluster status for {{ cluster.name }}
-  ansible.builtin.debug:
-    msg: |
-      Cluster '{{ cluster.name }}' is now Running!
-      Endpoint: {{ (kubernetes_cluster_status.json.listkubernetesclustersresponse.kubernetescluster[0].endpoint | default('N/A')) if kubernetes_cluster_status.json is defined else 'N/A' }}
+    - kubernetes_cluster_status.json is defined
+    - kubernetes_cluster_status.json.listkubernetesclustersresponse.kubernetescluster[0].state | default('') in ['Error', 'Failed', 'Destroyed']

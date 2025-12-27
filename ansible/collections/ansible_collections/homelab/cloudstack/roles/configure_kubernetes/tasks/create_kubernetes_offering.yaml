@@ -1,6 +1,6 @@
-# Create Compute Offering for CloudStack Kubernetes Service
+# Create Compute Offering for Kubernetes
 ---
-- name: List ALL service offerings
+- name: List service offerings
   ansible.builtin.uri:
     url: "{{ cloudstack_api_url }}"
     method: POST
@@ -12,29 +12,15 @@
       sessionkey: "{{ cloudstack_session_key }}"
     headers:
       Cookie: "{{ cloudstack_cookies }}"
-    return_content: true
   register: configure_kubernetes_all_offerings
 
-- name: Filter offerings by name
+- name: Check if offering exists
   ansible.builtin.set_fact:
-    configure_kubernetes_existing_offering_list: >-
-      {{ configure_kubernetes_all_offerings.json.listserviceofferingsresponse.serviceoffering |
-         default([]) | selectattr('name', 'equalto', configure_kubernetes_compute_offering.name) | list }}
+    configure_kubernetes_offering_exists: >-
+      {{ (configure_kubernetes_all_offerings.json.listserviceofferingsresponse.serviceoffering | default([]) |
+          selectattr('name', 'equalto', configure_kubernetes_compute_offering.name) | list | length) > 0 }}
 
-- name: Set offering exists flag
-  ansible.builtin.set_fact:
-    configure_kubernetes_offering_exists: "{{ configure_kubernetes_existing_offering_list | length > 0 }}"
-
-- name: Display found offerings
-  ansible.builtin.debug:
-    msg: |
-      Found {{ configure_kubernetes_existing_offering_list | length }} existing offering(s) named '{{ configure_kubernetes_compute_offering.name }}':
-      {% for offer in configure_kubernetes_existing_offering_list %}
-        - ID: {{ offer.id }}, CPU: {{ offer.cpunumber }}x{{ offer.cpuspeed }}MHz, RAM: {{ offer.memory }}MB, Storage: {{ offer.storagetype }}
-      {% endfor %}
-  when: configure_kubernetes_existing_offering_list | length > 0
-
-- name: Build compute offering parameters
+- name: Build offering parameters
   ansible.builtin.set_fact:
     configure_kubernetes_offering_params:
       command: createServiceOffering
@@ -48,13 +34,12 @@
       response: json
       sessionkey: "{{ cloudstack_session_key }}"
 
-- name: Add host tags to offering parameters
+- name: Add host tags
   ansible.builtin.set_fact:
-    configure_kubernetes_offering_params: >-
-      {{ configure_kubernetes_offering_params | combine({'hosttags': configure_kubernetes_compute_offering.host_tags}) }}
-  when: configure_kubernetes_compute_offering.host_tags is defined and configure_kubernetes_compute_offering.host_tags | length > 0
+    configure_kubernetes_offering_params: "{{ configure_kubernetes_offering_params | combine({'hosttags': configure_kubernetes_compute_offering.host_tags}) }}"
+  when: configure_kubernetes_compute_offering.host_tags | default('') | length > 0
 
-- name: Create Kubernetes compute offering
+- name: Create compute offering
   ansible.builtin.uri:
     url: "{{ cloudstack_api_url }}"
     method: POST
@@ -62,16 +47,4 @@
     body: "{{ configure_kubernetes_offering_params }}"
     headers:
       Cookie: "{{ cloudstack_cookies }}"
-    return_content: true
-  register: configure_kubernetes_create_offering_result
-
-- name: Display compute offering status
-  ansible.builtin.debug:
-    msg: |
-      Kubernetes Compute Offering:
-        Name: {{ configure_kubernetes_compute_offering.name }}
-        CPU: {{ configure_kubernetes_compute_offering.cpu }} cores @ {{ configure_kubernetes_compute_offering.cpu_speed }} MHz
-        Memory: {{ configure_kubernetes_compute_offering.memory }} MB
-        Storage: {{ configure_kubernetes_compute_offering.storage_type | default('shared') }}
-        Host Tags: {{ configure_kubernetes_compute_offering.host_tags | default('none') }}
-        Status: {{ 'Recreated' if (configure_kubernetes_offering_exists and configure_kubernetes_compute_offering_recreate | default(true)) else 'Created' }}
+  when: not configure_kubernetes_offering_exists

@@ -1,14 +1,12 @@
-# Configure additional storage devices (NVMe, SSD) for CloudStack local storage
+# Configure additional storage devices with MergeFS for CloudStack local storage
 ---
-- name: Install filesystem utilities
+- name: Install filesystem and MergeFS utilities
   ansible.builtin.apt:
-    name:
-      - xfsprogs
-      - nvme-cli
+    name: [xfsprogs, nvme-cli, mergerfs]
     state: present
     update_cache: true
 
-- name: Check if device exists
+- name: Check if devices exist
   ansible.builtin.stat:
     path: "{{ storage.device }}"
   loop: "{{ prepare_kvm_additional_storage }}"
@@ -17,7 +15,7 @@
     label: "{{ storage.device }}"
   register: prepare_kvm_storage_devices
 
-- name: Fail if device does not exist
+- name: Fail if any device does not exist
   ansible.builtin.fail:
     msg: "Device {{ item.storage.device }} does not exist!"
   loop: "{{ prepare_kvm_storage_devices.results }}"
@@ -25,23 +23,21 @@
     label: "{{ item.storage.device }}"
   when: not item.stat.exists
 
-- name: Check if device is already mounted
-  ansible.builtin.shell: |
-    set -o pipefail
-    mount | grep "{{ storage.device }}" || true
-  args:
-    executable: /bin/bash
-  loop: "{{ prepare_kvm_additional_storage }}"
-  loop_control:
-    loop_var: storage
-    label: "{{ storage.device }}"
-  register: prepare_kvm_mount_check
-  changed_when: false
+- name: Gather mount facts
+  ansible.builtin.setup:
+    gather_subset: [mounts]
 
-- name: Check if device has filesystem
-  ansible.builtin.shell: "blkid -s TYPE -o value {{ storage.device }}"
-  args:
-    executable: /bin/bash
+- name: Build mount status lookup
+  ansible.builtin.set_fact:
+    prepare_kvm_mounted_devices: "{{ ansible_mounts | map(attribute='device') | list }}"
+    prepare_kvm_mount_status: >-
+      {{ dict(prepare_kvm_additional_storage | map(attribute='device') |
+         zip(prepare_kvm_additional_storage | map(attribute='device') |
+         map('in', ansible_mounts | map(attribute='device') | list))) }}
+
+- name: Check if devices have filesystem
+  ansible.builtin.command:
+    cmd: "blkid -s TYPE -o value {{ storage.device }}"
   loop: "{{ prepare_kvm_additional_storage }}"
   loop_control:
     loop_var: storage
@@ -50,31 +46,30 @@
   changed_when: false
   failed_when: false
 
-- name: Create filesystem on device
+- name: Create filesystem on devices
   community.general.filesystem:
-    fstype: "{{ item.0.storage.filesystem | default('xfs') }}"
-    dev: "{{ item.0.storage.device }}"
-    opts: "{{ '-L ' + item.0.storage.label if item.0.storage.label is defined else '' }}"
-  loop: "{{ prepare_kvm_blkid_check.results | zip(prepare_kvm_mount_check.results) | list }}"
+    fstype: "{{ item.storage.filesystem | default('xfs') }}"
+    dev: "{{ item.storage.device }}"
+    opts: "{{ '-L ' + item.storage.label if item.storage.label is defined else omit }}"
+  loop: "{{ prepare_kvm_blkid_check.results }}"
   loop_control:
-    label: "{{ item.0.storage.device }}"
+    label: "{{ item.storage.device }}"
   when:
-    - item.0.stdout | trim == ''  # No filesystem type detected
-    - item.1.stdout == ''  # Not already mounted
+    - item.stdout | trim == ''
+    - not prepare_kvm_mount_status[item.storage.device]
 
-- name: Create mount point directories
+- name: Create disk mount directories
   ansible.builtin.file:
-    path: "{{ storage.mount_point }}"
+    path: "{{ prepare_kvm_mergefs_branch_path }}/disk{{ idx }}"
     state: directory
-    owner: root
-    group: root
     mode: "0755"
   loop: "{{ prepare_kvm_additional_storage }}"
   loop_control:
+    index_var: idx
     loop_var: storage
-    label: "{{ storage.mount_point }}"
+    label: "{{ storage.device }}"
 
-- name: Get device UUID
+- name: Get device UUIDs
   ansible.builtin.command: "blkid -s UUID -o value {{ storage.device }}"
   loop: "{{ prepare_kvm_additional_storage }}"
   loop_control:
@@ -82,51 +77,35 @@
     label: "{{ storage.device }}"
   register: prepare_kvm_device_uuids
   changed_when: false
+  failed_when: item.rc != 0 or item.stdout | trim == ''
 
-- name: Fail if UUID could not be retrieved
-  ansible.builtin.fail:
-    msg: "Could not retrieve UUID for device {{ item.storage.device }}. Ensure the device has a valid filesystem."
+- name: Mount individual storage devices
+  ansible.posix.mount:
+    path: "{{ prepare_kvm_mergefs_branch_path }}/disk{{ idx }}"
+    src: "UUID={{ item.stdout }}"
+    fstype: "{{ item.storage.filesystem | default('xfs') }}"
+    opts: "{{ item.storage.mount_options | default('noatime,nodiratime') }}"
+    state: mounted
   loop: "{{ prepare_kvm_device_uuids.results }}"
   loop_control:
+    index_var: idx
     label: "{{ item.storage.device }}"
-  when: item.rc != 0 or item.stdout | trim == ''
+  when: not prepare_kvm_mount_status[item.storage.device]
 
-- name: Mount storage devices via fstab
-  ansible.posix.mount:
-    path: "{{ item.0.storage.mount_point }}"
-    src: "UUID={{ item.0.stdout }}"
-    fstype: "{{ item.0.storage.filesystem | default('xfs') }}"
-    opts: "{{ item.0.storage.mount_options | default('noatime,nodiratime') }}"
-    state: mounted
-  loop: "{{ prepare_kvm_device_uuids.results | zip(prepare_kvm_mount_check.results) | list }}"
-  loop_control:
-    label: "{{ item.0.storage.mount_point }}"
-  when: item.1.stdout == ''  # Skip if already mounted
-
-- name: Set correct permissions on mount points
+- name: Create MergeFS mount point
   ansible.builtin.file:
-    path: "{{ storage.mount_point }}"
-    owner: root
-    group: root
+    path: "{{ prepare_kvm_mergefs_mount_point }}"
+    state: directory
     mode: "0755"
-  loop: "{{ prepare_kvm_additional_storage }}"
-  loop_control:
-    loop_var: storage
-    label: "{{ storage.mount_point }}"
 
-- name: Display storage configuration summary
-  ansible.builtin.debug:
-    msg: |
-      Additional Storage Configured:
-      {% for result in prepare_kvm_device_uuids.results %}
-        - Device: {{ result.storage.device }}
-          Mount Point: {{ result.storage.mount_point }}
-          UUID: {{ result.stdout }}
-          Filesystem: {{ result.storage.filesystem | default('xfs') }}
-      {% endfor %}
+- name: Build MergeFS branch paths
+  ansible.builtin.set_fact:
+    prepare_kvm_mergefs_branches: "{{ range(prepare_kvm_additional_storage | length) | map('regex_replace', '^(.*)$', prepare_kvm_mergefs_branch_path + '/disk\\1') | join(':') }}"
 
-      To add these as Primary Storage in CloudStack:
-      1. Go to Infrastructure → Primary Storage → Add Primary Storage
-      2. Select Scope: Host (for local) or Cluster
-      3. Protocol: Filesystem
-      4. Path: <mount_point from above>
+- name: Mount MergeFS pool
+  ansible.posix.mount:
+    path: "{{ prepare_kvm_mergefs_mount_point }}"
+    src: "{{ prepare_kvm_mergefs_branches }}"
+    fstype: fuse.mergerfs
+    opts: "{{ prepare_kvm_mergefs_options }}"
+    state: mounted
