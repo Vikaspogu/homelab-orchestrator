@@ -1,50 +1,16 @@
 # Create Compute Offering for Kubernetes
 ---
-- name: List service offerings
-  ansible.builtin.uri:
-    url: "{{ cloudstack_api_url }}"
-    method: POST
-    body_format: form-urlencoded
-    body:
-      command: listServiceOfferings
-      listall: "true"
-      response: json
-      sessionkey: "{{ cloudstack_session_key }}"
-    headers:
-      Cookie: "{{ cloudstack_cookies }}"
-  register: configure_kubernetes_all_offerings
-
-- name: Check if offering exists
-  ansible.builtin.set_fact:
-    configure_kubernetes_offering_exists: >-
-      {{ (configure_kubernetes_all_offerings.json.listserviceofferingsresponse.serviceoffering | default([]) |
-          selectattr('name', 'equalto', configure_kubernetes_compute_offering.name) | list | length) > 0 }}
-
-- name: Build offering parameters
-  ansible.builtin.set_fact:
-    configure_kubernetes_offering_params:
-      command: createServiceOffering
-      name: "{{ configure_kubernetes_compute_offering.name }}"
-      displaytext: "{{ configure_kubernetes_compute_offering.display_text | default(configure_kubernetes_compute_offering.name) }}"
-      cpunumber: "{{ configure_kubernetes_compute_offering.cpu }}"
-      cpuspeed: "{{ configure_kubernetes_compute_offering.cpu_speed }}"
-      memory: "{{ configure_kubernetes_compute_offering.memory }}"
-      storagetype: "{{ configure_kubernetes_compute_offering.storage_type | default('shared') }}"
-      offerha: "{{ configure_kubernetes_compute_offering.offer_ha | default(false) | lower }}"
-      response: json
-      sessionkey: "{{ cloudstack_session_key }}"
-
-- name: Add host tags
-  ansible.builtin.set_fact:
-    configure_kubernetes_offering_params: "{{ configure_kubernetes_offering_params | combine({'hosttags': configure_kubernetes_compute_offering.host_tags}) }}"
-  when: configure_kubernetes_compute_offering.host_tags | default('') | length > 0
-
 - name: Create compute offering
-  ansible.builtin.uri:
-    url: "{{ cloudstack_api_url }}"
-    method: POST
-    body_format: form-urlencoded
-    body: "{{ configure_kubernetes_offering_params }}"
-    headers:
-      Cookie: "{{ cloudstack_cookies }}"
-  when: not configure_kubernetes_offering_exists
+  ngine_io.cloudstack.service_offering:
+    api_url: "{{ cloudstack_api_url }}"
+    api_key: "{{ cloudstack_api_key }}"
+    api_secret: "{{ cloudstack_api_secret }}"
+    name: "{{ configure_kubernetes_compute_offering.name }}"
+    display_text: "{{ configure_kubernetes_compute_offering.display_text | default(configure_kubernetes_compute_offering.name) }}"
+    cpu_number: "{{ configure_kubernetes_compute_offering.cpu }}"
+    cpu_speed: "{{ configure_kubernetes_compute_offering.cpu_speed }}"
+    memory: "{{ configure_kubernetes_compute_offering.memory }}"
+    storage_type: "{{ configure_kubernetes_compute_offering.storage_type | default('shared') }}"
+    offer_ha: "{{ configure_kubernetes_compute_offering.offer_ha | default(false) }}"
+    host_tags: "{{ configure_kubernetes_compute_offering.host_tags | default(omit) }}"
+    state: present

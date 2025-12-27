@@ -11,6 +11,26 @@
     msg: "Proxmox extension not found at /usr/share/cloudstack-management/extensions/Proxmox. Ensure CloudStack 4.19+ is installed."
   when: not cloudstack_ops_proxmox_ext_path.stat.exists
 
+- name: Check CloudStack extensions configuration
+  ngine_io.cloudstack.configuration_info:
+    api_url: "{{ cloudstack_api_url }}"
+    api_key: "{{ cloudstack_api_key }}"
+    api_secret: "{{ cloudstack_api_secret }}"
+    name: "cloud.extensions.enabled"
+  register: cloudstack_ops_extensions_config
+  failed_when: false
+
+- name: Enable extensions in CloudStack configuration
+  ngine_io.cloudstack.configuration:
+    api_url: "{{ cloudstack_api_url }}"
+    api_key: "{{ cloudstack_api_key }}"
+    api_secret: "{{ cloudstack_api_secret }}"
+    name: "cloud.extensions.enabled"
+    value: "true"
+  when:
+    - cloudstack_ops_extensions_config.configurations | default([]) | length > 0
+    - (cloudstack_ops_extensions_config.configurations[0].value | default('false')) != 'true'
+
 - name: List available extensions
   ansible.builtin.uri:
     url: "{{ cloudstack_api_url }}"
@@ -88,4 +108,3 @@
     timeout: "{{ cloudstack_ops_async_timeout }}"
   register: cloudstack_ops_proxmox_resources
   when: cloudstack_ops_proxmox_ext.id is defined
-

@@ -25,124 +25,29 @@
     label: "{{ storage.name }}"
   when: cloudstack_ops_cluster_storages | length > 0
 
-- name: Add host-scoped local storage
+- name: Add host-scoped primary storage
+  ansible.builtin.uri:
+    url: "{{ cloudstack_api_url }}"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      command: createStoragePool
+      name: "{{ storage.name }}"
+      zoneid: "{{ cloudstack_ops_zone_id }}"
+      podid: "{{ cloudstack_ops_pod_ids[storage.pod_name | default(cloudstack_ops_pods[0].name)] }}"
+      clusterid: "{{ cloudstack_ops_cluster_ids[storage.cluster_name] }}"
+      url: "{{ storage.url }}"
+      scope: HOST
+      provider: "{{ storage.provider | default('DefaultPrimary') }}"
+      hypervisor: "{{ storage.hypervisor | default('KVM') }}"
+      response: json
+      sessionkey: "{{ cloudstack_session_key }}"
+    headers:
+      Cookie: "{{ cloudstack_cookies }}"
+    timeout: "{{ cloudstack_ops_async_timeout }}"
+  loop: "{{ cloudstack_ops_host_storages }}"
+  loop_control:
+    loop_var: storage
+    label: "{{ storage.name }}"
   when: cloudstack_ops_host_storages | length > 0
-  block:
-    - name: Get zone ID
-      ansible.builtin.uri:
-        url: "{{ cloudstack_api_url }}"
-        method: POST
-        body_format: form-urlencoded
-        body:
-          command: listZones
-          name: "{{ cloudstack_ops_zone.name }}"
-          response: json
-          sessionkey: "{{ cloudstack_session_key }}"
-        headers:
-          Cookie: "{{ cloudstack_cookies }}"
-      register: add_primary_storage_zone_response
-
-    - name: Get pod ID
-      ansible.builtin.uri:
-        url: "{{ cloudstack_api_url }}"
-        method: POST
-        body_format: form-urlencoded
-        body:
-          command: listPods
-          zoneid: "{{ add_primary_storage_zone_response.json.listzonesresponse.zone[0].id }}"
-          name: "{{ cloudstack_ops_pods[0].name }}"
-          response: json
-          sessionkey: "{{ cloudstack_session_key }}"
-        headers:
-          Cookie: "{{ cloudstack_cookies }}"
-      register: add_primary_storage_pod_response
-
-    - name: Get cluster IDs
-      ansible.builtin.uri:
-        url: "{{ cloudstack_api_url }}"
-        method: POST
-        body_format: form-urlencoded
-        body:
-          command: listClusters
-          zoneid: "{{ add_primary_storage_zone_response.json.listzonesresponse.zone[0].id }}"
-          response: json
-          sessionkey: "{{ cloudstack_session_key }}"
-        headers:
-          Cookie: "{{ cloudstack_cookies }}"
-      register: add_primary_storage_clusters_response
-
-    - name: Build cluster ID lookup
-      ansible.builtin.set_fact:
-        add_primary_storage_cluster_ids: "{{ dict(add_primary_storage_clusters_response.json.listclustersresponse.cluster | map(attribute='name') | zip(add_primary_storage_clusters_response.json.listclustersresponse.cluster | map(attribute='id'))) }}"
-
-    - name: Get hosts
-      ansible.builtin.uri:
-        url: "{{ cloudstack_api_url }}"
-        method: POST
-        body_format: form-urlencoded
-        body:
-          command: listHosts
-          type: Routing
-          zoneid: "{{ add_primary_storage_zone_response.json.listzonesresponse.zone[0].id }}"
-          response: json
-          sessionkey: "{{ cloudstack_session_key }}"
-        headers:
-          Cookie: "{{ cloudstack_cookies }}"
-      register: add_primary_storage_hosts_response
-
-    - name: Build host ID lookup
-      ansible.builtin.set_fact:
-        add_primary_storage_host_ids: >-
-          {{ dict(
-            (add_primary_storage_hosts_response.json.listhostsresponse.host | default([]) | map(attribute='name') | list +
-             add_primary_storage_hosts_response.json.listhostsresponse.host | default([]) | map(attribute='ipaddress') | list) |
-            zip(add_primary_storage_hosts_response.json.listhostsresponse.host | default([]) | map(attribute='id') | list * 2)
-          ) }}
-
-    - name: Get existing storage pools
-      ansible.builtin.uri:
-        url: "{{ cloudstack_api_url }}"
-        method: POST
-        body_format: form-urlencoded
-        body:
-          command: listStoragePools
-          zoneid: "{{ add_primary_storage_zone_response.json.listzonesresponse.zone[0].id }}"
-          response: json
-          sessionkey: "{{ cloudstack_session_key }}"
-        headers:
-          Cookie: "{{ cloudstack_cookies }}"
-      register: add_primary_storage_existing_pools
-
-    - name: Build existing pool names
-      ansible.builtin.set_fact:
-        add_primary_storage_existing_names: "{{ add_primary_storage_existing_pools.json.liststoragepoolsresponse.storagepool | default([]) | map(attribute='name') | list }}"
-
-    - name: Create host-scoped local storage
-      ansible.builtin.uri:
-        url: "{{ cloudstack_api_url }}"
-        method: POST
-        body_format: form-urlencoded
-        body:
-          command: createStoragePool
-          name: "{{ storage.name }}"
-          zoneid: "{{ add_primary_storage_zone_response.json.listzonesresponse.zone[0].id }}"
-          podid: "{{ add_primary_storage_pod_response.json.listpodsresponse.pod[0].id }}"
-          clusterid: "{{ add_primary_storage_cluster_ids[storage.cluster_name] }}"
-          url: "{{ storage.url }}"
-          scope: "host"
-          provider: "DefaultPrimary"
-          hypervisor: "{{ storage.hypervisor | default('KVM') }}"
-          hostid: "{{ add_primary_storage_host_ids[storage.host] }}"
-          response: json
-          sessionkey: "{{ cloudstack_session_key }}"
-        headers:
-          Cookie: "{{ cloudstack_cookies }}"
-        status_code: [200]
-      loop: "{{ cloudstack_ops_host_storages }}"
-      loop_control:
-        loop_var: storage
-        label: "{{ storage.name }}"
-      when:
-        - storage.name not in add_primary_storage_existing_names
-        - storage.host in add_primary_storage_host_ids
-      failed_when: false
+  failed_when: false

@@ -83,13 +83,13 @@ cloudstack_ops_primary_storages: []
 #   - name: "Local-MergeFS-Host1"
 #     cluster_name: "Cluster1"
 #     host: "10.30.30.56"
-#     url: "file:///mnt/cloudstack-storage"  # MergeFS unified mount point
+#     url: "/mnt/cloudstack-storage"  # MergeFS unified mount point
 #     scope: "host"
 #
 #   - name: "Local-MergeFS-Host2"
 #     cluster_name: "Cluster1"
 #     host: "10.30.30.57"
-#     url: "file:///mnt/cloudstack-storage"
+#     url: "/mnt/cloudstack-storage"
 #     scope: "host"
 
 # Secondary storage

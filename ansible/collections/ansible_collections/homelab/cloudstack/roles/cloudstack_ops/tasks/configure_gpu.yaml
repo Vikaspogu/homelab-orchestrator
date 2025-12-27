@@ -1,76 +1,29 @@
 # Configure GPU devices on CloudStack hosts
 ---
-- name: Get zone ID
-  ansible.builtin.uri:
-    url: "{{ cloudstack_api_url }}"
-    method: POST
-    body_format: form-urlencoded
-    body:
-      command: listZones
-      name: "{{ cloudstack_ops_zone.name }}"
-      response: json
-      sessionkey: "{{ cloudstack_session_key }}"
-    headers:
-      Cookie: "{{ cloudstack_cookies }}"
-    timeout: "{{ cloudstack_ops_async_timeout }}"
+- name: Get zone info
+  ngine_io.cloudstack.zone_info:
+    api_url: "{{ cloudstack_api_url }}"
+    api_key: "{{ cloudstack_api_key }}"
+    api_secret: "{{ cloudstack_api_secret }}"
+    name: "{{ cloudstack_ops_zone.name }}"
   register: cloudstack_ops_zone_for_gpu
 
 - name: Set zone ID
   ansible.builtin.set_fact:
-    cloudstack_ops_gpu_zone_id: "{{ cloudstack_ops_zone_for_gpu.json.listzonesresponse.zone[0].id }}"
-  when: cloudstack_ops_zone_for_gpu.json.listzonesresponse.zone | default([]) | length > 0
-
-- name: List GPU groups in zone
-  ansible.builtin.uri:
-    url: "{{ cloudstack_api_url }}"
-    method: POST
-    body_format: form-urlencoded
-    body:
-      command: listGpuGroups
-      zoneid: "{{ cloudstack_ops_gpu_zone_id }}"
-      response: json
-      sessionkey: "{{ cloudstack_session_key }}"
-    headers:
-      Cookie: "{{ cloudstack_cookies }}"
-    timeout: "{{ cloudstack_ops_async_timeout }}"
-  register: cloudstack_ops_gpu_groups_list
-  failed_when: false
-
-- name: Check for existing GPU compute offering
-  ansible.builtin.uri:
-    url: "{{ cloudstack_api_url }}"
-    method: POST
-    body_format: form-urlencoded
-    body:
-      command: listServiceOfferings
-      name: "{{ cloudstack_ops_gpu_offering.name | default('GPU Instance') }}"
-      response: json
-      sessionkey: "{{ cloudstack_session_key }}"
-    headers:
-      Cookie: "{{ cloudstack_cookies }}"
-    timeout: "{{ cloudstack_ops_async_timeout }}"
-  register: cloudstack_ops_gpu_offering_check
-  when: cloudstack_ops_gpu_offering is defined
+    cloudstack_ops_gpu_zone_id: "{{ cloudstack_ops_zone_for_gpu.zones[0].id }}"
+  when: cloudstack_ops_zone_for_gpu.zones | default([]) | length > 0
 
 - name: Create GPU-enabled compute offering
-  ansible.builtin.uri:
-    url: "{{ cloudstack_api_url }}"
-    method: POST
-    body_format: form-urlencoded
-    body:
-      command: createServiceOffering
-      name: "{{ cloudstack_ops_gpu_offering.name | default('GPU Instance') }}"
-      displaytext: "{{ cloudstack_ops_gpu_offering.display_text | default('Compute offering with GPU passthrough') }}"
-      cpunumber: "{{ cloudstack_ops_gpu_offering.cpu | default(4) }}"
-      cpuspeed: "{{ cloudstack_ops_gpu_offering.cpu_speed | default(2000) }}"
-      memory: "{{ cloudstack_ops_gpu_offering.memory | default(8192) }}"
-      storagetype: "{{ cloudstack_ops_gpu_offering.storage_type | default('local') }}"
-      hosttags: "{{ cloudstack_ops_gpu_offering.host_tags | default('') }}"
-      response: json
-      sessionkey: "{{ cloudstack_session_key }}"
-    headers:
-      Cookie: "{{ cloudstack_cookies }}"
-    timeout: "{{ cloudstack_ops_async_timeout }}"
-  when:
-    - cloudstack_ops_gpu_offering is defined
-    - cloudstack_ops_gpu_offering_check.json.listserviceofferingsresponse.serviceoffering | default([]) | length == 0
+  ngine_io.cloudstack.service_offering:
+    api_url: "{{ cloudstack_api_url }}"
+    api_key: "{{ cloudstack_api_key }}"
+    api_secret: "{{ cloudstack_api_secret }}"
+    name: "{{ cloudstack_ops_gpu_offering.name | default('GPU Instance') }}"
+    display_text: "{{ cloudstack_ops_gpu_offering.display_text | default('Compute offering with GPU passthrough') }}"
+    cpu_number: "{{ cloudstack_ops_gpu_offering.cpu | default(4) }}"
+    cpu_speed: "{{ cloudstack_ops_gpu_offering.cpu_speed | default(2000) }}"
+    memory: "{{ cloudstack_ops_gpu_offering.memory | default(8192) }}"
+    storage_type: "{{ cloudstack_ops_gpu_offering.storage_type | default('local') }}"
+    host_tags: "{{ cloudstack_ops_gpu_offering.host_tags | default(omit) }}"
+    state: present
+  when: cloudstack_ops_gpu_offering is defined
