@@ -10,18 +10,47 @@
     state: present
   register: cloudstack_ops_ssh_key_result
 
+# Option 1: Save to 1Password Connect
+- name: Save SSH key to 1Password
+  onepassword.connect.generic_item:
+    vault: "{{ onepassword_vault }}"
+    title: "{{ cloudstack_ops_ssh_key_name }}"
+    state: present
+    fields:
+      - label: private_key
+        value: "{{ cloudstack_ops_ssh_key_result.private_key }}"
+        field_type: concealed
+      - label: public_key
+        value: "{{ cloudstack_ops_ssh_key_result.public_key | default('') }}"
+        field_type: text
+      - label: fingerprint
+        value: "{{ cloudstack_ops_ssh_key_result.fingerprint | default('') }}"
+        field_type: text
+    tags:
+      - cloudstack
+      - ssh
+  delegate_to: localhost
+  when:
+    - cloudstack_ops_ssh_key_result.private_key is defined
+    - onepassword_enabled | default(false) | bool
+  no_log: true
+
+# Option 2: Save locally (fallback if 1Password not configured)
 - name: Ensure local SSH directory exists
   ansible.builtin.file:
     path: "~/.ssh"
     state: directory
     mode: "0700"
   delegate_to: localhost
+  when: not (onepassword_enabled | default(false) | bool)
 
-- name: Save private key
+- name: Save private key locally
   ansible.builtin.copy:
     content: "{{ cloudstack_ops_ssh_key_result.private_key }}"
     dest: "~/.ssh/{{ cloudstack_ops_ssh_key_name }}"
     mode: "0600"
   delegate_to: localhost
-  when: cloudstack_ops_ssh_key_result.private_key is defined
+  when:
+    - cloudstack_ops_ssh_key_result.private_key is defined
+    - not (onepassword_enabled | default(false) | bool)
   no_log: true

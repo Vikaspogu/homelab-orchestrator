@@ -7,8 +7,33 @@
     CONTROLLER_USERNAME: '{{ awx.username }}'
     CONTROLLER_PASSWORD: '{{ awx.password }}'
     CONTROLLER_VERIFY_SSL: 'false'
-  vars_files:
-    - ../../vars/common.vault.yaml
+  pre_tasks:
+    # Option 1: Use 1Password (set onepassword_enabled=true)
+    - name: Fetch AWX credentials from 1Password
+      onepassword.connect.item_info:
+        vault: "{{ onepassword_vault }}"
+        item: "{{ onepassword_item_awx | default('awx') }}"
+      delegate_to: localhost
+      register: onepassword_awx_item
+      when: onepassword_enabled | default(false) | bool
+      no_log: true
+
+    - name: Set AWX credentials from 1Password
+      ansible.builtin.set_fact:
+        awx:
+          hostname: "{{ (onepassword_awx_item.fields | selectattr('label', 'equalto', 'hostname') | first).value }}"
+          username: "{{ (onepassword_awx_item.fields | selectattr('label', 'equalto', 'username') | first).value }}"
+          password: "{{ (onepassword_awx_item.fields | selectattr('label', 'equalto', 'password') | first).value }}"
+        host_user: "{{ (onepassword_awx_item.fields | selectattr('label', 'equalto', 'host_user') | first).value }}"
+        host_password: "{{ (onepassword_awx_item.fields | selectattr('label', 'equalto', 'host_password') | first).value }}"
+        vault_password: "{{ (onepassword_awx_item.fields | selectattr('label', 'equalto', 'vault_password') | first).value }}"
+      when: onepassword_enabled | default(false) | bool
+      no_log: true
+
+    # Option 2: Use Ansible Vault (default)
+    - name: Load secrets from vault
+      ansible.builtin.include_vars: ../../vars/common.vault.yaml
+      when: not (onepassword_enabled | default(false) | bool)
   tasks:
     - name: Configure Platform Settings
       awx.awx.settings:

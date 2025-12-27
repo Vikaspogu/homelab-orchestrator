@@ -113,6 +113,8 @@ cloudstack_ops_gpu_groups: []
 #     vgpu_type: ""                 # vGPU type (only for vgpu, e.g., "GRID K1", "GRID K2")
 
 # SSH key pair (optional)
+# If onepassword_enabled=true, key is saved to 1Password
+# Otherwise, key is saved locally to ~/.ssh/
 cloudstack_ops_ssh_key_name: ""
 
 # Enable zone after setup

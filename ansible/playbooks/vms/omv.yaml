@@ -2,9 +2,29 @@
 - name: Deploy OMV VMs on all proxmox hosts
   hosts: proxmox
   gather_facts: false
-  vars_files:
-    - ../../vars/common.vault.yaml
   pre_tasks:
+    # Option 1: Use 1Password (set onepassword_enabled=true)
+    - name: Fetch Proxmox credentials from 1Password
+      onepassword.connect.item_info:
+        vault: "{{ onepassword_vault }}"
+        item: "{{ onepassword_item_proxmox | default('proxmox') }}"
+      delegate_to: localhost
+      register: onepassword_proxmox_item
+      when: onepassword_enabled | default(false) | bool
+      no_log: true
+
+    - name: Set Proxmox credentials from 1Password
+      ansible.builtin.set_fact:
+        proxmox_api_user: "{{ (onepassword_proxmox_item.fields | selectattr('label', 'equalto', 'username') | first).value }}"
+        proxmox_api_password: "{{ (onepassword_proxmox_item.fields | selectattr('label', 'equalto', 'password') | first).value }}"
+      when: onepassword_enabled | default(false) | bool
+      no_log: true
+
+    # Option 2: Use Ansible Vault (default)
+    - name: Load secrets from vault
+      ansible.builtin.include_vars: ../../vars/common.vault.yaml
+      when: not (onepassword_enabled | default(false) | bool)
+
     - name: Install multiple pip packages
       delegate_to: localhost
       ansible.builtin.pip:

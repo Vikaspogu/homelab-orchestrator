@@ -4,8 +4,7 @@
   become: true
   gather_facts: true
   ignore_unreachable: true
-  vars_files:
-    - ../../vars/common.vault.yaml
+  # No secrets needed for shutdown
   tasks:
     - name: Ping database server with retries
       ansible.builtin.ping:
