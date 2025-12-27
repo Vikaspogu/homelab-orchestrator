@@ -9,7 +9,7 @@
     # Option 1: Use 1Password (set onepassword_enabled=true)
     - name: Fetch CloudStack credentials from 1Password
       onepassword.connect.item_info:
-        vault: "{{ onepassword_vault }}"
+        vault: "{{ lookup('env', 'OP_VAULT') }}"
         item: "{{ onepassword_item_cloudstack | default('cloudstack-api') }}"
       delegate_to: localhost
       register: onepassword_cloudstack_item
@@ -25,7 +25,7 @@
 
     - name: Fetch KVM credentials from 1Password
       onepassword.connect.item_info:
-        vault: "{{ onepassword_vault }}"
+        vault: "{{ lookup('env', 'OP_VAULT') }}"
         item: "{{ onepassword_item_kvm | default('cloudstack-kvm') }}"
       delegate_to: localhost
       register: onepassword_kvm_item

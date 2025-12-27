@@ -24,7 +24,7 @@
     # Option 1: Use 1Password (set onepassword_enabled=true)
     - name: Fetch KVM credentials from 1Password
       onepassword.connect.item_info:
-        vault: "{{ onepassword_vault }}"
+        vault: "{{ lookup('env', 'OP_VAULT') }}"
         item: "{{ onepassword_item_kvm | default('cloudstack-kvm') }}"
       delegate_to: localhost
       register: onepassword_kvm_item

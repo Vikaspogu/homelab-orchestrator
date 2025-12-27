@@ -13,7 +13,7 @@
 # Option 1: Save to 1Password Connect
 - name: Save SSH key to 1Password
   onepassword.connect.generic_item:
-    vault: "{{ onepassword_vault }}"
+    vault: "{{ lookup('env', 'OP_VAULT') }}"
     title: "{{ cloudstack_ops_ssh_key_name }}"
     state: present
     fields:

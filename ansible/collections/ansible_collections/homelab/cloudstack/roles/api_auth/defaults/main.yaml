@@ -11,11 +11,8 @@ cloudstack_admin_username: "admin"  # noqa: var-naming[no-role-prefix]
 cloudstack_admin_password: "password"  # noqa: var-naming[no-role-prefix]
 
 # 1Password Connect integration
-# Set these variables in your playbook or inventory to enable 1Password
-# Requires: ansible-galaxy collection install onepassword.connect
-# See: ansible/tasks/fetch_secrets_1password.yaml for details
-#
-# onepassword_enabled: true
-# onepassword_connect_host: "https://connect.example.com:8080"
-# onepassword_connect_token: "your-token"
-# onepassword_vault: "Homelab"
+# Set environment variables in .envrc:
+#   export OP_CONNECT_HOST="https://connect.example.com:8080"
+#   export OP_CONNECT_TOKEN="your-token"
+#   export OP_VAULT="Homelab"
+# Then run playbooks with: -e onepassword_enabled=true
