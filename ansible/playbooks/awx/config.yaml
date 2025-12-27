@@ -15,19 +15,28 @@
         item: "{{ onepassword_item_awx | default('awx') }}"
       delegate_to: localhost
       register: onepassword_awx_item
-      when: onepassword_enabled | default(false) | bool
+      when: onepassword_enabled | default(true) | bool
+      no_log: true
+
+    - name: Fetch host credentials from 1Password
+      onepassword.connect.item_info:
+        vault: "{{ lookup('env', 'OP_VAULT') }}"
+        item: "servers"
+      delegate_to: localhost
+      register: onepassword_server_item
+      when: onepassword_enabled | default(true) | bool
       no_log: true
 
     - name: Set AWX credentials from 1Password
       ansible.builtin.set_fact:
         awx:
-          hostname: "{{ (onepassword_awx_item.fields | selectattr('label', 'equalto', 'hostname') | first).value }}"
-          username: "{{ (onepassword_awx_item.fields | selectattr('label', 'equalto', 'username') | first).value }}"
-          password: "{{ (onepassword_awx_item.fields | selectattr('label', 'equalto', 'password') | first).value }}"
-        host_user: "{{ (onepassword_awx_item.fields | selectattr('label', 'equalto', 'host_user') | first).value }}"
-        host_password: "{{ (onepassword_awx_item.fields | selectattr('label', 'equalto', 'host_password') | first).value }}"
-        vault_password: "{{ (onepassword_awx_item.fields | selectattr('label', 'equalto', 'vault_password') | first).value }}"
-      when: onepassword_enabled | default(false) | bool
+          hostname: "{{ (onepassword_awx_item.op_item.fields | selectattr('label', 'equalto', 'HOSTNAME') | first).value }}"
+          username: "{{ (onepassword_awx_item.op_item.fields | selectattr('label', 'equalto', 'username') | first).value }}"
+          password: "{{ (onepassword_awx_item.op_item.fields | selectattr('label', 'equalto', 'password') | first).value }}"
+        host_user: "{{ (onepassword_server_item.op_item.fields | selectattr('label', 'equalto', 'username') | first).value }}"
+        host_password: "{{ (onepassword_server_item.op_item.fields | selectattr('label', 'equalto', 'password') | first).value }}"
+        vault_password: "{{ (onepassword_awx_item.op_item.fields | selectattr('label', 'equalto', 'VAULT_PASSWORD') | first).value }}"
+      when: onepassword_enabled | default(true) | bool
       no_log: true
 
     # Option 2: Use Ansible Vault (default)

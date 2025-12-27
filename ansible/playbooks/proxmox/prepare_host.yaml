@@ -12,23 +12,19 @@
         item: "{{ onepassword_item_proxmox | default('proxmox') }}"
       delegate_to: localhost
       register: onepassword_proxmox_item
-      when: onepassword_enabled | default(false) | bool
+      when: onepassword_enabled | default(true) | bool
       no_log: true
 
     - name: Set Proxmox credentials from 1Password
       ansible.builtin.set_fact:
         datacenter:
-          username: "{{ (onepassword_proxmox_item.fields | selectattr('label', 'equalto', 'username') | first).value }}"
-          password: "{{ (onepassword_proxmox_item.fields | selectattr('label', 'equalto', 'password') | first).value }}"
-          hass_user_password: "{{ (onepassword_proxmox_item.fields | selectattr('label', 'equalto', 'hass_password') | first).value | default('') }}"
-        scrutiny_address: "{{ (onepassword_proxmox_item.fields | selectattr('label', 'equalto', 'scrutiny_address') | first).value | default('') }}"
-      when: onepassword_enabled | default(false) | bool
+          username: "{{ (onepassword_proxmox_item.op_item.fields | selectattr('label', 'equalto', 'DATACENTER_USERNAME') | first).value }}"
+          password: "{{ (onepassword_proxmox_item.op_item.fields | selectattr('label', 'equalto', 'DATACENTER_PASSWORD') | first).value }}"
+          hass_user_password: "{{ (onepassword_proxmox_item.op_item.fields | selectattr('label', 'equalto', 'HASS_USER_PASSWORD') | first).value | default('') }}"
+        scrutiny_address: "{{ (onepassword_proxmox_item.op_item.fields | selectattr('label', 'equalto', 'SCRUTINY_ADDRESS') | first).value | default('') }}"
+        promtail_ip: "{{ (onepassword_proxmox_item.op_item.fields | selectattr('label', 'equalto', 'PROMTAIL_IP') | first).value | default('') }}"
+      when: onepassword_enabled | default(true) | bool
       no_log: true
-
-    # Option 2: Use Ansible Vault (default)
-    - name: Load secrets from vault
-      ansible.builtin.include_vars: ../../vars/common.vault.yaml
-      when: not (onepassword_enabled | default(false) | bool)
   tasks:
     - name: Prepare proxmox
       block:

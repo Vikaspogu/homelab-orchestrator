@@ -10,23 +10,19 @@
     - name: Fetch CloudStack credentials from 1Password
       onepassword.connect.item_info:
         vault: "{{ lookup('env', 'OP_VAULT') }}"
-        item: "{{ onepassword_item_cloudstack | default('cloudstack-api') }}"
+        item: "{{ onepassword_item_cloudstack | default('cloudstack') }}"
       delegate_to: localhost
       register: onepassword_cloudstack_item
-      when: onepassword_enabled | default(false) | bool
+      when: onepassword_enabled | default(true) | bool
       no_log: true
 
     - name: Set CloudStack credentials from 1Password
       ansible.builtin.set_fact:
-        cloudstack_admin_password: "{{ (onepassword_cloudstack_item.fields | selectattr('label', 'equalto', 'admin_password') | first).value }}"
-        cloudstack_api_url: "{{ (onepassword_cloudstack_item.fields | selectattr('label', 'equalto', 'api_url') | first).value | default('http://localhost:8080/client/api') }}"
-      when: onepassword_enabled | default(false) | bool
+        cloudstack_admin_password: "{{ (onepassword_cloudstack_item.op_item.fields | selectattr('label', 'equalto', 'password') | first).value }}"
+        cloudstack_api_url: "{{ (onepassword_cloudstack_item.op_item.fields | selectattr('label', 'equalto', 'API_URL') | first).value }}"
+        configure_kubernetes_endpoint_url: "{{ (onepassword_cloudstack_item.op_item.fields | selectattr('label', 'equalto', 'FQDN_URL') | first).value }}"
+      when: onepassword_enabled | default(true) | bool
       no_log: true
-
-    # Option 2: Use Ansible Vault (default)
-    - name: Load secrets from vault
-      ansible.builtin.include_vars: ../../vars/common.vault.yaml
-      when: not (onepassword_enabled | default(false) | bool)
   vars:
     ###############
     ## Configure Kubernetes Role Vars ##

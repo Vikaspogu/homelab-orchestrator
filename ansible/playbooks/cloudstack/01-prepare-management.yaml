@@ -2,7 +2,6 @@
 ---
 - name: Deploy CloudStack Management Server with Database
   hosts: cloudstack_management
-  become: true
   gather_facts: true
   vars:
     prepare_management_nfs_enabled: false
@@ -12,23 +11,18 @@
     - name: Fetch database credentials from 1Password
       onepassword.connect.item_info:
         vault: "{{ lookup('env', 'OP_VAULT') }}"
-        item: "{{ onepassword_item_database | default('cloudstack-database') }}"
+        item: "{{ onepassword_item_database | default('cloudstack') }}"
       delegate_to: localhost
-      register: onepassword_database_item
-      when: onepassword_enabled | default(false) | bool
+      register: onepassword_cloudstack_item
+      when: onepassword_enabled | default(true) | bool
       no_log: true
-
+        
     - name: Set database credentials from 1Password
       ansible.builtin.set_fact:
-        prepare_management_db_password: "{{ (onepassword_database_item.fields | selectattr('label', 'equalto', 'db_password') | first).value }}"
-        prepare_management_server_key: "{{ (onepassword_database_item.fields | selectattr('label', 'equalto', 'server_key') | first).value }}"
-        prepare_management_database_key: "{{ (onepassword_database_item.fields | selectattr('label', 'equalto', 'database_key') | first).value }}"
-      when: onepassword_enabled | default(false) | bool
+        prepare_management_db_password: "{{ onepassword_cloudstack_item.op_item.fields.DB_PASSWORD.value }}"
+        prepare_management_server_key: "{{ onepassword_cloudstack_item.op_item.fields.SERVER_KEY.value }}"
+        prepare_management_database_key: "{{ onepassword_cloudstack_item.op_item.fields.DATABASE_KEY.value }}"
+      when: onepassword_enabled | default(true) | bool
       no_log: true
-
-    # Option 2: Use Ansible Vault (default)
-    - name: Load secrets from vault
-      ansible.builtin.include_vars: ../../vars/common.vault.yaml
-      when: not (onepassword_enabled | default(false) | bool)
   roles:
     - role: homelab.cloudstack.prepare_management

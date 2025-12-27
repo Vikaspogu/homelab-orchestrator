@@ -2,7 +2,6 @@
 ---
 - name: Setup CloudStack KVM Hypervisor Hosts
   hosts: cloudstack_kvm_hosts
-  become: true
   gather_facts: true
   vars:
     ###############
@@ -25,22 +24,17 @@
     - name: Fetch KVM credentials from 1Password
       onepassword.connect.item_info:
         vault: "{{ lookup('env', 'OP_VAULT') }}"
-        item: "{{ onepassword_item_kvm | default('cloudstack-kvm') }}"
+        item: "{{ onepassword_cloudstack_item | default('servers') }}"
       delegate_to: localhost
       register: onepassword_kvm_item
-      when: onepassword_enabled | default(false) | bool
+      when: onepassword_enabled | default(true) | bool
       no_log: true
 
     - name: Set KVM credentials from 1Password
       ansible.builtin.set_fact:
-        prepare_kvm_root_password: "{{ (onepassword_kvm_item.fields | selectattr('label', 'equalto', 'root_password') | first).value }}"
-        ansible_password: "{{ (onepassword_kvm_item.fields | selectattr('label', 'equalto', 'host_password') | first).value }}"
-      when: onepassword_enabled | default(false) | bool
+        prepare_kvm_root_password: "{{ (onepassword_kvm_item.op_item.fields | selectattr('label', 'equalto', 'password') | first).value }}"
+        ansible_password: "{{ (onepassword_kvm_item.op_item.fields | selectattr('label', 'equalto', 'password') | first).value }}"
+      when: onepassword_enabled | default(true) | bool
       no_log: true
-
-    # Option 2: Use Ansible Vault (default)
-    - name: Load secrets from vault
-      ansible.builtin.include_vars: ../../vars/common.vault.yaml
-      when: not (onepassword_enabled | default(false) | bool)
   roles:
     - role: homelab.cloudstack.prepare_kvm
