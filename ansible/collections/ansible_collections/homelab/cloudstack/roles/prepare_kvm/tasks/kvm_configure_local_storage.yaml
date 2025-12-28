@@ -1,25 +1,39 @@
 # Configure Local Storage for CloudStack
 ---
-- name: Set effective local storage path
-  ansible.builtin.set_fact:
-    prepare_kvm_effective_storage_path: "{{ prepare_kvm_mergefs_mount_point if (prepare_kvm_additional_storage | length > 0) else prepare_kvm_local_storage_path }}"
-
-- name: Ensure local storage directory exists
+- name: Ensure default local storage directory exists
   ansible.builtin.file:
-    path: "{{ prepare_kvm_effective_storage_path }}"
+    path: /var/lib/libvirt/images
     state: directory
     owner: "{{ prepare_kvm_local_storage_owner }}"
     group: "{{ prepare_kvm_local_storage_group }}"
     mode: "{{ prepare_kvm_local_storage_mode }}"
 
-- name: Configure local storage path in agent.properties
+- name: Ensure MergeFS local storage directory exists
+  ansible.builtin.file:
+    path: "{{ prepare_kvm_mergefs_mount_point }}"
+    state: directory
+    owner: "{{ prepare_kvm_local_storage_owner }}"
+    group: "{{ prepare_kvm_local_storage_group }}"
+    mode: "{{ prepare_kvm_local_storage_mode }}"
+  when: prepare_kvm_additional_storage | length > 0
+
+- name: Configure local storage paths in agent.properties
   ansible.builtin.lineinfile:
     path: /etc/cloudstack/agent/agent.properties
     regexp: '^local\.storage\.path='
-    line: "local.storage.path={{ prepare_kvm_effective_storage_path }}"
+    line: "local.storage.path=/var/lib/libvirt/images,{{ prepare_kvm_mergefs_mount_point }}"
     create: false
   notify: Restart CloudStack Agent
+  when: prepare_kvm_additional_storage | length > 0
 
-- name: Display configured local storage path
-  ansible.builtin.debug:
-    msg: "Local storage configured at: {{ prepare_kvm_effective_storage_path }}"
+- name: Configure local storage uuid list in agent.properties
+  ansible.builtin.lineinfile:
+    path: /etc/cloudstack/agent/agent.properties
+    regexp: '^local\.storage\.uuid='
+    line: "local.storage.uuid={{ prepare_kvm_local_storage_uuid_default }},{{ prepare_kvm_local_storage_uuid_mergefs }}"
+    create: false
+  notify: Restart CloudStack Agent
+  when:
+    - prepare_kvm_additional_storage | length > 0
+    - prepare_kvm_local_storage_uuid_default | default('') | length > 0
+    - prepare_kvm_local_storage_uuid_mergefs | default('') | length > 0

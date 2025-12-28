@@ -82,6 +82,10 @@ prepare_kvm_local_storage_path: "/var/lib/libvirt/images"
 prepare_kvm_local_storage_owner: "root"
 prepare_kvm_local_storage_group: "root"
 prepare_kvm_local_storage_mode: "0755"
+# UUIDs for local storage pools (optional - CloudStack can auto-generate)
+# Must match the number of paths if specified
+prepare_kvm_local_storage_uuid_default: ""
+prepare_kvm_local_storage_uuid_mergefs: ""
 
 # Additional storage devices (NVMe, SSD, etc.)
 # Multiple disks are merged into a single pool using MergeFS
