@@ -7,6 +7,29 @@
       - xmlstarlet
     state: present
 
+- name: Install NVIDIA driver build dependencies
+  ansible.builtin.apt:
+    name:
+      - gcc
+      - make
+      - "linux-headers-{{ ansible_kernel }}"
+    state: present
+    update_cache: true
+
+- name: Download NVIDIA driver
+  ansible.builtin.get_url:
+    url: "{{ prepare_kvm_nvidia_driver_url }}"
+    dest: "/tmp/{{ prepare_kvm_nvidia_driver_url | basename }}"
+    mode: '0755'
+  when: prepare_kvm_nvidia_driver_url | default('') | length > 0
+
+- name: Install NVIDIA driver
+  ansible.builtin.command:
+    cmd: "/tmp/{{ prepare_kvm_nvidia_driver_url | basename }} --silent --no-questions --ui=none"
+    creates: /usr/bin/nvidia-smi
+  when: prepare_kvm_nvidia_driver_url | default('') | length > 0
+  register: prepare_kvm_nvidia_driver_installed
+
 - name: Detect CPU vendor
   ansible.builtin.slurp:
     src: /proc/cpuinfo

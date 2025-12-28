@@ -104,3 +104,7 @@ prepare_kvm_aria2_support: false
 # VFIO GPU Passthrough configuration
 prepare_kvm_vfio_gpu_enabled: false
 prepare_kvm_vfio_reboot: true
+
+# NVIDIA driver URL (download and install)
+# Example: https://us.download.nvidia.com/XFree86/Linux-x86_64/390.157/NVIDIA-Linux-x86_64-390.157.run
+prepare_kvm_nvidia_driver_url: ""
