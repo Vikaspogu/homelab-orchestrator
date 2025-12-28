@@ -19,16 +19,25 @@
   changed_when: false
   failed_when: false
 
-- name: Generate new UUIDs only if none exist
+- name: Count existing UUIDs
+  ansible.builtin.set_fact:
+    prepare_kvm_existing_uuid_count: "{{ (prepare_kvm_existing_uuids.stdout | trim).split(',') | select() | list | length if (prepare_kvm_existing_uuids.stdout | trim | length > 0) else 0 }}"
+    prepare_kvm_required_uuid_count: "{{ prepare_kvm_all_storage_paths | length }}"
+
+- name: Check if UUIDs need generation
+  ansible.builtin.set_fact:
+    prepare_kvm_need_uuids: "{{ (prepare_kvm_existing_uuid_count | int) != (prepare_kvm_required_uuid_count | int) }}"
+
+- name: Generate UUIDs for all paths if count mismatch
   ansible.builtin.command: cat /proc/sys/kernel/random/uuid
   loop: "{{ prepare_kvm_all_storage_paths }}"
   register: prepare_kvm_new_uuids
   changed_when: false
-  when: prepare_kvm_existing_uuids.stdout | trim | length == 0
+  when: prepare_kvm_need_uuids
 
 - name: Set final UUIDs
   ansible.builtin.set_fact:
-    prepare_kvm_final_uuids: "{{ prepare_kvm_new_uuids.results | map(attribute='stdout') | join(',') if (prepare_kvm_existing_uuids.stdout | trim | length == 0) else prepare_kvm_existing_uuids.stdout }}"
+    prepare_kvm_final_uuids: "{{ prepare_kvm_new_uuids.results | map(attribute='stdout') | join(',') if prepare_kvm_need_uuids else prepare_kvm_existing_uuids.stdout }}"
 
 - name: Configure local storage paths in agent.properties
   ansible.builtin.lineinfile:
