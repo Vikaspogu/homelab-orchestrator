@@ -1,5 +1,12 @@
 # Setup VFIO for GPU Passthrough
 ---
+- name: Install GPU discovery prerequisites
+  ansible.builtin.apt:
+    name:
+      - pciutils
+      - xmlstarlet
+    state: present
+
 - name: Detect CPU vendor
   ansible.builtin.slurp:
     src: /proc/cpuinfo
