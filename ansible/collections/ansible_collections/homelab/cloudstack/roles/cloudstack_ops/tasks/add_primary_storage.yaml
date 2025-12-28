@@ -97,11 +97,11 @@
       zoneid: "{{ cloudstack_ops_zone_id }}"
       podid: "{{ cloudstack_ops_pod_ids[storage.pod_name | default(cloudstack_ops_pods[0].name)] }}"
       clusterid: "{{ cloudstack_ops_cluster_ids[storage.cluster_name] }}"
-      hostid: "{{ cloudstack_ops_host_ids[storage.host_name] }}"
-      url: "{{ storage.url }}"
+      hostid: "{{ cloudstack_ops_host_ids[storage.host] }}"
+      path: "{{ storage.url }}"
       scope: HOST
       provider: "{{ storage.provider | default('DefaultPrimary') }}"
-      hypervisor: "{{ storage.hypervisor | default('KVM') }}"
+      protocol: "{{ storage.protocol | default('Filesystem') }}"
       response: json
       sessionkey: "{{ cloudstack_session_key }}"
     headers:
