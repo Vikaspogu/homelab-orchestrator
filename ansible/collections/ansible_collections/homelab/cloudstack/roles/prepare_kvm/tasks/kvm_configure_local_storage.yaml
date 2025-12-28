@@ -1,8 +1,12 @@
 # Configure Local Storage for CloudStack
 ---
+- name: Set effective local storage path
+  ansible.builtin.set_fact:
+    prepare_kvm_effective_storage_path: "{{ prepare_kvm_mergefs_mount_point if (prepare_kvm_additional_storage | length > 0) else prepare_kvm_local_storage_path }}"
+
 - name: Ensure local storage directory exists
   ansible.builtin.file:
-    path: "{{ prepare_kvm_local_storage_path }}"
+    path: "{{ prepare_kvm_effective_storage_path }}"
     state: directory
     owner: "{{ prepare_kvm_local_storage_owner }}"
     group: "{{ prepare_kvm_local_storage_group }}"
@@ -12,7 +16,10 @@
   ansible.builtin.lineinfile:
     path: /etc/cloudstack/agent/agent.properties
     regexp: '^local\.storage\.path='
-    line: "local.storage.path={{ prepare_kvm_local_storage_path }}"
+    line: "local.storage.path={{ prepare_kvm_effective_storage_path }}"
     create: false
   notify: Restart CloudStack Agent
-  when: prepare_kvm_local_storage_path != "/var/lib/libvirt/images"
+
+- name: Display configured local storage path
+  ansible.builtin.debug:
+    msg: "Local storage configured at: {{ prepare_kvm_effective_storage_path }}"

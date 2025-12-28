@@ -68,8 +68,9 @@ cloudstack_ops_guest_vlan_range: ""
 # Guest networks to create
 cloudstack_ops_networks: []
 
-# Primary storage
-# Supports both cluster-scoped (NFS) and host-scoped (local) storage
+# Primary storage (shared/NFS storage)
+# Note: Local storage is auto-discovered from agent.properties on each KVM host
+# Configure local storage path via prepare_kvm role (prepare_kvm_local_storage_path)
 cloudstack_ops_primary_storages: []
 # Examples:
 #   # NFS shared storage (cluster-scoped)
@@ -78,19 +79,12 @@ cloudstack_ops_primary_storages: []
 #     url: "nfs://10.30.30.10/export/primary"
 #     scope: "cluster"
 #
-#   # Local MergeFS storage on specific host (host-scoped)
-#   # Uses the unified MergeFS mount point that combines multiple disks
-#   - name: "Local-MergeFS-Host1"
+#   # Zone-scoped storage (e.g., Ceph RBD)
+#   - name: "Ceph-Primary"
 #     cluster_name: "Cluster1"
-#     host: "10.30.30.56"
-#     url: "/mnt/cloudstack-storage"  # MergeFS unified mount point
-#     scope: "host"
-#
-#   - name: "Local-MergeFS-Host2"
-#     cluster_name: "Cluster1"
-#     host: "10.30.30.57"
-#     url: "/mnt/cloudstack-storage"
-#     scope: "host"
+#     url: "rbd://admin:secret@ceph-mons/pool"
+#     scope: "zone"
+#     hypervisor: "KVM"
 
 # Secondary storage
 cloudstack_ops_secondary_storages: []
