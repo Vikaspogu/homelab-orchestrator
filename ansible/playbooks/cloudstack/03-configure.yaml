@@ -96,13 +96,6 @@
         end_ip: '10.30.30.100'
         vlan: 'untagged'
 
-    cloudstack_ops_primary_storages:
-      - name: 'Local-NVMe-Host1'
-        cluster_name: 'Kubernetes-Cluster'
-        host: '10.30.30.56' # Host IP where local storage exists
-        url: 'file:///mnt/cloudstack-storage' # Mount point on the host
-        scope: 'host'
-
     cloudstack_ops_ssh_key_name: 'cloudstack-ssh-key'
     cloudstack_ops_enable_zone: true
   roles:

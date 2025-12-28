@@ -16,7 +16,7 @@
     # Additional NVMe storage for CloudStack local storage
     prepare_kvm_additional_storage:
       - device: '/dev/nvme1n1'
-        mount_point: '/mnt/nvme-storage'
+        mount_point: '/mnt/nvme1n1'
         filesystem: 'xfs'
         mount_options: 'noatime,nodiratime,discard'
 

@@ -1,15 +1,15 @@
 # Prepare KVM Role - Default Variables
 ---
 # CloudStack version
-prepare_kvm_version: ""
+prepare_kvm_version: ''
 
 # Hostname configuration
 prepare_kvm_hostname: "{{ ansible_facts['fqdn'] }}"
 
 # CloudStack repository URLs
-prepare_kvm_repo_base_url_ubuntu: "https://download.cloudstack.org/ubuntu"
-prepare_kvm_repo_base_url_debian: "https://download.cloudstack.org/debian"
-prepare_kvm_repo_gpg_key: "https://download.cloudstack.org/release.asc"
+prepare_kvm_repo_base_url_ubuntu: 'https://download.cloudstack.org/ubuntu'
+prepare_kvm_repo_base_url_debian: 'https://download.cloudstack.org/debian'
+prepare_kvm_repo_gpg_key: 'https://download.cloudstack.org/release.asc'
 
 # Service management
 prepare_kvm_enable_services: true
@@ -18,37 +18,37 @@ prepare_kvm_start_services: true
 # Libvirt configuration
 prepare_kvm_libvirt_listen_tls: 0
 prepare_kvm_libvirt_listen_tcp: 0
-prepare_kvm_libvirt_tls_port: "16514"
-prepare_kvm_libvirt_tcp_port: "16509"
-prepare_kvm_libvirt_auth_tcp: "none"
+prepare_kvm_libvirt_tls_port: '16514'
+prepare_kvm_libvirt_tcp_port: '16509'
+prepare_kvm_libvirt_auth_tcp: 'none'
 prepare_kvm_libvirt_mdns_adv: 0
 
 # Guest CPU configuration
 # Options: custom, host-model, host-passthrough
-prepare_kvm_guest_cpu_mode: "host-passthrough"
-prepare_kvm_guest_cpu_model: ""  # Used with custom mode
-prepare_kvm_guest_cpu_features: ""  # e.g., "vmx avx -mmx"
+prepare_kvm_guest_cpu_mode: 'host-passthrough'
+prepare_kvm_guest_cpu_model: '' # Used with custom mode
+prepare_kvm_guest_cpu_features: '' # e.g., "vmx avx -mmx"
 
 # Network bridge configuration
-prepare_kvm_network_mode: "advanced"  # Options: basic, advanced
+prepare_kvm_network_mode: 'advanced' # Options: basic, advanced
 
 # Management bridge (cloudbr0)
-prepare_kvm_mgmt_bridge: "cloudbr0"
-prepare_kvm_mgmt_interface: "eth0"
+prepare_kvm_mgmt_bridge: 'cloudbr0'
+prepare_kvm_mgmt_interface: 'eth0'
 prepare_kvm_mgmt_ip: "{{ ansible_facts['default_ipv4']['address'] | default('') }}"
 prepare_kvm_mgmt_netmask: "{{ ansible_facts['default_ipv4']['netmask'] | default('255.255.255.0') }}"
-prepare_kvm_mgmt_prefix: "24"
+prepare_kvm_mgmt_prefix: '24'
 prepare_kvm_mgmt_gateway: "{{ ansible_facts['default_ipv4']['gateway'] | default('') }}"
-prepare_kvm_mgmt_dns: ["8.8.8.8", "8.8.4.4"]
+prepare_kvm_mgmt_dns: ['8.8.8.8', '8.8.4.4']
 prepare_kvm_mgmt_domain: "{{ ansible_facts['domain'] | default('local') }}"
 
 # Guest bridge configuration
-prepare_kvm_guest_bridge: "cloudbr0"
-prepare_kvm_guest_interface: "eth0"
-prepare_kvm_guest_vlan: ""
+prepare_kvm_guest_bridge: 'cloudbr0'
+prepare_kvm_guest_interface: 'eth0'
+prepare_kvm_guest_vlan: ''
 
 # Bridge STP settings
-prepare_kvm_bridge_stp: "off"
+prepare_kvm_bridge_stp: 'off'
 prepare_kvm_bridge_fd: 5
 prepare_kvm_bridge_maxwait: 1
 
@@ -61,27 +61,27 @@ prepare_kvm_firewall_ports:
   - { port: 22, proto: tcp }
   - { port: 1798, proto: tcp }
   - { port: 16514, proto: tcp }
-  - { port: "5900:6100", proto: tcp }
-  - { port: "49152:49216", proto: tcp }
+  - { port: '5900:6100', proto: tcp }
+  - { port: '49152:49216', proto: tcp }
 
 # AppArmor configuration
 prepare_kvm_disable_apparmor_libvirt: true
 
 # Non-root user for adding host (optional)
-prepare_kvm_host_user: ""
+prepare_kvm_host_user: ''
 
 # SSH configuration for CloudStack management access
 prepare_kvm_enable_pass_auth: true
-prepare_kvm_root_password: ""
-prepare_kvm_ssh_user: ""
-prepare_kvm_mgmt_ssh_public_key: ""
+prepare_kvm_root_password: ''
+prepare_kvm_ssh_user: ''
+prepare_kvm_mgmt_ssh_public_key: ''
 
 # Local storage configuration
 prepare_kvm_local_storage_enabled: true
-prepare_kvm_local_storage_path: "/var/lib/libvirt/images"
-prepare_kvm_local_storage_owner: "root"
-prepare_kvm_local_storage_group: "root"
-prepare_kvm_local_storage_mode: "0755"
+prepare_kvm_local_storage_path: '/var/lib/libvirt/images'
+prepare_kvm_local_storage_owner: 'root'
+prepare_kvm_local_storage_group: 'root'
+prepare_kvm_local_storage_mode: '0755'
 # Additional storage devices (NVMe, SSD, etc.)
 prepare_kvm_additional_storage: []
 # Example:
@@ -104,12 +104,3 @@ prepare_kvm_aria2_support: false
 # VFIO GPU Passthrough configuration
 prepare_kvm_vfio_gpu_enabled: false
 prepare_kvm_vfio_reboot: true
-
-# NVIDIA driver version for apt installation (recommended for Ubuntu 24.04+)
-# Example: "550" installs nvidia-driver-550
-prepare_kvm_nvidia_driver_version: ""
-
-# NVIDIA driver URL for .run file installation (fallback method)
-# Example: https://us.download.nvidia.com/XFree86/Linux-x86_64/390.157/NVIDIA-Linux-x86_64-390.157.run
-# Note: If driver_version is set, this is ignored
-prepare_kvm_nvidia_driver_url: ""
