@@ -105,6 +105,11 @@ prepare_kvm_aria2_support: false
 prepare_kvm_vfio_gpu_enabled: false
 prepare_kvm_vfio_reboot: true
 
-# NVIDIA driver URL (download and install)
+# NVIDIA driver version for apt installation (recommended for Ubuntu 24.04+)
+# Example: "550" installs nvidia-driver-550
+prepare_kvm_nvidia_driver_version: ""
+
+# NVIDIA driver URL for .run file installation (fallback method)
 # Example: https://us.download.nvidia.com/XFree86/Linux-x86_64/390.157/NVIDIA-Linux-x86_64-390.157.run
+# Note: If driver_version is set, this is ignored
 prepare_kvm_nvidia_driver_url: ""
