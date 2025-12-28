@@ -1,8 +1,8 @@
-# Configure additional storage devices with MergeFS for CloudStack local storage
+# Configure additional storage devices for CloudStack local storage
 ---
-- name: Install filesystem and MergeFS utilities
+- name: Install filesystem utilities
   ansible.builtin.apt:
-    name: [xfsprogs, nvme-cli, mergerfs]
+    name: [xfsprogs, nvme-cli]
     state: present
     update_cache: true
 
@@ -54,14 +54,13 @@
     - item.stdout | trim == ''
     - item.storage.device not in prepare_kvm_mounted_devices
 
-- name: Create disk mount directories
+- name: Create storage mount directories
   ansible.builtin.file:
-    path: "{{ prepare_kvm_mergefs_branch_path }}/disk{{ idx }}"
+    path: "{{ storage.mount_point }}"
     state: directory
     mode: "0755"
   loop: "{{ prepare_kvm_additional_storage }}"
   loop_control:
-    index_var: idx
     loop_var: storage
     label: "{{ storage.device }}"
 
@@ -83,33 +82,14 @@
     label: "{{ item.storage.device }}"
   when: item.rc != 0 or item.stdout | trim == ''
 
-- name: Mount individual storage devices
+- name: Mount storage devices
   ansible.posix.mount:
-    path: "{{ prepare_kvm_mergefs_branch_path }}/disk{{ idx }}"
+    path: "{{ item.storage.mount_point }}"
     src: "UUID={{ item.stdout }}"
     fstype: "{{ item.storage.filesystem | default('xfs') }}"
     opts: "{{ item.storage.mount_options | default('noatime,nodiratime') }}"
     state: mounted
   loop: "{{ prepare_kvm_device_uuids.results }}"
   loop_control:
-    index_var: idx
     label: "{{ item.storage.device }}"
   when: item.storage.device not in prepare_kvm_mounted_devices
-
-- name: Create MergeFS mount point
-  ansible.builtin.file:
-    path: "{{ prepare_kvm_mergefs_mount_point }}"
-    state: directory
-    mode: "0755"
-
-- name: Build MergeFS branch paths
-  ansible.builtin.set_fact:
-    prepare_kvm_mergefs_branches: "{{ range(prepare_kvm_additional_storage | length) | map('regex_replace', '^(.*)$', prepare_kvm_mergefs_branch_path + '/disk\\1') | join(':') }}"
-
-- name: Mount MergeFS pool
-  ansible.posix.mount:
-    path: "{{ prepare_kvm_mergefs_mount_point }}"
-    src: "{{ prepare_kvm_mergefs_branches }}"
-    fstype: fuse.mergerfs
-    opts: "{{ prepare_kvm_mergefs_options }}"
-    state: mounted

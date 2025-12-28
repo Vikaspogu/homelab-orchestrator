@@ -8,32 +8,41 @@
     group: "{{ prepare_kvm_local_storage_group }}"
     mode: "{{ prepare_kvm_local_storage_mode }}"
 
-- name: Ensure MergeFS local storage directory exists
-  ansible.builtin.file:
-    path: "{{ prepare_kvm_mergefs_mount_point }}"
-    state: directory
-    owner: "{{ prepare_kvm_local_storage_owner }}"
-    group: "{{ prepare_kvm_local_storage_group }}"
-    mode: "{{ prepare_kvm_local_storage_mode }}"
-  when: prepare_kvm_additional_storage | length > 0
+- name: Build local storage paths list
+  ansible.builtin.set_fact:
+    prepare_kvm_all_storage_paths: "{{ ['/var/lib/libvirt/images'] + (prepare_kvm_additional_storage | map(attribute='mount_point') | list) }}"
+
+- name: Check existing UUIDs in agent.properties
+  ansible.builtin.shell: |
+    grep '^local\.storage\.uuid=' /etc/cloudstack/agent/agent.properties 2>/dev/null | cut -d'=' -f2
+  register: prepare_kvm_existing_uuids
+  changed_when: false
+  failed_when: false
+
+- name: Generate new UUIDs only if none exist
+  ansible.builtin.command: cat /proc/sys/kernel/random/uuid
+  loop: "{{ prepare_kvm_all_storage_paths }}"
+  register: prepare_kvm_new_uuids
+  changed_when: false
+  when: prepare_kvm_existing_uuids.stdout | trim | length == 0
+
+- name: Set final UUIDs
+  ansible.builtin.set_fact:
+    prepare_kvm_final_uuids: "{{ prepare_kvm_new_uuids.results | map(attribute='stdout') | join(',') if (prepare_kvm_existing_uuids.stdout | trim | length == 0) else prepare_kvm_existing_uuids.stdout }}"
 
 - name: Configure local storage paths in agent.properties
   ansible.builtin.lineinfile:
     path: /etc/cloudstack/agent/agent.properties
     regexp: '^local\.storage\.path='
-    line: "local.storage.path=/var/lib/libvirt/images,{{ prepare_kvm_mergefs_mount_point }}"
+    line: "local.storage.path={{ prepare_kvm_all_storage_paths | join(',') }}"
     create: false
   notify: Restart CloudStack Agent
-  when: prepare_kvm_additional_storage | length > 0
 
-- name: Configure local storage uuid list in agent.properties
+- name: Configure local storage uuids in agent.properties
   ansible.builtin.lineinfile:
     path: /etc/cloudstack/agent/agent.properties
     regexp: '^local\.storage\.uuid='
-    line: "local.storage.uuid={{ prepare_kvm_local_storage_uuid_default }},{{ prepare_kvm_local_storage_uuid_mergefs }}"
+    line: "local.storage.uuid={{ prepare_kvm_final_uuids }}"
     create: false
   notify: Restart CloudStack Agent
-  when:
-    - prepare_kvm_additional_storage | length > 0
-    - prepare_kvm_local_storage_uuid_default | default('') | length > 0
-    - prepare_kvm_local_storage_uuid_mergefs | default('') | length > 0
+  when: prepare_kvm_final_uuids | length > 0
