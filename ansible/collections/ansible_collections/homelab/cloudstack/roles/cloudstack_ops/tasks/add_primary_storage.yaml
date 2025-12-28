@@ -45,6 +45,27 @@
     cloudstack_ops_cluster_ids: "{{ dict(cloudstack_ops_clusters_response.json.listclustersresponse.cluster | default([]) | map(attribute='name') | zip(cloudstack_ops_clusters_response.json.listclustersresponse.cluster | default([]) | map(attribute='id'))) }}"
   when: cloudstack_ops_host_storages | length > 0
 
+- name: Get hosts for host-scoped storage
+  ansible.builtin.uri:
+    url: "{{ cloudstack_api_url }}"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      command: listHosts
+      zoneid: "{{ cloudstack_ops_zone_id }}"
+      type: Routing
+      response: json
+      sessionkey: "{{ cloudstack_session_key }}"
+    headers:
+      Cookie: "{{ cloudstack_cookies }}"
+  register: cloudstack_ops_hosts_response
+  when: cloudstack_ops_host_storages | length > 0
+
+- name: Build host ID map
+  ansible.builtin.set_fact:
+    cloudstack_ops_host_ids: "{{ dict(cloudstack_ops_hosts_response.json.listhostsresponse.host | default([]) | map(attribute='name') | zip(cloudstack_ops_hosts_response.json.listhostsresponse.host | default([]) | map(attribute='id'))) }}"
+  when: cloudstack_ops_host_storages | length > 0
+
 - name: Add cluster-scoped primary storage
   ngine_io.cloudstack.storage_pool:
     api_url: "{{ cloudstack_api_url }}"
@@ -76,6 +97,7 @@
       zoneid: "{{ cloudstack_ops_zone_id }}"
       podid: "{{ cloudstack_ops_pod_ids[storage.pod_name | default(cloudstack_ops_pods[0].name)] }}"
       clusterid: "{{ cloudstack_ops_cluster_ids[storage.cluster_name] }}"
+      hostid: "{{ cloudstack_ops_host_ids[storage.host_name] }}"
       url: "{{ storage.url }}"
       scope: HOST
       provider: "{{ storage.provider | default('DefaultPrimary') }}"
@@ -90,4 +112,8 @@
     loop_var: storage
     label: "{{ storage.name }}"
   when: cloudstack_ops_host_storages | length > 0
-  failed_when: false
+  register: cloudstack_ops_host_storage_result
+  failed_when:
+    - cloudstack_ops_host_storage_result.json is defined
+    - cloudstack_ops_host_storage_result.json.createstoragepool is not defined
+    - "'already exists' not in (cloudstack_ops_host_storage_result.json.createStoragePoolresponse.errortext | default(''))"
