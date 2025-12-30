@@ -98,5 +98,15 @@
 
     cloudstack_ops_ssh_key_name: 'cloudstack-ssh-key'
     cloudstack_ops_enable_zone: true
+    cloudstack_ops_primary_storages:
+      - name: 'NFS-Primary'
+        cluster_name: 'Kubernetes-Cluster'
+        url: 'nfs://10.30.30.55/export/primary'
+        scope: 'cluster'
+    cloudstack_ops_secondary_storages:
+      - name: 'NFS-Secondary'
+        cluster_name: 'Kubernetes-Cluster'
+        url: 'nfs://10.30.30.55/export/primary'
+        scope: 'cluster'
   roles:
     - role: homelab.cloudstack.cloudstack_ops

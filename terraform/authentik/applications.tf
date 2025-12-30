@@ -5,7 +5,8 @@ locals {
     "bytestash",
     "reactive-resume",
     "papra",
-    "airflow"
+    "airflow",
+    "romm",
   ]
 }
 
@@ -41,8 +42,8 @@ locals {
       client_secret = module.onepassword_application["bytestash"].fields["CLIENT_SECRET"]
       group         = authentik_group.admins.id
       icon_url      = "https://raw.githubusercontent.com/jordan-dalby/ByteStash/refs/heads/main/client/public/logo192.png"
-      redirect_uris = ["https://bytestash.omv.a113.casa/api/auth/oidc/callback"]
-      launch_url    = "https://bytestash.omv.a113.casa"
+      redirect_uris = ["https://bytestash.omv.${var.cluster_domain}/api/auth/oidc/callback"]
+      launch_url    = "https://bytestash.omv.${var.cluster_domain}"
     },
     reactive-resume = {
       client_id     = module.onepassword_application["reactive-resume"].fields["CLIENT_ID"]
@@ -65,8 +66,16 @@ locals {
       client_secret = module.onepassword_application["airflow"].fields["CLIENT_SECRET"]
       group         = authentik_group.admins.id
       icon_url      = "https://avatars.githubusercontent.com/u/47359?s=48&v=4"
-      redirect_uris = ["https://airflow.omv.a113.casa/auth/oauth-authorized/authentik"]
-      launch_url    = "https://airflow.omv.a113.casa"
+      redirect_uris = ["https://airflow.omv.${var.cluster_domain}/auth/oauth-authorized/authentik"]
+      launch_url    = "https://airflow.omv.${var.cluster_domain}"
+    },
+    romm = {
+      client_id     = module.onepassword_application["romm"].fields["CLIENT_ID"]
+      client_secret = module.onepassword_application["romm"].fields["CLIENT_SECRET"]
+      group         = authentik_group.admins.id
+      icon_url      = "https://avatars.githubusercontent.com/u/47359?s=48&v=4"
+      redirect_uris = ["https://romm.${var.cluster_domain}/api/oauth/openid"]
+      launch_url    = "https://romm.${var.cluster_domain}"
     },
   }
 }
