@@ -2,8 +2,7 @@
 
 # Script to recursively find and extract .7z files using 7-zip
 # Usage: ./extract_7z.sh <search_directory> <output_directory>
-
-set -e
+# Note: Script continues even if individual extractions fail
 
 # Colors for output
 RED='\033[0;31m'
@@ -57,10 +56,13 @@ echo ""
 # Counter for extracted files
 count=0
 failed=0
+total=0
+failed_files=()
 
-# Find and extract all .7z files
+# Find and extract all .7z files - continues even if extraction fails
 while IFS= read -r -d '' archive; do
-    echo -e "${YELLOW}Extracting: $archive${NC}"
+    ((total++)) || true
+    echo -e "${YELLOW}[$total] Extracting: $archive${NC}"
     
     # Get the base name without extension for subfolder
     basename=$(basename "$archive" .7z)
@@ -69,13 +71,14 @@ while IFS= read -r -d '' archive; do
     extract_path="$OUTPUT_DIR/$basename"
     mkdir -p "$extract_path"
     
-    # Extract the archive
-    if 7z x -y -o"$extract_path" "$archive"; then
+    # Extract the archive - continue on failure
+    if 7z x -y -o"$extract_path" "$archive" 2>&1; then
         echo -e "${GREEN}✓ Successfully extracted: $basename${NC}"
-        ((count++))
+        ((count++)) || true
     else
         echo -e "${RED}✗ Failed to extract: $archive${NC}"
-        ((failed++))
+        ((failed++)) || true
+        failed_files+=("$archive")
     fi
     echo ""
 done < <(find "$SEARCH_DIR" -type f -iname "*.7z" -print0)
@@ -83,9 +86,20 @@ done < <(find "$SEARCH_DIR" -type f -iname "*.7z" -print0)
 # Summary
 echo "========================================"
 echo -e "${GREEN}Extraction complete!${NC}"
+echo -e "Total archives found: $total"
 echo -e "Successfully extracted: ${GREEN}$count${NC} archive(s)"
 if [ $failed -gt 0 ]; then
     echo -e "Failed: ${RED}$failed${NC} archive(s)"
+    echo ""
+    echo -e "${RED}Failed files:${NC}"
+    for f in "${failed_files[@]}"; do
+        echo "  - $f"
+    done
 fi
+echo ""
 echo "Output directory: $OUTPUT_DIR"
+
+if [ $total -eq 0 ]; then
+    echo -e "${YELLOW}No .7z files found in $SEARCH_DIR${NC}"
+fi
 
