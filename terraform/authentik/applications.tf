@@ -81,14 +81,14 @@ locals {
 }
 
 resource "authentik_provider_oauth2" "oauth2" {
-  for_each              = local.applications
-  name                  = each.key
-  client_id             = each.value.client_id
-  client_secret         = each.value.client_secret
-  authorization_flow    = authentik_flow.provider-authorization-implicit-consent.uuid
-  authentication_flow   = data.authentik_flow.default-authentication-flow.id
-  invalidation_flow     = data.authentik_flow.default-provider-invalidation-flow.id
-  property_mappings     = concat(
+  for_each            = local.applications
+  name                = each.key
+  client_id           = each.value.client_id
+  client_secret       = each.value.client_secret
+  authorization_flow  = authentik_flow.provider-authorization-implicit-consent.uuid
+  authentication_flow = data.authentik_flow.default-authentication-flow.id
+  invalidation_flow   = data.authentik_flow.default-provider-invalidation-flow.id
+  property_mappings = concat(
     data.authentik_property_mapping_provider_scope.oauth2.ids,
     [authentik_property_mapping_provider_scope.email_verified.id]
   )
