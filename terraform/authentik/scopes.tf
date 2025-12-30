@@ -6,3 +6,14 @@ data "authentik_property_mapping_provider_scope" "oauth2" {
     "goauthentik.io/providers/oauth2/scope-profile"
   ]
 }
+
+## Custom scope to set email_verified to true
+resource "authentik_property_mapping_provider_scope" "email_verified" {
+  name       = "email_verified"
+  scope_name = "email_verified"
+  expression = <<EOF
+return {
+    "email_verified": True
+}
+EOF
+}
