@@ -27,8 +27,8 @@
     state: present
     api_timeout: 300
   register: cloudstack_ops_zone_result
-  when: cloudstack_ops_zone_info.zones | length == 0
+  when: cloudstack_ops_zone_info.zones | default([]) | length == 0
 
 - name: Set zone ID
   ansible.builtin.set_fact:
-    cloudstack_ops_zone_id: "{{ cloudstack_ops_zone_result.id | default(cloudstack_ops_zone_info.zones[0].id) }}"
+    cloudstack_ops_zone_id: "{{ cloudstack_ops_zone_result.id | default((cloudstack_ops_zone_info.zones | default([{}]))[0].id | default('')) }}"
