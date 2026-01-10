@@ -27,18 +27,17 @@
     ## Kubernetes Cluster Role Vars ##
     ###############
     kubernetes_cluster_list:
-      - name: 'k8s-prod-1'
+      - name: 'k8s-prod'
         description: 'Production Kubernetes Cluster'
         zone: 'Zone1'
         kubernetes_version: 'v1.32.5-x86_64'
         service_offering: 'CKS Instance'
         network: 'guest-network'
-        # template: "CKS-Ubuntu-22.04"  # Use CKS Ubuntu 22.04 for control/worker nodes
-        enable_csi: true
-        enable_gpu: true
+        enable_csi: false
+        enable_gpu: false
         size: 2
         control_nodes: 1
-        node_root_disk_size: 50
+        node_root_disk_size: 250
 
     kubernetes_cluster_wait_for_cluster: true
     kubernetes_cluster_wait_timeout: 1800

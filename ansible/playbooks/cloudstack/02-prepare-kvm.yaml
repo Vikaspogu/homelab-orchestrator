@@ -8,6 +8,7 @@
     ###############
     ## Prepare KVM Role Vars ##
     ###############
+    ansible_user: 'vikaspogu'
     prepare_kvm_version: '4.22'
     prepare_kvm_mgmt_interface: 'enp0s25'
     prepare_kvm_mgmt_domain: 'a113.internal'
