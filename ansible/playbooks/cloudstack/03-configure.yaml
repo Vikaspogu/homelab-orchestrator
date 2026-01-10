@@ -61,6 +61,13 @@
             label: 'cloudbr0'
           - type: 'Public'
             label: 'cloudbr0'
+          - type: 'Storage'
+            label: 'cloudbr0'
+        storage_traffic:
+          gateway: '10.30.30.1'
+          netmask: '255.255.255.0'
+          start_ip: '10.30.30.101'
+          end_ip: '10.30.30.110'
 
     cloudstack_ops_pods:
       - name: 'Pod1'
