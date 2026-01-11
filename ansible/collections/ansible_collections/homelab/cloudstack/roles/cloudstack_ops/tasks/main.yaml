@@ -6,7 +6,7 @@
       - cloudstack_api_url is defined
       - cloudstack_ops_zone.name is defined
       - cloudstack_ops_zone.dns1 is defined
-    fail_msg: "Required CloudStack configuration variables are not set"
+    fail_msg: 'Required CloudStack configuration variables are not set'
 
 - name: Get CloudStack API authentication
   ansible.builtin.include_role:
@@ -49,6 +49,12 @@
   tags:
     - cluster
 
+- name: Add Hosts
+  ansible.builtin.include_tasks: add_hosts.yaml
+  when: cloudstack_ops_hosts | length > 0
+  tags:
+    - hosts
+
 - name: Add Primary Storage
   ansible.builtin.include_tasks: add_primary_storage.yaml
   when: cloudstack_ops_primary_storages | length > 0
@@ -62,12 +68,6 @@
   tags:
     - storage
     - secondary_storage
-
-- name: Add Hosts
-  ansible.builtin.include_tasks: add_hosts.yaml
-  when: cloudstack_ops_hosts | length > 0
-  tags:
-    - hosts
 
 - name: Configure GPU devices on hosts
   ansible.builtin.include_tasks: configure_gpu.yaml

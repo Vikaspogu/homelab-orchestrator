@@ -27,7 +27,7 @@
     ## Kubernetes Cluster Role Vars ##
     ###############
     kubernetes_cluster_list:
-      - name: 'k8s-prod'
+      - name: 'k8s-prod-1'
         description: 'Production Kubernetes Cluster'
         zone: 'Zone1'
         kubernetes_version: 'v1.32.5-x86_64'

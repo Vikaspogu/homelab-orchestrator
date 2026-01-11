@@ -102,7 +102,11 @@
         start_ip: '10.30.30.76'
         end_ip: '10.30.30.100'
         vlan: 'untagged'
-
+    cloudstack_ops_public_ip_ranges:
+      - gateway: '10.30.30.1'
+        netmask: '255.255.255.0'
+        start_ip: '10.30.30.111'
+        end_ip: '10.30.30.120'
     cloudstack_ops_ssh_key_name: 'cloudstack-ssh-key'
     cloudstack_ops_enable_zone: true
     cloudstack_ops_primary_storages:
