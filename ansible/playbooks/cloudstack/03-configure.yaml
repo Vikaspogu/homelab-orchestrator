@@ -44,7 +44,7 @@
     cloudstack_ops_zone:
       name: 'Zone1'
       dns1: '8.8.8.8'
-      internal_dns1: '10.30.30.1'
+      internal_dns1: '10.30.0.1'
       network_type: 'Advanced'
       guest_cidr: '10.1.0.0/16'
       local_storage_enabled: true
