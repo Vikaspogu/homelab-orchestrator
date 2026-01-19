@@ -1,0 +1,73 @@
+# Configure VFIO for GPU passthrough
+# Based on vfio.yml from playbook-aarch64.yml
+---
+- name: Update PCI IDs database (background)
+  ansible.builtin.shell: |
+    nohup update-pciids &>/dev/null &
+  args:
+    executable: /bin/bash
+  changed_when: false
+  failed_when: false
+
+- name: Copy GPU configuration script
+  ansible.builtin.copy:
+    src: list_and_configure_gpus.py
+    dest: /tmp/list_and_configure_gpus.py
+    mode: '0755'
+
+- name: Run GPU configuration script
+  ansible.builtin.command:
+    cmd: python3 /tmp/list_and_configure_gpus.py
+  register: prepare_hosts_gpu_result
+  changed_when: true
+  failed_when: false
+
+- name: Create NVIDIA blacklist configuration
+  ansible.builtin.copy:
+    dest: /etc/modprobe.d/blacklist-nvidia.conf
+    content: |
+      blacklist nouveau
+      blacklist nvidia
+      blacklist nvidiafb
+      blacklist nvidia_drm
+      blacklist snd_hda_intel
+    mode: '0644'
+
+- name: Create VFIO modules configuration
+  ansible.builtin.copy:
+    dest: /etc/modules-load.d/vfio.conf
+    content: |
+      vfio
+      vfio_iommu_type1
+      vfio_pci
+    mode: '0644'
+
+- name: Install HWE kernel for Ubuntu 22.04 (x86_64 only)
+  ansible.builtin.apt:
+    name: linux-generic-hwe-22.04
+    state: present
+    install_recommends: true
+  when:
+    - ansible_facts['distribution_version'] is version('22.04', '==')
+    - prepare_hosts_cpu_type != 'aarch64'
+  register: prepare_hosts_hwe_kernel_2204
+
+- name: Install HWE kernel for Ubuntu 24.04 (x86_64 only)
+  ansible.builtin.apt:
+    name: linux-generic-hwe-24.04
+    state: present
+    install_recommends: true
+  when:
+    - ansible_facts['distribution_version'] is version('24.04', '==')
+    - prepare_hosts_cpu_type != 'aarch64'
+  register: prepare_hosts_hwe_kernel_2404
+
+- name: Update initramfs
+  ansible.builtin.command:
+    cmd: update-initramfs -u
+  changed_when: true
+  when: >-
+    (prepare_hosts_hwe_kernel_2204.changed | default(false)) or
+    (prepare_hosts_hwe_kernel_2404.changed | default(false))
+
+# NOTE: Reboot handled by main.yml final reboot task

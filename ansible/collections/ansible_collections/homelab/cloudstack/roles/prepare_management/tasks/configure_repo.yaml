@@ -15,37 +15,37 @@
     state: directory
     owner: root
     group: root
-    mode: "0755"
+    mode: '0755'
 
 - name: Download CloudStack GPG key
   ansible.builtin.get_url:
-    url: "{{ prepare_management_repo_gpg_key }}"
-    dest: "/tmp/cloudstack-release.asc"
-    mode: "0644"
+    url: '{{ prepare_management_repo_gpg_key }}'
+    dest: '/tmp/cloudstack-release.asc'
+    mode: '0644'
 
 - name: Convert GPG key to keyring format
   ansible.builtin.shell: |
     gpg --dearmor < /tmp/cloudstack-release.asc > {{ prepare_management_gpg_key_file }}
   args:
-    creates: "{{ prepare_management_gpg_key_file }}"
+    creates: '{{ prepare_management_gpg_key_file }}'
 
 - name: Set GPG key permissions
   ansible.builtin.file:
-    path: "{{ prepare_management_gpg_key_file }}"
+    path: '{{ prepare_management_gpg_key_file }}'
     owner: root
     group: root
-    mode: "0644"
+    mode: '0644'
 
 - name: Configure CloudStack APT repository
   ansible.builtin.template:
     src: cloudstack.list.j2
-    dest: "{{ prepare_management_repo_file }}"
+    dest: '{{ prepare_management_repo_file }}'
     owner: root
     group: root
-    mode: "0644"
+    mode: '0644'
   register: prepare_management_apt_repo_added
 
-- name: Update APT cache  # noqa: no-handler
+- name: Update APT cache # noqa: no-handler
   ansible.builtin.apt:
     update_cache: true
   when: prepare_management_apt_repo_added.changed

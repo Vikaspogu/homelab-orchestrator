@@ -2,9 +2,9 @@
 ---
 - name: Get zones
   ngine_io.cloudstack.zone_info:
-    api_url: "{{ cloudstack_api_url }}"
-    api_key: "{{ cloudstack_api_key }}"
-    api_secret: "{{ cloudstack_api_secret }}"
+    api_url: '{{ cloudstack_api_url }}'
+    api_key: '{{ cloudstack_api_key }}'
+    api_secret: '{{ cloudstack_api_secret }}'
   register: kubernetes_cluster_zones_response
 
 - name: Build zone ID map
@@ -13,16 +13,16 @@
 
 - name: Get service offerings
   ansible.builtin.uri:
-    url: "{{ cloudstack_api_url }}"
+    url: '{{ cloudstack_api_url }}'
     method: POST
     body_format: form-urlencoded
     body:
       command: listServiceOfferings
       response: json
-      sessionkey: "{{ cloudstack_session_key }}"
+      sessionkey: '{{ cloudstack_session_key }}'
     headers:
-      Cookie: "{{ cloudstack_cookies }}"
-    timeout: "{{ kubernetes_cluster_api_timeout }}"
+      Cookie: '{{ cloudstack_cookies }}'
+    timeout: '{{ kubernetes_cluster_api_timeout }}'
   register: kubernetes_cluster_offerings_response
 
 - name: Build offering ID map
@@ -31,16 +31,16 @@
 
 - name: Get Kubernetes versions
   ansible.builtin.uri:
-    url: "{{ cloudstack_api_url }}"
+    url: '{{ cloudstack_api_url }}'
     method: POST
     body_format: form-urlencoded
     body:
       command: listKubernetesSupportedVersions
       response: json
-      sessionkey: "{{ cloudstack_session_key }}"
+      sessionkey: '{{ cloudstack_session_key }}'
     headers:
-      Cookie: "{{ cloudstack_cookies }}"
-    timeout: "{{ kubernetes_cluster_api_timeout }}"
+      Cookie: '{{ cloudstack_cookies }}'
+    timeout: '{{ kubernetes_cluster_api_timeout }}'
   register: kubernetes_cluster_versions_response
 
 - name: Build version ID map
@@ -49,16 +49,16 @@
 
 - name: Get networks
   ansible.builtin.uri:
-    url: "{{ cloudstack_api_url }}"
+    url: '{{ cloudstack_api_url }}'
     method: POST
     body_format: form-urlencoded
     body:
       command: listNetworks
       response: json
-      sessionkey: "{{ cloudstack_session_key }}"
+      sessionkey: '{{ cloudstack_session_key }}'
     headers:
-      Cookie: "{{ cloudstack_cookies }}"
-    timeout: "{{ kubernetes_cluster_api_timeout }}"
+      Cookie: '{{ cloudstack_cookies }}'
+    timeout: '{{ kubernetes_cluster_api_timeout }}'
   register: kubernetes_cluster_networks_response
 
 - name: Build network ID map
@@ -67,40 +67,40 @@
 
 - name: Get OS types
   ansible.builtin.uri:
-    url: "{{ cloudstack_api_url }}"
+    url: '{{ cloudstack_api_url }}'
     method: POST
     body_format: form-urlencoded
     body:
       command: listOsTypes
       description: "{{ kubernetes_cluster_cks_template.os_type | default('Ubuntu 22.04') }}"
       response: json
-      sessionkey: "{{ cloudstack_session_key }}"
+      sessionkey: '{{ cloudstack_session_key }}'
     headers:
-      Cookie: "{{ cloudstack_cookies }}"
-    timeout: "{{ kubernetes_cluster_api_timeout }}"
+      Cookie: '{{ cloudstack_cookies }}'
+    timeout: '{{ kubernetes_cluster_api_timeout }}'
   register: kubernetes_cluster_ostypes_response
   when: kubernetes_cluster_cks_template.name | default('') | length > 0
 
 - name: Set OS type ID
   ansible.builtin.set_fact:
-    kubernetes_cluster_ostype_id: "{{ kubernetes_cluster_ostypes_response.json.listostypesresponse.ostype[0].id }}"
+    kubernetes_cluster_ostype_id: '{{ kubernetes_cluster_ostypes_response.json.listostypesresponse.ostype[0].id }}'
   when:
     - kubernetes_cluster_cks_template.name | default('') | length > 0
     - kubernetes_cluster_ostypes_response.json.listostypesresponse.ostype | default([]) | length > 0
 
 - name: Get templates
   ansible.builtin.uri:
-    url: "{{ cloudstack_api_url }}"
+    url: '{{ cloudstack_api_url }}'
     method: POST
     body_format: form-urlencoded
     body:
       command: listTemplates
       templatefilter: all
       response: json
-      sessionkey: "{{ cloudstack_session_key }}"
+      sessionkey: '{{ cloudstack_session_key }}'
     headers:
-      Cookie: "{{ cloudstack_cookies }}"
-    timeout: "{{ kubernetes_cluster_api_timeout }}"
+      Cookie: '{{ cloudstack_cookies }}'
+    timeout: '{{ kubernetes_cluster_api_timeout }}'
   register: kubernetes_cluster_templates_response
 
 - name: Build template ID map

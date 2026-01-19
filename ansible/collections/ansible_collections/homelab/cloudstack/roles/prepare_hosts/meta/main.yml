@@ -1,0 +1,23 @@
+# Prepare Hosts Role - Metadata
+---
+galaxy_info:
+  role_name: prepare_hosts
+  author: Vikas Pogu
+  description: Prepare KVM hosts for CloudStack with support for local or Ceph storage
+  license: Apache-2.0
+  min_ansible_version: '2.14'
+
+  platforms:
+    - name: Ubuntu
+      versions:
+        - jammy
+        - noble
+
+  galaxy_tags:
+    - cloudstack
+    - kvm
+    - virtualization
+    - ceph
+    - storage
+
+dependencies: []

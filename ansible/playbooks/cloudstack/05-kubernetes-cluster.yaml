@@ -1,12 +1,9 @@
-# Create Kubernetes Clusters via CloudStack CKS
-# Uses CloudStack Kubernetes Service to create managed clusters
 ---
 - name: Create CloudStack Kubernetes Clusters
   hosts: localhost
   connection: local
   gather_facts: false
   pre_tasks:
-    # Option 1: Use 1Password (set onepassword_enabled=true)
     - name: Fetch CloudStack credentials from 1Password
       onepassword.connect.item_info:
         vault: "{{ lookup('env', 'OP_VAULT') }}"
@@ -23,16 +20,13 @@
       when: onepassword_enabled | default(true) | bool
       no_log: true
   vars:
-    ###############
-    ## Kubernetes Cluster Role Vars ##
-    ###############
     kubernetes_cluster_list:
       - name: 'k8s-prod-1'
         description: 'Production Kubernetes Cluster'
         zone: 'Zone1'
         kubernetes_version: 'v1.32.5-x86_64'
         service_offering: 'CKS Instance'
-        network: 'guest-network'
+        network: 'defaultGuestNetwork'
         enable_csi: false
         enable_gpu: false
         size: 2
@@ -43,31 +37,3 @@
     kubernetes_cluster_wait_timeout: 1800
   roles:
     - role: homelab.cloudstack.kubernetes_cluster
-
-  post_tasks:
-    - name: Display next steps
-      ansible.builtin.debug:
-        msg: |
-          ============================================
-          CloudStack Kubernetes Clusters Created!
-          ============================================
-
-          Kubeconfig files saved to:
-          {% for cluster in kubernetes_cluster_list %}
-            - kubeconfig-{{ cluster.name }}.yaml
-          {% endfor %}
-
-          To use a cluster:
-            export KUBECONFIG=kubeconfig-{{ kubernetes_cluster_list[0].name }}.yaml
-            kubectl get nodes
-            kubectl get pods -A
-
-          To access cluster via CloudStack:
-            cloudmonkey list kubernetesclusters
-            cloudmonkey get kubernetesclusterconfig id=<cluster-id>
-
-          To scale cluster:
-            cloudmonkey scale kubernetescluster id=<id> size=<new-size>
-
-          To delete cluster:
-            cloudmonkey delete kubernetescluster id=<id>

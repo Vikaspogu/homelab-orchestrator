@@ -9,11 +9,11 @@ prepare_management_mysql_packages:
 prepare_management_chrony_packages:
   - chrony
 
-prepare_management_mysql_service: "mysql"
-prepare_management_chrony_service: "chrony"
+prepare_management_mysql_service: 'mysql'
+prepare_management_chrony_service: 'chrony'
 
-prepare_management_mysql_config_file: "/etc/mysql/my.cnf"
-prepare_management_mysql_config_dir: "/etc/mysql/conf.d"
+prepare_management_mysql_config_file: '/etc/mysql/my.cnf'
+prepare_management_mysql_config_dir: '/etc/mysql/conf.d'
 
-prepare_management_repo_file: "/etc/apt/sources.list.d/cloudstack.list"
-prepare_management_gpg_key_file: "/etc/apt/keyrings/cloudstack.gpg"
+prepare_management_repo_file: '/etc/apt/sources.list.d/cloudstack.list'
+prepare_management_gpg_key_file: '/etc/apt/keyrings/cloudstack.gpg'

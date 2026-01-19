@@ -1,0 +1,52 @@
+---
+- name: Configure CloudStack Kubernetes Service
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    configure_kubernetes_zone_name: 'Zone1'
+    configure_kubernetes_enabled: true
+    configure_kubernetes_network_offering: 'DefaultNetworkOfferingforKubernetesService'
+    configure_kubernetes_experimental_features: false
+    configure_kubernetes_compute_offering:
+      name: 'CKS Instance'
+      display_text: 'Compute offering for CloudStack Kubernetes Service nodes'
+      cpu: 8
+      cpu_speed: 2000
+      memory: 8192
+      storage_type: 'local'
+      offer_ha: false
+      host_tags: 'kubernetes'
+    configure_kubernetes_compute_offering_recreate: true
+    configure_kubernetes_versions:
+      - name: 'v1.33.1-x86_64'
+        semantic_version: '1.33.1'
+        url: 'http://download.cloudstack.org/cks/setup-v1.33.1-calico-x86_64.iso'
+        zone_name: 'Zone1'
+        min_cpu: 8
+        min_memory: 8192
+      - name: 'v1.32.5-x86_64'
+        semantic_version: '1.32.5'
+        url: 'http://download.cloudstack.org/cks/setup-v1.32.5-calico-x86_64.iso'
+        zone_name: 'Zone1'
+        min_cpu: 8
+        min_memory: 8192
+  pre_tasks:
+    - name: Fetch CloudStack credentials from 1Password
+      onepassword.connect.item_info:
+        vault: "{{ lookup('env', 'OP_VAULT') }}"
+        item: "{{ onepassword_item_cloudstack | default('cloudstack') }}"
+      delegate_to: localhost
+      register: onepassword_cloudstack_item
+      when: onepassword_enabled | default(true) | bool
+      no_log: true
+
+    - name: Set CloudStack credentials from 1Password
+      ansible.builtin.set_fact:
+        cloudstack_admin_password: '{{ onepassword_cloudstack_item.op_item.fields.password.value }}'
+        cloudstack_api_url: '{{ onepassword_cloudstack_item.op_item.fields.API_URL.value }}'
+        configure_kubernetes_endpoint_url: '{{ onepassword_cloudstack_item.op_item.fields.FQDN_URL.value }}'
+      when: onepassword_enabled | default(true) | bool
+      no_log: true
+  roles:
+    - role: homelab.cloudstack.configure_kubernetes

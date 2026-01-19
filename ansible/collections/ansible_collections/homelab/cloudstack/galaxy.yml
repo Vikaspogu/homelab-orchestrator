@@ -21,4 +21,4 @@ issues: https://github.com/Vikaspogu/homelab-orchestrator/issues
 build_ignore:
   - .git
   - .gitignore
-  - "*.tar.gz"
+  - '*.tar.gz'

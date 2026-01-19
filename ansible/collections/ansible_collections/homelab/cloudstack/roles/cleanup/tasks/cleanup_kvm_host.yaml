@@ -29,21 +29,21 @@
 
 - name: Remove CloudStack directories
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: '{{ item }}'
     state: absent
   loop: [/etc/cloudstack, /var/log/cloudstack]
   when: cleanup_config
 
 - name: Remove libvirt directories
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: '{{ item }}'
     state: absent
   loop: [/etc/libvirt, /var/lib/libvirt, /var/log/libvirt]
   when: cleanup_libvirt
 
 - name: Remove local storage
   ansible.builtin.file:
-    path: "{{ cleanup_local_storage_path }}"
+    path: '{{ cleanup_local_storage_path }}'
     state: absent
   when: cleanup_storage
 
@@ -60,7 +60,7 @@
       ansible.builtin.shell: |
         ip link set {{ item }} down
         brctl delbr {{ item }}
-      loop: "{{ cleanup_bridges_to_remove }}"
+      loop: '{{ cleanup_bridges_to_remove }}'
       when: item in cleanup_bridge_list.stdout
       changed_when: true
       failed_when: false
@@ -73,7 +73,7 @@
 
 - name: Remove APT repository
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: '{{ item }}'
     state: absent
   loop:
     - /etc/apt/sources.list.d/cloudstack.list

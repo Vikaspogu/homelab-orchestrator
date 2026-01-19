@@ -1,0 +1,232 @@
+---
+- name: Validate Hosts Added to CloudStack
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    zone_name: 'Zone1'
+    validation_results: []
+  tasks:
+    - name: Login to CloudStack
+      ansible.builtin.uri:
+        url: '{{ cloudstack_api_url }}'
+        method: POST
+        body_format: form-urlencoded
+        body:
+          command: login
+          username: '{{ cloudstack_user }}'
+          password: '{{ cloudstack_password }}'
+          response: json
+        return_content: true
+      register: login_response
+      failed_when: false
+
+    - name: Extract session info
+      ansible.builtin.set_fact:
+        session_key: "{{ login_response.json.loginresponse.sessionkey | default('') }}"
+        cookies: "{{ login_response.cookies_string | default('') }}"
+      when: login_response.json is defined and login_response.json.loginresponse is defined
+
+    - name: Set empty session_key if login failed
+      ansible.builtin.set_fact:
+        session_key: ''
+        cookies: ''
+      when: session_key is not defined
+
+    - name: Fail if login unsuccessful
+      ansible.builtin.fail:
+        msg: 'Failed to login to CloudStack API at {{ cloudstack_api_url }}. Check credentials and connectivity.'
+      when: session_key | length == 0
+
+    - name: Get zone ID
+      ansible.builtin.uri:
+        url: '{{ cloudstack_api_url }}'
+        method: POST
+        body_format: form-urlencoded
+        body:
+          command: listZones
+          name: '{{ zone_name }}'
+          response: json
+          sessionkey: '{{ session_key }}'
+        headers:
+          Cookie: '{{ cookies }}'
+        return_content: true
+      register: zones_response
+
+    - name: Set zone ID
+      ansible.builtin.set_fact:
+        zone_id: '{{ zones_response.json.listzonesresponse.zone[0].id }}'
+      when: zones_response.json.listzonesresponse.zone | default([]) | length > 0
+
+    - name: 'CHECK 1: Hosts status'
+      block:
+        - name: Query hosts
+          ansible.builtin.uri:
+            url: '{{ cloudstack_api_url }}'
+            method: POST
+            body_format: form-urlencoded
+            body:
+              command: listHosts
+              zoneid: '{{ zone_id }}'
+              type: Routing
+              response: json
+              sessionkey: '{{ session_key }}'
+            headers:
+              Cookie: '{{ cookies }}'
+            return_content: true
+          register: hosts_response
+
+        - name: Parse host info
+          ansible.builtin.set_fact:
+            hosts_list: '{{ hosts_response.json.listhostsresponse.host | default([]) }}'
+            hosts_up: "{{ hosts_response.json.listhostsresponse.host | default([]) | selectattr('state', 'equalto', 'Up') | list }}"
+
+        - name: Record hosts check
+          ansible.builtin.set_fact:
+            validation_results:
+              "{{ validation_results + [{'check': 'Hosts Up', 'status': 'PASS' if hosts_up | length == hosts_list | length and hosts_list | length
+              > 0 else 'FAIL', 'details': (hosts_up | length | string) + '/' + (hosts_list | length | string) + ' hosts Up'}] }}"
+
+    - name: 'CHECK 2: Host resource state'
+      block:
+        - name: Count enabled hosts
+          ansible.builtin.set_fact:
+            hosts_enabled: "{{ hosts_list | selectattr('resourcestate', 'equalto', 'Enabled') | list }}"
+
+        - name: Record resource state check
+          ansible.builtin.set_fact:
+            validation_results:
+              "{{ validation_results + [{'check': 'Hosts Enabled', 'status': 'PASS' if hosts_enabled | length == hosts_list | length else 'FAIL',
+              'details': (hosts_enabled | length | string) + '/' + (hosts_list | length | string) + ' hosts Enabled'}] }}"
+
+    - name: 'CHECK 3: Local storage pools'
+      block:
+        - name: Query storage pools
+          ansible.builtin.uri:
+            url: '{{ cloudstack_api_url }}'
+            method: POST
+            body_format: form-urlencoded
+            body:
+              command: listStoragePools
+              zoneid: '{{ zone_id }}'
+              response: json
+              sessionkey: '{{ session_key }}'
+            headers:
+              Cookie: '{{ cookies }}'
+            return_content: true
+          register: storage_response
+
+        - name: Parse storage info
+          ansible.builtin.set_fact:
+            storage_pools: '{{ storage_response.json.liststoragepoolsresponse.storagepool | default([]) }}'
+            storage_up: "{{ storage_response.json.liststoragepoolsresponse.storagepool | default([]) | selectattr('state', 'equalto', 'Up') | list }}"
+
+        - name: Record storage check
+          ansible.builtin.set_fact:
+            validation_results:
+              "{{ validation_results + [{'check': 'Storage Pools', 'status': 'PASS' if storage_up | length > 0 else 'FAIL', 'details': (storage_up
+              | length | string) + ' pool(s) Up'}] }}"
+
+    - name: 'CHECK 4: System VMs running'
+      block:
+        - name: Query system VMs
+          ansible.builtin.uri:
+            url: '{{ cloudstack_api_url }}'
+            method: POST
+            body_format: form-urlencoded
+            body:
+              command: listSystemVms
+              zoneid: '{{ zone_id }}'
+              response: json
+              sessionkey: '{{ session_key }}'
+            headers:
+              Cookie: '{{ cookies }}'
+            return_content: true
+          register: sysvms_response
+
+        - name: Parse system VM info
+          ansible.builtin.set_fact:
+            sysvms: '{{ sysvms_response.json.listsystemvmsresponse.systemvm | default([]) }}'
+            ssvm_running:
+              "{{ sysvms_response.json.listsystemvmsresponse.systemvm | default([]) | selectattr('systemvmtype', 'equalto', 'secondarystoragevm') | selectattr('state',
+              'equalto', 'Running') | list | length > 0 }}"
+            cpvm_running:
+              "{{ sysvms_response.json.listsystemvmsresponse.systemvm | default([]) | selectattr('systemvmtype', 'equalto', 'consoleproxy') | selectattr('state',
+              'equalto', 'Running') | list | length > 0 }}"
+
+        - name: Record SSVM check
+          ansible.builtin.set_fact:
+            validation_results:
+              "{{ validation_results + [{'check': 'Secondary Storage VM', 'status': 'PASS' if ssvm_running else 'FAIL', 'details': 'Running' if
+              ssvm_running else 'Not Running'}] }}"
+
+        - name: Record CPVM check
+          ansible.builtin.set_fact:
+            validation_results:
+              "{{ validation_results + [{'check': 'Console Proxy VM', 'status': 'PASS' if cpvm_running else 'FAIL', 'details': 'Running' if cpvm_running
+              else 'Not Running'}] }}"
+
+    - name: 'CHECK 5: SystemVM Template'
+      block:
+        - name: Query templates
+          ansible.builtin.uri:
+            url: '{{ cloudstack_api_url }}'
+            method: POST
+            body_format: form-urlencoded
+            body:
+              command: listTemplates
+              templatefilter: all
+              zoneid: '{{ zone_id }}'
+              response: json
+              sessionkey: '{{ session_key }}'
+            headers:
+              Cookie: '{{ cookies }}'
+            return_content: true
+          register: templates_response
+
+        - name: Find system VM template
+          ansible.builtin.set_fact:
+            sysvm_template: "{{ templates_response.json.listtemplatesresponse.template | default([]) | selectattr('name', 'search', 'SystemVM') | list }}"
+
+        - name: Check template ready
+          ansible.builtin.set_fact:
+            template_ready: "{{ sysvm_template | selectattr('isready', 'equalto', true) | list | length > 0 }}"
+          when: sysvm_template | length > 0
+
+        - name: Record template check
+          ansible.builtin.set_fact:
+            validation_results:
+              "{{ validation_results + [{'check': 'SystemVM Template', 'status': 'PASS' if template_ready | default(false) else 'FAIL', 'details':
+              'Ready' if template_ready | default(false) else 'Not Ready (downloading)'}] }}"
+
+    - name: Calculate validation summary
+      ansible.builtin.set_fact:
+        passed_checks: "{{ validation_results | selectattr('status', 'equalto', 'PASS') | list | length }}"
+        failed_checks: "{{ validation_results | selectattr('status', 'equalto', 'FAIL') | list | length }}"
+        warn_checks: "{{ validation_results | selectattr('status', 'equalto', 'WARN') | list | length }}"
+
+    - name: Display validation results
+      ansible.builtin.debug:
+        msg: |
+          ╔══════════════════════════════════════════════════════════════════╗
+          ║  STEP 3: HOSTS ADDED VALIDATION
+          ╠══════════════════════════════════════════════════════════════════╣
+          {% for result in validation_results %}
+          ║ [{{ result.status }}] {{ result.check }}: {{ result.details }}
+          {% endfor %}
+          ╠══════════════════════════════════════════════════════════════════╣
+          ║ PASSED: {{ passed_checks }}  WARNINGS: {{ warn_checks | default(0) }}  FAILED: {{ failed_checks }}
+          ╚══════════════════════════════════════════════════════════════════╝
+
+    - name: Get failed check details
+      ansible.builtin.set_fact:
+        failed_check_list: "{{ validation_results | selectattr('status', 'equalto', 'FAIL') | list }}"
+
+    - name: Fail if critical checks failed
+      ansible.builtin.fail:
+        msg: |
+          Host validation failed! Fix issues before proceeding to Step 4.
+          {% for check in failed_check_list %}
+          - {{ check.check }}: {{ check.details }}
+          {% endfor %}
+      when: failed_checks | int > 0

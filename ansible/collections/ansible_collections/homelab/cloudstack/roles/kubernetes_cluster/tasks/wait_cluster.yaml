@@ -2,17 +2,17 @@
 ---
 - name: Get cluster status
   ansible.builtin.uri:
-    url: "{{ cloudstack_api_url }}"
+    url: '{{ cloudstack_api_url }}'
     method: POST
     body_format: form-urlencoded
     body:
       command: listKubernetesClusters
-      name: "{{ cluster.name }}"
+      name: '{{ cluster.name }}'
       response: json
-      sessionkey: "{{ cloudstack_session_key }}"
+      sessionkey: '{{ cloudstack_session_key }}'
     headers:
-      Cookie: "{{ cloudstack_cookies }}"
-    timeout: "{{ kubernetes_cluster_api_timeout }}"
+      Cookie: '{{ cloudstack_cookies }}'
+    timeout: '{{ kubernetes_cluster_api_timeout }}'
   register: kubernetes_cluster_initial_status
 
 - name: Set cluster state
@@ -29,21 +29,21 @@
 
 - name: Wait for cluster to be running
   ansible.builtin.uri:
-    url: "{{ cloudstack_api_url }}"
+    url: '{{ cloudstack_api_url }}'
     method: POST
     body_format: form-urlencoded
     body:
       command: listKubernetesClusters
-      name: "{{ cluster.name }}"
+      name: '{{ cluster.name }}'
       response: json
-      sessionkey: "{{ cloudstack_session_key }}"
+      sessionkey: '{{ cloudstack_session_key }}'
     headers:
-      Cookie: "{{ cloudstack_cookies }}"
-    timeout: "{{ kubernetes_cluster_api_timeout }}"
+      Cookie: '{{ cloudstack_cookies }}'
+    timeout: '{{ kubernetes_cluster_api_timeout }}'
   register: kubernetes_cluster_status
   until: >
     (kubernetes_cluster_status.json.listkubernetesclustersresponse.kubernetescluster[0].state | default('Unknown')) in ['Running', 'Error', 'Failed', 'Destroyed']
-  retries: "{{ (kubernetes_cluster_wait_timeout / 30) | int }}"
+  retries: '{{ (kubernetes_cluster_wait_timeout / 30) | int }}'
   delay: 30
   when:
     - kubernetes_cluster_state is defined

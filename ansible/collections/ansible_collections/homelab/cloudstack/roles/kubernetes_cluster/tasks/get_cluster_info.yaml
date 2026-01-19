@@ -2,16 +2,16 @@
 ---
 - name: Get all clusters
   ansible.builtin.uri:
-    url: "{{ cloudstack_api_url }}"
+    url: '{{ cloudstack_api_url }}'
     method: POST
     body_format: form-urlencoded
     body:
       command: listKubernetesClusters
       response: json
-      sessionkey: "{{ cloudstack_session_key }}"
+      sessionkey: '{{ cloudstack_session_key }}'
     headers:
-      Cookie: "{{ cloudstack_cookies }}"
-    timeout: "{{ kubernetes_cluster_api_timeout }}"
+      Cookie: '{{ cloudstack_cookies }}'
+    timeout: '{{ kubernetes_cluster_api_timeout }}'
   register: kubernetes_cluster_all_clusters
 
 - name: Build cluster maps
@@ -22,22 +22,22 @@
 
 - name: Get kubeconfig for running clusters
   ansible.builtin.uri:
-    url: "{{ cloudstack_api_url }}"
+    url: '{{ cloudstack_api_url }}'
     method: POST
     body_format: form-urlencoded
     body:
       command: getKubernetesClusterConfig
-      id: "{{ kubernetes_cluster_ids[cluster.name] }}"
+      id: '{{ kubernetes_cluster_ids[cluster.name] }}'
       response: json
-      sessionkey: "{{ cloudstack_session_key }}"
+      sessionkey: '{{ cloudstack_session_key }}'
     headers:
-      Cookie: "{{ cloudstack_cookies }}"
-    timeout: "{{ kubernetes_cluster_api_timeout }}"
+      Cookie: '{{ cloudstack_cookies }}'
+    timeout: '{{ kubernetes_cluster_api_timeout }}'
   register: kubernetes_cluster_kubeconfig_result
-  loop: "{{ kubernetes_cluster_list }}"
+  loop: '{{ kubernetes_cluster_list }}'
   loop_control:
     loop_var: cluster
-    label: "{{ cluster.name }}"
+    label: '{{ cluster.name }}'
   when:
     - kubernetes_cluster_ids[cluster.name] is defined
     - kubernetes_cluster_states[cluster.name] | default('') == 'Running'
@@ -45,11 +45,11 @@
 
 - name: Save kubeconfig files
   ansible.builtin.copy:
-    content: "{{ item.json.getkubernetesclusterconfigresponse.clusterconfig.configdata }}"
-    dest: "{{ playbook_dir }}/../kubeconfig-{{ item.cluster.name }}.yaml"
-    mode: "0600"
-  loop: "{{ kubernetes_cluster_kubeconfig_result.results | default([]) }}"
+    content: '{{ item.json.getkubernetesclusterconfigresponse.clusterconfig.configdata }}'
+    dest: '{{ playbook_dir }}/../kubeconfig-{{ item.cluster.name }}.yaml'
+    mode: '0600'
+  loop: '{{ kubernetes_cluster_kubeconfig_result.results | default([]) }}'
   loop_control:
-    label: "{{ item.cluster.name }}"
+    label: '{{ item.cluster.name }}'
   when: item.json.getkubernetesclusterconfigresponse.clusterconfig.configdata is defined
   delegate_to: localhost

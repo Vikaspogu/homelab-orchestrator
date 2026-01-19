@@ -2,20 +2,20 @@
 ---
 - name: Set network offering
   ngine_io.cloudstack.configuration:
-    api_url: "{{ cloudstack_api_url }}"
-    api_key: "{{ cloudstack_api_key }}"
-    api_secret: "{{ cloudstack_api_secret }}"
-    name: "cloud.kubernetes.cluster.network.offering"
-    value: "{{ configure_kubernetes_network_offering }}"
+    api_url: '{{ cloudstack_api_url }}'
+    api_key: '{{ cloudstack_api_key }}'
+    api_secret: '{{ cloudstack_api_secret }}'
+    name: 'cloud.kubernetes.cluster.network.offering'
+    value: '{{ configure_kubernetes_network_offering }}'
     api_timeout: 300
   when: configure_kubernetes_network_offering | length > 0
 
 - name: Enable experimental features
   ngine_io.cloudstack.configuration:
-    api_url: "{{ cloudstack_api_url }}"
-    api_key: "{{ cloudstack_api_key }}"
-    api_secret: "{{ cloudstack_api_secret }}"
-    name: "cloud.kubernetes.cluster.experimental.features.enabled"
-    value: "true"
+    api_url: '{{ cloudstack_api_url }}'
+    api_key: '{{ cloudstack_api_key }}'
+    api_secret: '{{ cloudstack_api_secret }}'
+    name: 'cloud.kubernetes.cluster.experimental.features.enabled'
+    value: 'true'
     api_timeout: 300
   when: configure_kubernetes_experimental_features

@@ -1,0 +1,94 @@
+# Register SystemVM Template
+# Should be called after secondary storage is configured
+---
+- name: Get OS type ID for SystemVM template
+  ansible.builtin.uri:
+    url: '{{ cloudstack_api_url }}'
+    method: POST
+    body_format: form-urlencoded
+    body:
+      command: listOsTypes
+      description: "{{ configure_zone_systemvm_template.os_type | default('Debian GNU/Linux 12 (64-bit)') }}"
+      response: json
+      sessionkey: '{{ cloudstack_session_key }}'
+    headers:
+      Cookie: '{{ cloudstack_cookies }}'
+    return_content: true
+  register: configure_zone_os_types_result
+
+- name: Set OS type ID
+  ansible.builtin.set_fact:
+    configure_zone_os_type_id: '{{ configure_zone_os_types_result.json.listostypesresponse.ostype[0].id }}'
+  when: configure_zone_os_types_result.json.listostypesresponse.ostype | default([]) | length > 0
+
+- name: Check if SystemVM template already exists
+  ansible.builtin.uri:
+    url: '{{ cloudstack_api_url }}'
+    method: POST
+    body_format: form-urlencoded
+    body:
+      command: listTemplates
+      templatefilter: all
+      name: '{{ configure_zone_systemvm_template.name }}'
+      response: json
+      sessionkey: '{{ cloudstack_session_key }}'
+    headers:
+      Cookie: '{{ cloudstack_cookies }}'
+    return_content: true
+  register: configure_zone_existing_template
+
+- name: Set template exists flag
+  ansible.builtin.set_fact:
+    configure_zone_template_exists: '{{ configure_zone_existing_template.json.listtemplatesresponse.template | default([]) | length > 0 }}'
+
+- name: Register SystemVM template
+  ansible.builtin.uri:
+    url: '{{ cloudstack_api_url }}'
+    method: POST
+    body_format: form-urlencoded
+    timeout: 600
+    body:
+      command: registerTemplate
+      name: '{{ configure_zone_systemvm_template.name }}'
+      displaytext: '{{ configure_zone_systemvm_template.display_text | default(configure_zone_systemvm_template.name) }}'
+      url: '{{ configure_zone_systemvm_template.url }}'
+      zoneid: "{{ configure_zone_systemvm_template.zone_id | default('-1') }}"
+      hypervisor: "{{ configure_zone_systemvm_template.hypervisor | default('KVM') }}"
+      format: "{{ configure_zone_systemvm_template.format | default('QCOW2') }}"
+      ostypeid: '{{ configure_zone_os_type_id }}'
+      isrouting: '{{ configure_zone_systemvm_template.is_routing | default(false) }}'
+      ispublic: '{{ configure_zone_systemvm_template.is_public | default(false) }}'
+      isfeatured: '{{ configure_zone_systemvm_template.is_featured | default(true) }}'
+      requireshvm: '{{ configure_zone_systemvm_template.requires_hvm | default(true) }}'
+      directdownload: '{{ configure_zone_systemvm_template.direct_download | default(false) }}'
+      templatetype: SYSTEM
+      arch: "{{ configure_zone_systemvm_template.arch | default('aarch64') }}"
+      response: json
+      sessionkey: '{{ cloudstack_session_key }}'
+    headers:
+      Cookie: '{{ cloudstack_cookies }}'
+  when: not configure_zone_template_exists
+  failed_when: false
+  register: configure_zone_register_template_result
+
+- name: Display registration result
+  ansible.builtin.debug:
+    msg: "{{ 'Template registered: ' + configure_zone_systemvm_template.name if not configure_zone_template_exists else 'Template already exists: ' + configure_zone_systemvm_template.name }}"
+
+- name: Set router.template.kvm for zone
+  ansible.builtin.uri:
+    url: '{{ cloudstack_api_url }}'
+    method: POST
+    body_format: form-urlencoded
+    body:
+      command: updateConfiguration
+      name: router.template.kvm
+      value: '{{ configure_zone_systemvm_template.name }}'
+      zoneid: '{{ configure_zone_zone_id }}'
+      response: json
+      sessionkey: '{{ cloudstack_session_key }}'
+    headers:
+      Cookie: '{{ cloudstack_cookies }}'
+    return_content: true
+  when: configure_zone_zone_id is defined
+  failed_when: false

@@ -18,8 +18,8 @@
     - name: Set Proxmox credentials from 1Password
       ansible.builtin.set_fact:
         datacenter:
-          username: "{{ onepassword_proxmox_item.op_item.fields.DATACENTER_USERNAME.value }}"
-          password: "{{ onepassword_proxmox_item.op_item.fields.DATACENTER_PASSWORD.value }}"
+          username: '{{ onepassword_proxmox_item.op_item.fields.DATACENTER_USERNAME.value }}'
+          password: '{{ onepassword_proxmox_item.op_item.fields.DATACENTER_PASSWORD.value }}'
           hass_user_password: "{{ onepassword_proxmox_item.op_item.fields.HASS_USER_PASSWORD.value | default('') }}"
         scrutiny_address: "{{ onepassword_proxmox_item.op_item.fields.SCRUTINY_ADDRESS.value | default('') }}"
         promtail_ip: "{{ onepassword_proxmox_item.op_item.fields.PROMTAIL_IP.value | default('') }}"

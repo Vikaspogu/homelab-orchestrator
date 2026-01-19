@@ -53,11 +53,13 @@ homelab-orchestrator/
 Two integration options:
 
 **Option 1: Standalone Proxmox**
+
 - VM creation and management
 - Template creation from cloud images
 - ISO upload and mounting
 
 **Option 2: CloudStack Proxmox Extension**
+
 - Manage Proxmox VMs through CloudStack
 - Unified API for hybrid environments
 - Requires CloudStack 4.19+ with Orchestrator Extensions
@@ -163,26 +165,26 @@ tofu apply
 
 ### CloudStack
 
-| Playbook | Description |
-|----------|-------------|
-| `01-prepare-management.yaml` | Install CloudStack management server |
-| `02-prepare-kvm.yaml` | Prepare KVM hypervisor hosts |
-| `03-configure.yaml` | Configure zones, pods, clusters, storage |
-| `04-kubernetes-configure.yaml` | Enable CKS and add Kubernetes versions |
-| `05-kubernetes-cluster.yaml` | Deploy Kubernetes clusters |
-| `99-cleanup.yaml` | Remove CloudStack components |
+| Playbook                       | Description                              |
+| ------------------------------ | ---------------------------------------- |
+| `01-prepare-management.yaml`   | Install CloudStack management server     |
+| `02-prepare-kvm.yaml`          | Prepare KVM hypervisor hosts             |
+| `03-configure.yaml`            | Configure zones, pods, clusters, storage |
+| `04-kubernetes-configure.yaml` | Enable CKS and add Kubernetes versions   |
+| `05-kubernetes-cluster.yaml`   | Deploy Kubernetes clusters               |
+| `99-cleanup.yaml`              | Remove CloudStack components             |
 
 ### Utility
 
-| Playbook | Description |
-|----------|-------------|
-| `misc/shutdown.yaml` | Controlled infrastructure shutdown |
-| `misc/update_passwords.yaml` | Update service passwords |
+| Playbook                     | Description                        |
+| ---------------------------- | ---------------------------------- |
+| `misc/shutdown.yaml`         | Controlled infrastructure shutdown |
+| `misc/update_passwords.yaml` | Update service passwords           |
 
 ### Proxmox
 
-| Playbook | Description |
-|----------|-------------|
+| Playbook                    | Description                |
+| --------------------------- | -------------------------- |
 | `proxmox/prepare_host.yaml` | Proxmox host configuration |
 
 ## CloudStack Collection

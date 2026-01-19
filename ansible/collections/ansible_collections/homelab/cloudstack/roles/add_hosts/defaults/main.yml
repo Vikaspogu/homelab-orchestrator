@@ -1,0 +1,47 @@
+# Add Hosts Role - Default Variables
+---
+# CloudStack API connection (inherited from api_auth role)
+cloudstack_api_url: ''
+cloudstack_api_key: ''
+cloudstack_api_secret: ''
+
+# Target zone, pod, cluster (must exist in CloudStack)
+add_hosts_zone_name: ''
+add_hosts_pod_name: ''
+add_hosts_cluster_name: ''
+
+# Host configuration
+add_hosts_hypervisor: 'KVM'
+add_hosts_username: 'root'
+add_hosts_password: '' # Should be vaulted
+
+# ARM64/aarch64 CPU speed (MHz) - required as CloudStack can't auto-detect
+add_hosts_cpu_speed_mhz: 4000
+add_hosts_cpu_type: '' # Set to 'aarch64' for ARM hosts
+
+# Default tags applied to all hosts (can be extended per-host)
+add_hosts_default_tags: []
+# Example:
+#   add_hosts_default_tags:
+#     - kubernetes
+#     - gpu
+
+# List of hosts to add
+# Each host needs: hostname (FQDN or IP that CloudStack management can reach)
+add_hosts_list: []
+# Example:
+#   add_hosts_list:
+#     - hostname: "kvm01.example.com"
+#     - hostname: "kvm02.example.com"
+#       tags:
+#         - gpu
+#         - ssd
+#     - hostname: "10.0.0.10"
+#       allocation_state: "disabled"
+
+# List of hosts to delete
+delete_hosts_list: []
+# Example:
+#   delete_hosts_list:
+#     - hostname: "kvm03.example.com"
+#     - hostname: "10.0.0.11"

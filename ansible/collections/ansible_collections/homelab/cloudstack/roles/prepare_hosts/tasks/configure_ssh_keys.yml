@@ -1,0 +1,96 @@
+# Configure SSH keys for CloudStack agent access
+---
+# Fetch SSH keys from URL (if configured)
+- name: Fetch SSH keys from URL
+  when: prepare_hosts_ssh_authorized_keys_url | length > 0
+  block:
+    - name: Download authorized_keys file from URL
+      ansible.builtin.get_url:
+        url: '{{ prepare_hosts_ssh_authorized_keys_url }}'
+        dest: /tmp/authorized_keys_download
+        mode: '0600'
+      register: prepare_hosts_ssh_url_download
+      failed_when: false
+
+    - name: Read downloaded SSH keys
+      ansible.builtin.slurp:
+        src: /tmp/authorized_keys_download
+      register: prepare_hosts_ssh_url_content
+      when: prepare_hosts_ssh_url_download is succeeded
+
+    - name: Set SSH keys from URL
+      ansible.builtin.set_fact:
+        prepare_hosts_ssh_keys_from_url: "{{ (prepare_hosts_ssh_url_content.content | b64decode).split('\n') | select() | list }}"
+      when: prepare_hosts_ssh_url_download is succeeded
+
+    - name: Clean up temp file
+      ansible.builtin.file:
+        path: /tmp/authorized_keys_download
+        state: absent
+
+# Add SSH keys to ansible_user
+- name: Ensure .ssh directory exists for ansible_user
+  ansible.builtin.file:
+    path: '~{{ ansible_user }}/.ssh'
+    state: directory
+    mode: '0700'
+    owner: '{{ ansible_user }}'
+
+- name: Add SSH keys from URL for ansible_user
+  ansible.builtin.authorized_key:
+    user: '{{ ansible_user }}'
+    key: '{{ item }}'
+    state: present
+  loop: '{{ prepare_hosts_ssh_keys_from_url | default([]) }}'
+  when:
+    - prepare_hosts_ssh_keys_from_url is defined
+    - item | length > 0
+    - item is not match('^#')
+
+- name: Add SSH public key for ansible_user (from variable)
+  ansible.builtin.authorized_key:
+    user: '{{ ansible_user }}'
+    key: '{{ prepare_hosts_ssh_public_key }}'
+    state: present
+  when: prepare_hosts_ssh_public_key | length > 0
+
+- name: Add bundled SSH public key for ansible_user
+  ansible.builtin.authorized_key:
+    user: '{{ ansible_user }}'
+    key: "{{ lookup('file', 'ssh_creds.pub') }}"
+    state: present
+  when: prepare_hosts_use_bundled_ssh_key | bool
+
+# Add SSH keys to root user (for CloudStack management)
+- name: Ensure .ssh directory exists for root
+  ansible.builtin.file:
+    path: /root/.ssh
+    state: directory
+    mode: '0700'
+    owner: root
+    group: root
+
+- name: Add SSH keys from URL for root
+  ansible.builtin.authorized_key:
+    user: root
+    key: '{{ item }}'
+    state: present
+  loop: '{{ prepare_hosts_ssh_keys_from_url | default([]) }}'
+  when:
+    - prepare_hosts_ssh_keys_from_url is defined
+    - item | length > 0
+    - item is not match('^#')
+
+- name: Add SSH public key for root (from variable)
+  ansible.builtin.authorized_key:
+    user: root
+    key: '{{ prepare_hosts_ssh_public_key }}'
+    state: present
+  when: prepare_hosts_ssh_public_key | length > 0
+
+- name: Add bundled SSH public key for root
+  ansible.builtin.authorized_key:
+    user: root
+    key: "{{ lookup('file', 'ssh_creds.pub') }}"
+    state: present
+  when: prepare_hosts_use_bundled_ssh_key | bool

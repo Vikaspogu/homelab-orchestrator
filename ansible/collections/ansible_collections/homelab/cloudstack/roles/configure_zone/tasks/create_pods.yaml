@@ -1,0 +1,24 @@
+# Create Pods in Zone
+---
+- name: Create pods
+  ngine_io.cloudstack.pod:
+    api_url: '{{ cloudstack_api_url }}'
+    api_key: '{{ cloudstack_api_key }}'
+    api_secret: '{{ cloudstack_api_secret }}'
+    name: '{{ item.name }}'
+    zone: '{{ configure_zone_zone.name }}'
+    gateway: '{{ item.gateway }}'
+    netmask: '{{ item.netmask }}'
+    start_ip: '{{ item.start_ip }}'
+    end_ip: '{{ item.end_ip }}'
+    state: present
+  loop: '{{ configure_zone_pods }}'
+  loop_control:
+    label: '{{ item.name }}'
+  register: configure_zone_pods_result
+
+- name: Build pod ID map
+  ansible.builtin.set_fact:
+    configure_zone_pod_ids: >-
+      {{ dict(configure_zone_pods_result.results | map(attribute='name')
+         | zip(configure_zone_pods_result.results | map(attribute='id'))) }}

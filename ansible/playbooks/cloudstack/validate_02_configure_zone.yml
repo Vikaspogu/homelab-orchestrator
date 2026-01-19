@@ -1,0 +1,250 @@
+---
+- name: Validate CloudStack Zone Configuration
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    zone_name: 'Zone1'
+    validation_results: []
+  tasks:
+    - name: Login to CloudStack
+      ansible.builtin.uri:
+        url: '{{ cloudstack_api_url }}'
+        method: POST
+        body_format: form-urlencoded
+        body:
+          command: login
+          username: '{{ cloudstack_user }}'
+          password: '{{ cloudstack_password }}'
+          response: json
+        return_content: true
+      register: login_response
+      failed_when: false
+
+    - name: Extract session info
+      ansible.builtin.set_fact:
+        session_key: "{{ login_response.json.loginresponse.sessionkey | default('') }}"
+        cookies: "{{ login_response.cookies_string | default('') }}"
+      when: login_response.json is defined and login_response.json.loginresponse is defined
+
+    - name: Set empty session_key if login failed
+      ansible.builtin.set_fact:
+        session_key: ''
+        cookies: ''
+      when: session_key is not defined
+
+    - name: Fail if login unsuccessful
+      ansible.builtin.fail:
+        msg: 'Failed to login to CloudStack API at {{ cloudstack_api_url }}. Check credentials and connectivity.'
+      when: session_key | length == 0
+
+    - name: 'CHECK 1: Zone exists and enabled'
+      block:
+        - name: Query zones
+          ansible.builtin.uri:
+            url: '{{ cloudstack_api_url }}'
+            method: POST
+            body_format: form-urlencoded
+            body:
+              command: listZones
+              name: '{{ zone_name }}'
+              response: json
+              sessionkey: '{{ session_key }}'
+            headers:
+              Cookie: '{{ cookies }}'
+            return_content: true
+          register: zones_response
+          failed_when: false
+
+        - name: Parse zone info
+          ansible.builtin.set_fact:
+            zone_exists: '{{ zones_response.json.listzonesresponse.zone | default([]) | length > 0 }}'
+            zone_state:
+              "{{ zones_response.json.listzonesresponse.zone[0].allocationstate | default('Unknown') if zones_response.json.listzonesresponse.zone | default([])
+              | length > 0 else 'Not Found' }}"
+            zone_id:
+              "{{ zones_response.json.listzonesresponse.zone[0].id | default('') if zones_response.json.listzonesresponse.zone | default([]) | length > 0 else
+              '' }}"
+
+        - name: Record zone check
+          ansible.builtin.set_fact:
+            validation_results:
+              "{{ validation_results + [{'check': 'Zone', 'status': 'PASS' if zone_exists and zone_state == 'Enabled' else 'FAIL', 'details': zone_name
+              + ' - ' + zone_state}] }}"
+
+    - name: 'CHECK 2: Physical network enabled'
+      block:
+        - name: Query physical networks
+          ansible.builtin.uri:
+            url: '{{ cloudstack_api_url }}'
+            method: POST
+            body_format: form-urlencoded
+            body:
+              command: listPhysicalNetworks
+              zoneid: '{{ zone_id }}'
+              response: json
+              sessionkey: '{{ session_key }}'
+            headers:
+              Cookie: '{{ cookies }}'
+            return_content: true
+          register: pn_response
+          failed_when: false
+          when: zone_id | length > 0
+
+        - name: Parse physical network info
+          ansible.builtin.set_fact:
+            pn_count: '{{ pn_response.json.listphysicalnetworksresponse.physicalnetwork | default([]) | length }}'
+            pn_enabled:
+              "{{ pn_response.json.listphysicalnetworksresponse.physicalnetwork | default([]) | selectattr('state', 'equalto', 'Enabled') | list | length
+              > 0 }}"
+          when: pn_response is defined and pn_response.json is defined
+
+        - name: Record physical network check
+          ansible.builtin.set_fact:
+            validation_results:
+              "{{ validation_results + [{'check': 'Physical Network', 'status': 'PASS' if pn_enabled | default(false) else 'FAIL', 'details': (pn_count
+              | default(0) | string) + ' network(s) found'}] }}"
+
+    - name: 'CHECK 3: Pod exists'
+      block:
+        - name: Query pods
+          ansible.builtin.uri:
+            url: '{{ cloudstack_api_url }}'
+            method: POST
+            body_format: form-urlencoded
+            body:
+              command: listPods
+              zoneid: '{{ zone_id }}'
+              response: json
+              sessionkey: '{{ session_key }}'
+            headers:
+              Cookie: '{{ cookies }}'
+            return_content: true
+          register: pods_response
+          failed_when: false
+          when: zone_id | length > 0
+
+        - name: Parse pod info
+          ansible.builtin.set_fact:
+            pod_count: '{{ pods_response.json.listpodsresponse.pod | default([]) | length }}'
+          when: pods_response is defined and pods_response.json is defined
+
+        - name: Record pod check
+          ansible.builtin.set_fact:
+            validation_results:
+              "{{ validation_results + [{'check': 'Pods', 'status': 'PASS' if (pod_count | default(0) | int) > 0 else 'FAIL', 'details': (pod_count
+              | default(0) | string) + ' pod(s) found'}] }}"
+
+    - name: 'CHECK 4: Cluster exists'
+      block:
+        - name: Query clusters
+          ansible.builtin.uri:
+            url: '{{ cloudstack_api_url }}'
+            method: POST
+            body_format: form-urlencoded
+            body:
+              command: listClusters
+              zoneid: '{{ zone_id }}'
+              response: json
+              sessionkey: '{{ session_key }}'
+            headers:
+              Cookie: '{{ cookies }}'
+            return_content: true
+          register: clusters_response
+          failed_when: false
+          when: zone_id | length > 0
+
+        - name: Parse cluster info
+          ansible.builtin.set_fact:
+            cluster_count: '{{ clusters_response.json.listclustersresponse.cluster | default([]) | length }}'
+          when: clusters_response is defined and clusters_response.json is defined
+
+        - name: Record cluster check
+          ansible.builtin.set_fact:
+            validation_results:
+              "{{ validation_results + [{'check': 'Clusters', 'status': 'PASS' if (cluster_count | default(0) | int) > 0 else 'FAIL', 'details':
+              (cluster_count | default(0) | string) + ' cluster(s) found'}] }}"
+
+    - name: 'CHECK 5: Guest network exists'
+      block:
+        - name: Query networks
+          ansible.builtin.uri:
+            url: '{{ cloudstack_api_url }}'
+            method: POST
+            body_format: form-urlencoded
+            body:
+              command: listNetworks
+              zoneid: '{{ zone_id }}'
+              response: json
+              sessionkey: '{{ session_key }}'
+            headers:
+              Cookie: '{{ cookies }}'
+            return_content: true
+          register: networks_response
+          failed_when: false
+          when: zone_id | length > 0
+
+        - name: Parse network info
+          ansible.builtin.set_fact:
+            network_count: '{{ networks_response.json.listnetworksresponse.network | default([]) | length }}'
+            network_names: "{{ networks_response.json.listnetworksresponse.network | default([]) | map(attribute='name') | list }}"
+          when: networks_response is defined and networks_response.json is defined
+
+        - name: Record network check
+          ansible.builtin.set_fact:
+            validation_results:
+              "{{ validation_results + [{'check': 'Guest Networks', 'status': 'PASS' if (network_count | default(0) | int) > 0 else 'FAIL', 'details':
+              network_names | default([]) | join(', ') | default('none')}] }}"
+
+    - name: 'CHECK 6: Secondary storage'
+      block:
+        - name: Query image stores
+          ansible.builtin.uri:
+            url: '{{ cloudstack_api_url }}'
+            method: POST
+            body_format: form-urlencoded
+            body:
+              command: listImageStores
+              zoneid: '{{ zone_id }}'
+              response: json
+              sessionkey: '{{ session_key }}'
+            headers:
+              Cookie: '{{ cookies }}'
+            return_content: true
+          register: storage_response
+          failed_when: false
+          when: zone_id | length > 0
+
+        - name: Parse storage info
+          ansible.builtin.set_fact:
+            storage_count: '{{ storage_response.json.listimagestoresresponse.imagestore | default([]) | length }}'
+          when: storage_response is defined and storage_response.json is defined
+
+        - name: Record storage check
+          ansible.builtin.set_fact:
+            validation_results:
+              "{{ validation_results + [{'check': 'Secondary Storage', 'status': 'PASS' if (storage_count | default(0) | int) > 0 else 'FAIL', 'details':
+              (storage_count | default(0) | string) + ' image store(s)'}] }}"
+
+    - name: Calculate validation summary
+      ansible.builtin.set_fact:
+        passed_checks: "{{ validation_results | selectattr('status', 'equalto', 'PASS') | list | length }}"
+        failed_checks: "{{ validation_results | selectattr('status', 'equalto', 'FAIL') | list | length }}"
+
+    - name: Display validation results
+      ansible.builtin.debug:
+        msg: |
+          ╔══════════════════════════════════════════════════════════════════╗
+          ║  STEP 2: ZONE CONFIGURATION VALIDATION
+          ╠══════════════════════════════════════════════════════════════════╣
+          {% for result in validation_results %}
+          ║ [{{ result.status }}] {{ result.check }}: {{ result.details }}
+          {% endfor %}
+          ╠══════════════════════════════════════════════════════════════════╣
+          ║ PASSED: {{ passed_checks }}/{{ validation_results | length }}  FAILED: {{ failed_checks }}/{{ validation_results | length }}
+          ╚══════════════════════════════════════════════════════════════════╝
+
+    - name: Fail if any checks failed
+      ansible.builtin.fail:
+        msg: 'Zone configuration validation failed. Fix issues before proceeding to Step 3.'
+      when: failed_checks | int > 0

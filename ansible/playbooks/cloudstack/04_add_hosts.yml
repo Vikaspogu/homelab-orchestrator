@@ -1,0 +1,74 @@
+---
+- name: Add KVM Hosts to CloudStack
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  strategy: linear
+  vars:
+    add_hosts_zone_name: 'Zone1'
+    add_hosts_pod_name: 'Pod1'
+    add_hosts_cluster_name: 'Kubernetes-Cluster'
+
+    add_hosts_list:
+      - hostname: 'cloudstack-kvm-01.a113.internal'
+
+  roles:
+    - role: homelab.cloudstack.add_hosts
+
+  post_tasks:
+    - name: Add hosts from list to dynamic inventory
+      ansible.builtin.add_host:
+        name: '{{ item.hostname }}'
+        groups: added_hosts
+        prepare_hosts_cpu_type: "{{ item.cpu_type | default('x86_64') }}"
+        prepare_hosts_host_cpu_manual_speed_mhz: '{{ item.cpu_speed_mhz | default(2000) }}'
+      loop: '{{ add_hosts_list }}'
+      delegate_to: localhost
+
+- name: Configure KVM hosts after adding to CloudStack
+  hosts: added_hosts
+  become: true
+  gather_facts: true
+  strategy: linear
+  tasks:
+    - name: Check libvirtd service status
+      ansible.builtin.systemd:
+        name: libvirtd
+      register: libvirtd_status
+      failed_when: false
+
+    - name: Fix libvirtd TLS config if service failed
+      when: libvirtd_status.status.ActiveState | default('') == 'failed'
+      block:
+        - name: Disable TLS in libvirtd.conf
+          ansible.builtin.replace:
+            path: /etc/libvirt/libvirtd.conf
+            regexp: '^listen_tls=1'
+            replace: 'listen_tls=0'
+
+        - name: Reset failed state
+          ansible.builtin.command: systemctl reset-failed libvirtd
+          changed_when: true
+
+        - name: Start libvirtd
+          ansible.builtin.systemd:
+            name: libvirtd
+            state: started
+
+    - name: Ensure libvirtd is running
+      ansible.builtin.systemd:
+        name: libvirtd
+        state: started
+
+    - name: Configure CPU flags
+      ansible.builtin.include_role:
+        name: homelab.cloudstack.prepare_hosts
+        tasks_from: configure_cpu_flags.yml
+      vars:
+        prepare_hosts_ignore_lock: true
+
+    - name: Restart cloudstack-agent
+      ansible.builtin.systemd:
+        name: cloudstack-agent
+        state: restarted
+      failed_when: false

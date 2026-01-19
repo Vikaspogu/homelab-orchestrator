@@ -1,0 +1,25 @@
+#!/bin/bash
+
+LOCK_PATH=/var/lock/ceph_ready.lock
+ANSIBLE_VAULT_PASSFILE=~/.ansible_vault
+
+cd "$(dirname "$(realpath "$0")")" || exit
+
+ansible-vault decrypt --vault-password-file "$ANSIBLE_VAULT_PASSFILE" ../inventory.yml --output inventory.yml
+
+for HOST in $(cat inventory.yml | yq -r '.all.hosts | to_entries[] | "\(.key)"' | grep -E "smc|a4u8g|4u8g-gen"); do
+    echo "Considering host $HOST"
+    read -r HOST_IP HOST_USER SSHPASS<<<"$(cat inventory.yml | yq -r ".all.hosts.$HOST | \"\(.ansible_host) \(.ansible_user) \(.ansible_ssh_pass)\"")"
+    if [ "$(sshpass -p "$SSHPASS" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 "$HOST_USER@$HOST_IP" ls "$LOCK_PATH" 2>/dev/null | wc -l)" -eq 1 ] ; then
+        # Check to see if the host has already been added
+        if [ "$(sudo ceph orch host ls --format json --host_pattern "$HOST" | jq '. | length')" -eq 0 ] ; then
+            sudo ceph orch host add "$HOST" "$HOST_IP"
+            sudo ceph orch host rescan "$HOST"
+        fi
+        for disk in $(cat inventory.yml | yq -r ".all.hosts.$HOST.disks[]"); do
+            if [ "$(sudo ceph orch device ls "$HOST" --format json | jq -r ".[].devices[] | select(.available == true) | select(.ceph_device == false) | select(.path == \"$disk\") | .path" | wc -l)" -eq 1 ]; then
+                sudo ceph orch daemon add osd "$HOST:$disk"
+            fi
+        done
+    fi
+done

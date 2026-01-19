@@ -1,0 +1,54 @@
+# Create Physical Networks in Zone
+---
+- name: Create physical networks
+  ngine_io.cloudstack.physical_network:
+    api_url: '{{ cloudstack_api_url }}'
+    api_key: '{{ cloudstack_api_key }}'
+    api_secret: '{{ cloudstack_api_secret }}'
+    name: '{{ item.name }}'
+    zone: '{{ configure_zone_zone.name }}'
+    isolation_method: "{{ item.isolation_method | default('VLAN') }}"
+    vlan: '{{ item.vlan | default(omit) }}'
+    broadcast_domain_range: '{{ item.broadcast_domain_range | default(omit) }}'
+    state: present
+    nsps_enabled:
+      - virtualrouter
+      - securitygroupprovider
+  register: configure_zone_physical_network_result
+  loop: '{{ configure_zone_physical_networks }}'
+  loop_control:
+    label: '{{ item.name }}'
+
+- name: Enable physical networks
+  ngine_io.cloudstack.physical_network:
+    api_url: '{{ cloudstack_api_url }}'
+    api_key: '{{ cloudstack_api_key }}'
+    api_secret: '{{ cloudstack_api_secret }}'
+    name: '{{ item.name }}'
+    zone: '{{ configure_zone_zone.name }}'
+    state: enabled
+  loop: '{{ configure_zone_physical_networks }}'
+  loop_control:
+    label: '{{ item.name }}'
+  ignore_errors: true
+
+- name: Build physical network ID map
+  ansible.builtin.set_fact:
+    configure_zone_physical_network_ids: >-
+      {{ dict(configure_zone_physical_network_result.results
+         | map(attribute='name') | zip(configure_zone_physical_network_result.results
+         | map(attribute='id'))) }}
+
+- name: Add traffic types to physical networks
+  ngine_io.cloudstack.traffic_type:
+    api_url: '{{ cloudstack_api_url }}'
+    api_key: '{{ cloudstack_api_key }}'
+    api_secret: '{{ cloudstack_api_secret }}'
+    physical_network: '{{ item.0.name }}'
+    traffic_type: '{{ item.1.type }}'
+    zone: '{{ configure_zone_zone.name }}'
+    state: present
+  loop: "{{ configure_zone_physical_networks | subelements('traffic_types', skip_missing=True) }}"
+  loop_control:
+    label: '{{ item.0.name }} - {{ item.1.type }}'
+  ignore_errors: true

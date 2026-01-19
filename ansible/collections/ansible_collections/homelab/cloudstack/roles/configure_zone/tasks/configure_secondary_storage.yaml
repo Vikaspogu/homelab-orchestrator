@@ -1,0 +1,28 @@
+# Configure Secondary Storage in CloudStack
+---
+- name: Get zone info for secondary storage
+  ngine_io.cloudstack.zone_info:
+    api_url: '{{ cloudstack_api_url }}'
+    api_key: '{{ cloudstack_api_key }}'
+    api_secret: '{{ cloudstack_api_secret }}'
+    name: '{{ configure_zone_secondary_storage.zone_name }}'
+  register: configure_zone_ss_zone_info
+  delegate_to: localhost
+
+- name: Fail if zone not found
+  ansible.builtin.fail:
+    msg: "Zone '{{ configure_zone_secondary_storage.zone_name }}' not found"
+  when: configure_zone_ss_zone_info.zones | length == 0
+
+- name: Add secondary storage (image store)
+  ngine_io.cloudstack.image_store:
+    api_url: '{{ cloudstack_api_url }}'
+    api_key: '{{ cloudstack_api_key }}'
+    api_secret: '{{ cloudstack_api_secret }}'
+    api_timeout: 300
+    name: "{{ configure_zone_secondary_storage.name | default('Secondary Storage') }}"
+    zone: '{{ configure_zone_secondary_storage.zone_name }}'
+    url: '{{ configure_zone_secondary_storage.url }}'
+    provider: "{{ configure_zone_secondary_storage.provider | default('NFS') }}"
+    state: present
+  delegate_to: localhost

@@ -17,7 +17,7 @@
 
 - name: Set hostname
   ansible.builtin.hostname:
-    name: "{{ prepare_management_hostname }}"
+    name: '{{ prepare_management_hostname }}'
   when: prepare_management_hostname != ansible_facts['hostname']
 
 - name: Configure /etc/hosts
@@ -33,28 +33,28 @@
   ansible.builtin.lineinfile:
     path: /etc/hosts
     regexp: "^127\\.0\\.0\\.1"
-    line: "127.0.0.1 localhost localhost.localdomain"
+    line: '127.0.0.1 localhost localhost.localdomain'
     state: present
 
 - name: Install chrony
   ansible.builtin.apt:
-    name: "{{ prepare_management_chrony_packages }}"
+    name: '{{ prepare_management_chrony_packages }}'
     state: present
     update_cache: true
 
 - name: Enable chrony
   ansible.builtin.systemd:
-    name: "{{ prepare_management_chrony_service }}"
+    name: '{{ prepare_management_chrony_service }}'
     enabled: true
     state: started
 
 - name: Configure passwordless sudo
   ansible.builtin.lineinfile:
-    path: "/etc/sudoers.d/{{ ansible_user }}"
-    line: "{{ ansible_user }} ALL=(ALL) NOPASSWD: ALL"
+    path: '/etc/sudoers.d/{{ ansible_user }}'
+    line: '{{ ansible_user }} ALL=(ALL) NOPASSWD: ALL'
     create: true
-    mode: "0440"
-    validate: "visudo -cf %s"
+    mode: '0440'
+    validate: 'visudo -cf %s'
   when:
     - ansible_user is defined
     - ansible_user != 'root'

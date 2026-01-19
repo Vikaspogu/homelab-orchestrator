@@ -1,0 +1,32 @@
+---
+- name: Run All Validations
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    validation_target: 'all' # Options: all, 1, 2, 3, 4
+
+  tasks:
+    - name: Display validation target
+      ansible.builtin.debug:
+        msg: 'Running validation for: {{ validation_target }}'
+
+# Step 1: Host Preparation Validation
+- name: Validate Host Preparation
+  ansible.builtin.import_playbook: validate_01_prepare_hosts.yml
+  when: validation_target in ['all', '1']
+
+# Step 2: Zone Configuration Validation
+- name: Validate Zone Configuration
+  ansible.builtin.import_playbook: validate_02_configure_zone.yml
+  when: validation_target in ['all', '2']
+
+# Step 3: Hosts Added Validation
+- name: Validate Hosts Added
+  ansible.builtin.import_playbook: validate_03_add_hosts.yml
+  when: validation_target in ['all', '3']
+
+# Step 4: Kubernetes Service Validation
+- name: Validate Kubernetes Service
+  ansible.builtin.import_playbook: validate_04_configure_kubernetes.yml
+  when: validation_target in ['all', '4']

@@ -1,0 +1,39 @@
+# Configure Ceph OSD for CloudStack
+# Based on ceph-osd.yml playbook
+---
+- name: Log playbook execution for Ceph OSD
+  ansible.builtin.include_role:
+    name: homelab.cloudstack.logging
+    tasks_from: append_log.yml
+  vars:
+    logging_playbook_name: 'configure_ceph_osd'
+  when: prepare_hosts_logging_enabled
+
+- name: Check for Ceph OSD lock file
+  ansible.builtin.stat:
+    path: '{{ prepare_hosts_ceph_osd_lock_file }}'
+  register: prepare_hosts_ceph_lock_status
+
+- name: Fail if lock file exists and ceph_osd_lock is not set
+  ansible.builtin.fail:
+    msg: 'Attention: Ceph OSD setup ran on this host already. Remove {{ prepare_hosts_ceph_osd_lock_file }} or set prepare_hosts_ceph_osd_lock=true to override.'
+  when:
+    - prepare_hosts_ceph_lock_status.stat.exists
+    - not prepare_hosts_ceph_osd_lock
+
+- name: Gather service facts
+  ansible.builtin.service_facts:
+
+- name: Remove all partitions on specified disks
+  ansible.builtin.command: 'sgdisk --zap-all {{ item }}'
+  loop: '{{ prepare_hosts_ceph_osd_disks }}'
+  when: prepare_hosts_ceph_osd_disks | length > 0
+  changed_when: true
+  register: prepare_hosts_ceph_osd_zap_result
+
+- name: Create Ceph OSD lock file (after successful completion)
+  ansible.builtin.file:
+    path: '{{ prepare_hosts_ceph_osd_lock_file }}'
+    state: touch
+    mode: '0644'
+  when: prepare_hosts_ceph_osd_zap_result is not failed

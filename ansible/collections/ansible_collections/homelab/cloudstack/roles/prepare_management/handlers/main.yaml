@@ -2,13 +2,13 @@
 ---
 - name: Restart MySQL
   ansible.builtin.systemd:
-    name: "{{ prepare_management_mysql_service }}"
+    name: '{{ prepare_management_mysql_service }}'
     state: restarted
     daemon_reload: true
 
 - name: Restart chrony
   ansible.builtin.systemd:
-    name: "{{ prepare_management_chrony_service }}"
+    name: '{{ prepare_management_chrony_service }}'
     state: restarted
 
 - name: Restart CloudStack Management

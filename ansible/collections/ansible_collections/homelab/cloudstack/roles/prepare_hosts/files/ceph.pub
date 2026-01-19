@@ -1,0 +1,3 @@
+# Placeholder Ceph SSH public key file
+# Replace with your Ceph cluster SSH public key when using prepare_hosts_use_bundled_ceph_key: true
+# Example: ssh-rsa AAAA... ceph-cluster

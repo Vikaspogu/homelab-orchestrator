@@ -1,0 +1,130 @@
+# Install CloudStack agent
+# Based on cloudstack_setup.yml from playbook-aarch64.yml
+# Supports both x86_64 and aarch64 architectures
+---
+- name: Download CloudStack GPG key
+  ansible.builtin.get_url:
+    url: http://packages.shapeblue.com/release.asc
+    dest: /tmp/release.asc
+    mode: '0644'
+  register: prepare_hosts_gpg_download
+
+- name: Add CloudStack GPG key
+  ansible.builtin.command:
+    cmd: 'gpg --batch --yes --dearmor -o /etc/apt/trusted.gpg.d/cloudstack.gpg /tmp/release.asc'
+  changed_when: true
+  when: prepare_hosts_gpg_download is success
+
+- name: Verify CloudStack GPG key exists
+  ansible.builtin.stat:
+    path: /etc/apt/trusted.gpg.d/cloudstack.gpg
+  register: prepare_hosts_gpg_key
+
+- name: Fail if GPG key not installed
+  ansible.builtin.fail:
+    msg: 'Failed to install CloudStack GPG key'
+  when: not prepare_hosts_gpg_key.stat.exists
+
+- name: Add CloudStack repository
+  ansible.builtin.lineinfile:
+    path: /etc/apt/sources.list.d/cloudstack.list
+    line: 'deb [signed-by=/etc/apt/trusted.gpg.d/cloudstack.gpg] http://packages.shapeblue.com/cloudstack/upstream/debian/{{ prepare_hosts_cloudstack_version }} /'
+    create: true
+    mode: '0644'
+
+- name: Update APT cache
+  ansible.builtin.apt:
+    update_cache: true
+
+# Install latest version from repo when package_version is empty, otherwise pin to specific version
+- name: Install qemu-kvm and cloudstack-agent
+  ansible.builtin.apt:
+    name:
+      - qemu-kvm
+      - libvirt-daemon-driver-lxc
+      - "{{ 'cloudstack-common=' + prepare_hosts_cloudstack_package_version if prepare_hosts_cloudstack_package_version else 'cloudstack-common' }}"
+      - "{{ 'cloudstack-agent=' + prepare_hosts_cloudstack_package_version if prepare_hosts_cloudstack_package_version else 'cloudstack-agent' }}"
+    state: present
+  register: prepare_hosts_cloudstack_install
+  until: prepare_hosts_cloudstack_install is success
+
+- name: Configure libvirt for VNC
+  ansible.builtin.lineinfile:
+    path: /etc/libvirt/qemu.conf
+    regexp: '^#vnc_listen.*'
+    line: 'vnc_listen = "0.0.0.0"'
+
+- name: Ensure LIBVIRTD_ARGS is set to listen
+  ansible.builtin.lineinfile:
+    path: /etc/default/libvirtd
+    line: 'LIBVIRTD_ARGS="--listen"'
+    create: yes
+
+- name: Mask libvirtd sockets
+  ansible.builtin.command:
+    cmd: 'systemctl mask {{ item }}'
+  loop:
+    - libvirtd.socket
+    - libvirtd-ro.socket
+    - libvirtd-admin.socket
+    - libvirtd-tls.socket
+    - libvirtd-tcp.socket
+
+- name: Configure libvirt for TCP
+  ansible.builtin.lineinfile:
+    path: /etc/libvirt/libvirtd.conf
+    line: '{{ item }}'
+    create: yes
+  loop:
+    - 'listen_tls=0'
+    - 'listen_tcp=1'
+    - 'listen_addr = "0.0.0.0"'
+    - 'tcp_port = "16509"'
+    - 'mdns_adv = 0'
+    - 'auth_tcp = "none"'
+
+- name: Configure sysctl for bridge
+  ansible.builtin.lineinfile:
+    path: /etc/sysctl.conf
+    line: '{{ item }}'
+    create: yes
+  loop:
+    - 'net.bridge.bridge-nf-call-arptables = 0'
+    - 'net.bridge.bridge-nf-call-iptables = 0'
+
+- name: Ensure libvirt.conf directory exists
+  ansible.builtin.file:
+    path: /etc/libvirt
+    state: directory
+    mode: '0755'
+
+- name: Configure libvirt remote_mode for legacy daemon
+  ansible.builtin.lineinfile:
+    path: /etc/libvirt/libvirt.conf
+    regexp: '^remote_mode='
+    line: 'remote_mode="legacy"'
+    state: present
+    create: true
+    mode: '0644'
+  when:
+    - ansible_facts['distribution'] == "Ubuntu"
+    - ansible_facts['distribution_version'] is version('24.04', '>=')
+
+- name: Disable AppArmor profiles for libvirt
+  ansible.builtin.file:
+    src: '/etc/apparmor.d/{{ item }}'
+    dest: '/etc/apparmor.d/disable/{{ item }}'
+    state: link
+  loop:
+    - 'usr.sbin.libvirtd'
+    - 'usr.lib.libvirt.virt-aa-helper'
+  failed_when: false
+
+- name: Reload AppArmor profiles
+  ansible.builtin.command:
+    cmd: 'apparmor_parser -R /etc/apparmor.d/{{ item }}'
+  loop:
+    - 'usr.sbin.libvirtd'
+    - 'usr.lib.libvirt.virt-aa-helper'
+  failed_when: false
+  changed_when: true

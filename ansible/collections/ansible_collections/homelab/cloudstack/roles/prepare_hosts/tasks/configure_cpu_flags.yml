@@ -1,0 +1,32 @@
+# Configure CPU flags for CloudStack agent
+# Based on cloudstack_cpu_flags.yml from playbook-aarch64.yml
+---
+- name: Determine CPU mode and architecture
+  ansible.builtin.set_fact:
+    prepare_hosts_guest_cpu_mode: "{{ 'host-passthrough' if prepare_hosts_cpu_type == 'aarch64' else 'host-model' }}"
+
+- name: Configure guest CPU mode in agent properties
+  ansible.builtin.lineinfile:
+    path: /etc/cloudstack/agent/agent.properties
+    line: 'guest.cpu.mode={{ prepare_hosts_guest_cpu_mode }}'
+    regexp: '^guest.cpu.mode='
+    create: true
+    mode: '0644'
+
+- name: Configure guest CPU arch for aarch64
+  ansible.builtin.lineinfile:
+    path: /etc/cloudstack/agent/agent.properties
+    line: 'guest.cpu.arch=aarch64'
+    regexp: '^guest.cpu.arch='
+    create: true
+    mode: '0644'
+  when: prepare_hosts_cpu_type == 'aarch64'
+
+- name: Configure host CPU manual speed for aarch64
+  ansible.builtin.lineinfile:
+    path: /etc/cloudstack/agent/agent.properties
+    line: 'host.cpu.manual.speed.mhz={{ prepare_hosts_host_cpu_manual_speed_mhz }}'
+    regexp: '^host.cpu.manual.speed.mhz='
+    create: true
+    mode: '0644'
+  when: prepare_hosts_cpu_type == 'aarch64'

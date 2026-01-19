@@ -1,0 +1,15 @@
+# Add Hosts Role - Metadata
+---
+galaxy_info:
+  author: Vikas Pogu
+  description: Add KVM hosts to existing CloudStack zone/pod/cluster
+  license: MIT
+  min_ansible_version: '2.15'
+  platforms:
+    - name: Ubuntu
+      versions:
+        - jammy
+        - noble
+
+dependencies:
+  - role: homelab.cloudstack.api_auth

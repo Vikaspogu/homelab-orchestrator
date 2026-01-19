@@ -1,17 +1,23 @@
-# Configure Kubernetes Role - Metadata
 ---
 galaxy_info:
-  author: CloudStack Operations Team
-  description: Ansible role to enable and configure CloudStack Kubernetes Service (CKS)
+  role_name: configure_kubernetes
+  author: Vikas Pogu
+  description: Configure CloudStack Kubernetes Service (CKS) - enable service, compute offerings, and K8s versions
   license: Apache-2.0
-
-  min_ansible_version: "2.9"
-
+  min_ansible_version: '2.14'
+  platforms:
+    - name: Ubuntu
+      versions:
+        - jammy
+        - noble
+    - name: Debian
+      versions:
+        - bullseye
+        - bookworm
   galaxy_tags:
-    - cloud
     - cloudstack
     - kubernetes
     - cks
-    - containers
 
-dependencies: []
+dependencies:
+  - role: homelab.cloudstack.api_auth

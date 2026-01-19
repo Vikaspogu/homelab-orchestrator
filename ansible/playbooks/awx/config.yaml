@@ -21,7 +21,7 @@
     - name: Fetch host credentials from 1Password
       onepassword.connect.item_info:
         vault: "{{ lookup('env', 'OP_VAULT') }}"
-        item: "servers"
+        item: 'servers'
       delegate_to: localhost
       register: onepassword_server_item
       when: onepassword_enabled | default(true) | bool
@@ -30,12 +30,12 @@
     - name: Set AWX credentials from 1Password
       ansible.builtin.set_fact:
         awx:
-          hostname: "{{ onepassword_awx_item.op_item.fields.HOSTNAME.value }}"
-          username: "{{ onepassword_awx_item.op_item.fields.username.value }}"
-          password: "{{ onepassword_awx_item.op_item.fields.password.value }}"
-        host_user: "{{ onepassword_server_item.op_item.fields.username.value }}"
-        host_password: "{{ onepassword_server_item.op_item.fields.password.value }}"
-        vault_password: "{{ onepassword_awx_item.op_item.fields.VAULT_PASSWORD.value }}"
+          hostname: '{{ onepassword_awx_item.op_item.fields.HOSTNAME.value }}'
+          username: '{{ onepassword_awx_item.op_item.fields.username.value }}'
+          password: '{{ onepassword_awx_item.op_item.fields.password.value }}'
+        host_user: '{{ onepassword_server_item.op_item.fields.username.value }}'
+        host_password: '{{ onepassword_server_item.op_item.fields.password.value }}'
+        vault_password: '{{ onepassword_awx_item.op_item.fields.VAULT_PASSWORD.value }}'
       when: onepassword_enabled | default(true) | bool
       no_log: true
 

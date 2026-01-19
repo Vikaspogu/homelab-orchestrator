@@ -1,0 +1,32 @@
+# Prepare Hosts Role - Handlers
+---
+- name: Restart SSH
+  ansible.builtin.service:
+    name: ssh
+    state: restarted
+
+- name: Restart chrony
+  ansible.builtin.systemd:
+    name: chrony
+    state: restarted
+
+- name: Restart systemd-resolved
+  ansible.builtin.systemd:
+    name: systemd-resolved
+    state: restarted
+
+- name: Restart CloudStack agent
+  ansible.builtin.service:
+    name: cloudstack-agent
+    state: restarted
+  failed_when: false
+
+- name: Restart libvirtd
+  ansible.builtin.service:
+    name: libvirtd
+    state: restarted
+
+- name: Reload UFW
+  community.general.ufw:
+    state: reloaded
+  failed_when: false

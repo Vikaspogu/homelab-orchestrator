@@ -1,0 +1,25 @@
+---
+galaxy_info:
+  role_name: configure_zone
+  author: Vikas Pogu
+  description: Configure CloudStack zone infrastructure (zone, networks, pods, clusters, storage, templates)
+  license: Apache-2.0
+  min_ansible_version: '2.14'
+  platforms:
+    - name: Ubuntu
+      versions:
+        - jammy
+        - noble
+    - name: Debian
+      versions:
+        - bullseye
+        - bookworm
+  galaxy_tags:
+    - cloudstack
+    - infrastructure
+    - zone
+    - networking
+    - storage
+
+dependencies:
+  - role: homelab.cloudstack.api_auth

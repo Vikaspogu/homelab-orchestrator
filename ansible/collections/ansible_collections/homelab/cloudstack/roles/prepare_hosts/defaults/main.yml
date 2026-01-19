@@ -1,0 +1,98 @@
+# Prepare Hosts Role - Default Variables
+---
+# Storage type: 'ceph' or 'local'
+prepare_hosts_storage_type: 'local'
+
+# CloudStack version to install (used for repository and package version)
+prepare_hosts_cloudstack_version: '4.20'
+# Package version pattern: installs latest matching version from the repo
+# Set to empty string "" to install latest, or specific version like "4.20.2.0-shapeblue0"
+prepare_hosts_cloudstack_package_version: ''
+
+# Network configuration
+prepare_hosts_bridge_name: 'cloudbr0'
+prepare_hosts_network_interface: '' # Must be set in inventory
+
+# DNS configuration
+prepare_hosts_dns_servers:
+  - '10.30.0.1'
+prepare_hosts_dns_search:
+  - 'a113.internal'
+
+# NTP configuration (chrony)
+prepare_hosts_ntp_servers:
+  - 'pool.ntp.org'
+
+# Local storage configuration
+prepare_hosts_local_storage_path: '/var/lib/libvirt/images'
+prepare_hosts_local_disk: ''
+
+# Ceph storage configuration
+prepare_hosts_ceph_enabled: false
+prepare_hosts_ceph_release: ''
+prepare_hosts_ceph_ssh_public_key: ''
+prepare_hosts_ceph_ssh_password: ''
+# Use bundled Ceph SSH key from role files (ceph.pub)
+prepare_hosts_use_bundled_ceph_key: false
+
+# Ceph OSD configuration
+prepare_hosts_ceph_osd_enabled: false
+prepare_hosts_ceph_osd_disks: []
+prepare_hosts_ceph_osd_lock: false
+
+# GPU/VFIO configuration
+prepare_hosts_vfio_enabled: true
+
+# CPU type: 'intel', 'amd', or 'aarch64'
+prepare_hosts_cpu_type: ''
+
+# Manual CPU speed for aarch64 hosts (CloudStack cannot auto-detect ARM CPU speed)
+prepare_hosts_host_cpu_manual_speed_mhz: 4000
+
+# NUMA configuration
+# Enable NUMA for x86_64 hosts (automatically disabled for aarch64)
+prepare_hosts_numa_enabled: false
+prepare_hosts_numa_default_hugepagesz: '1G'
+prepare_hosts_numa_reserved_hugepages: ''
+
+# Groovy hooks for CloudStack agent
+# Set to true for x86 hosts with NUMA - includes CPU pinning and NUMA optimization
+# Must be 'false' for aarch64 - NUMA script has x86-specific features
+prepare_hosts_groovy_numa_enabled: false
+
+# Root password (should be vaulted in production)
+prepare_hosts_root_password: ''
+
+# SSH configuration
+prepare_hosts_permit_root_login: true
+prepare_hosts_ssh_public_key: ''
+prepare_hosts_ssh_public_key_file: ''
+prepare_hosts_ssh_password: ''
+# Use bundled SSH key from role files (ssh_creds.pub)
+prepare_hosts_use_bundled_ssh_key: false
+# URL to download authorized_keys file (e.g., http://server/authorized_keys)
+prepare_hosts_ssh_authorized_keys_url: ''
+
+# libtcmalloc configuration for libvirtd performance (ceph-libtcmalloc.yml)
+# Package name varies by Ubuntu version:
+# - Ubuntu 22.04: libtcmalloc-minimal4
+# - Ubuntu 24.04: libtcmalloc-minimal4t64
+prepare_hosts_libtcmalloc_enabled: true
+prepare_hosts_libtcmalloc_package: '' # Auto-detected based on Ubuntu version
+
+# Skip reboot after configuration
+prepare_hosts_skip_reboot: false
+
+# Lock file path to prevent re-running
+prepare_hosts_lock_file: '/var/lock/ansible_playbook.lock'
+prepare_hosts_ignore_lock: false
+
+# Ceph OSD lock file path
+prepare_hosts_ceph_osd_lock_file: '/var/lock/ceph_ready.lock'
+
+# Firewall configuration
+# Configure UFW/iptables for CloudStack required ports
+prepare_hosts_configure_firewall: true
+
+# Playbook execution logging
+prepare_hosts_logging_enabled: true

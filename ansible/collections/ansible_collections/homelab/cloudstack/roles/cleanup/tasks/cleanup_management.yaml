@@ -29,7 +29,7 @@
 
 - name: Remove CloudStack directories
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: '{{ item }}'
     state: absent
   loop:
     - /etc/cloudstack
@@ -40,7 +40,7 @@
 
 - name: Remove MySQL directories
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: '{{ item }}'
     state: absent
   loop: [/var/lib/mysql, /etc/mysql, /var/log/mysql]
   when: cleanup_database
@@ -53,7 +53,7 @@
 
 - name: Remove APT repository
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: '{{ item }}'
     state: absent
   loop:
     - /etc/apt/sources.list.d/cloudstack.list

@@ -1,0 +1,45 @@
+# Configure UEFI/EFI for CloudStack
+# Based on cloudstack_efi.yml from playbook-aarch64.yml
+---
+- name: Install ovmf package
+  ansible.builtin.apt:
+    name: ovmf
+    state: present
+
+- name: Check for required UEFI files
+  ansible.builtin.stat:
+    path: '{{ item }}'
+  register: prepare_hosts_uefi_files
+  loop:
+    - /usr/share/OVMF/OVMF_CODE_4M.secboot.fd
+    - /usr/share/OVMF/OVMF_CODE_4M.fd
+    - /usr/share/OVMF/OVMF_VARS_4M.fd
+    - /usr/share/OVMF/OVMF_VARS_4M.ms.fd
+
+- name: Fail if required UEFI files are missing
+  ansible.builtin.fail:
+    msg: 'One or more required UEFI files are missing'
+  when: prepare_hosts_uefi_files.results | selectattr('stat.exists', 'eq', false) | list | length > 0
+
+- name: Ensure NVRAM directory exists
+  ansible.builtin.file:
+    path: /var/lib/libvirt/qemu/nvram/
+    state: directory
+    mode: '0755'
+
+- name: Ensure CloudStack agent config directory exists
+  ansible.builtin.file:
+    path: /etc/cloudstack/agent
+    state: directory
+    mode: '0755'
+
+- name: Create uefi.properties file
+  ansible.builtin.copy:
+    dest: /etc/cloudstack/agent/uefi.properties
+    content: |
+      guest.loader.secure=/usr/share/OVMF/OVMF_CODE_4M.secboot.fd
+      guest.loader.legacy=/usr/share/OVMF/OVMF_CODE_4M.fd
+      guest.nvram.template.legacy=/usr/share/OVMF/OVMF_VARS_4M.fd
+      guest.nvram.template.secure=/usr/share/OVMF/OVMF_VARS_4M.ms.fd
+      guest.nvram.path=/var/lib/libvirt/qemu/nvram/
+    mode: '0644'

@@ -1,0 +1,28 @@
+# Configure CloudStack agent Groovy hooks
+# Based on cloudstack_agent_groovy.yml from playbook-aarch64.yml
+---
+- name: Create agent hooks directory
+  ansible.builtin.file:
+    path: /etc/cloudstack/agent/hooks
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Copy NUMA Groovy script (for x86 NUMA-enabled hosts)
+  ansible.builtin.copy:
+    src: libvirt-vm-xml-transformer-numa.groovy
+    dest: /etc/cloudstack/agent/hooks/libvirt-vm-xml-transformer.groovy
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Configure CloudStack agent hooks
+  ansible.builtin.lineinfile:
+    path: /etc/cloudstack/agent/agent.properties
+    line: '{{ item }}'
+    create: true
+    mode: '0644'
+  loop:
+    - 'agent.hooks.libvirt_vm_xml_transformer.method=transform'
+    - 'agent.hooks.libvirt_vm_xml_transformer.script=libvirt-vm-xml-transformer.groovy'

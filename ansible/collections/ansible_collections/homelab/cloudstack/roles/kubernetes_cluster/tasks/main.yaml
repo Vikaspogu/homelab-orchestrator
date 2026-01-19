@@ -6,36 +6,38 @@
   when: cloudstack_session_key is not defined
 
 - name: Lookup CloudStack resource IDs
-  ansible.builtin.include_tasks: lookup_ids.yaml
+  ansible.builtin.import_tasks: lookup_ids.yaml
 
 - name: Register CKS-ready template
-  ansible.builtin.include_tasks: register_template.yaml
-  when: kubernetes_cluster_cks_template.name | default('') | length > 0
+  ansible.builtin.import_tasks: register_template.yaml
+  when:
+    - kubernetes_cluster_cks_template.name | default('') | length > 0
+    - kubernetes_cluster_cks_template.zone | default('') | length > 0
   tags: [template]
 
 - name: Create Kubernetes clusters
-  ansible.builtin.include_tasks: create_cluster.yaml
-  loop: "{{ kubernetes_cluster_list }}"
+  ansible.builtin.import_tasks: create_cluster.yaml
+  loop: '{{ kubernetes_cluster_list }}'
   loop_control:
     loop_var: cluster
-    label: "{{ cluster.name }}"
+    label: '{{ cluster.name }}'
 
 - name: Wait for clusters
-  ansible.builtin.include_tasks: wait_cluster.yaml
-  loop: "{{ kubernetes_cluster_list }}"
+  ansible.builtin.import_tasks: wait_cluster.yaml
+  loop: '{{ kubernetes_cluster_list }}'
   loop_control:
     loop_var: cluster
-    label: "{{ cluster.name }}"
+    label: '{{ cluster.name }}'
   when: kubernetes_cluster_wait_for_cluster
 
 - name: Upgrade Kubernetes clusters
-  ansible.builtin.include_tasks: upgrade_cluster.yaml
-  loop: "{{ kubernetes_cluster_upgrade_list }}"
+  ansible.builtin.import_tasks: upgrade_cluster.yaml
+  loop: '{{ kubernetes_cluster_upgrade_list }}'
   loop_control:
     loop_var: cluster
-    label: "{{ cluster.name }}"
+    label: '{{ cluster.name }}'
   when: kubernetes_cluster_upgrade_list | length > 0
   tags: [upgrade]
 
 - name: Get cluster information
-  ansible.builtin.include_tasks: get_cluster_info.yaml
+  ansible.builtin.import_tasks: get_cluster_info.yaml

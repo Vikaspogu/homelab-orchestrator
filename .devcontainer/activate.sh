@@ -13,4 +13,3 @@ if [ -d "${VENV_DIR}" ]; then
 else
     echo "Virtual environment not found. Run .devcontainer/setup.sh first."
 fi
-

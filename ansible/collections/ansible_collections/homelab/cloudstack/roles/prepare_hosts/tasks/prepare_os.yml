@@ -1,0 +1,86 @@
+# Prepare operating system for CloudStack KVM hosts
+---
+- name: Fix system time if incorrect (required for APT HTTPS)
+  ansible.builtin.shell: |
+    if [ "$(date +%Y)" -lt 2026 ]; then
+      timedatectl set-ntp true
+      systemctl restart systemd-timesyncd 2>/dev/null || true
+      sleep 5
+      # Fallback: sync from HTTP header if still wrong
+      if [ "$(date +%Y)" -lt 2026 ]; then
+        HTTP_DATE=$(curl -sI http://www.google.com 2>/dev/null | grep -i "^date:" | cut -d' ' -f2-)
+        [ -n "$HTTP_DATE" ] && date -s "$HTTP_DATE" || true
+      fi
+    fi
+  args:
+    executable: /bin/bash
+  changed_when: false
+
+- name: Disable cloud-init
+  ansible.builtin.file:
+    path: /etc/cloud/cloud-init.disabled
+    state: touch
+    mode: '0644'
+  when: disable_cloud_init | default(false) | bool
+
+- name: Update APT cache and install base packages
+  ansible.builtin.apt:
+    name:
+      - bridge-utils
+      - cpu-checker
+      - aria2
+      - chrony
+    state: present
+    update_cache: true
+    lock_timeout: 300
+  register: prepare_hosts_apt_result
+  retries: 3
+  delay: 10
+  until: prepare_hosts_apt_result is success
+
+- name: Configure chrony NTP servers
+  ansible.builtin.template:
+    src: chrony.conf.j2
+    dest: /etc/chrony/chrony.conf
+    mode: '0644'
+  when: prepare_hosts_ntp_servers | length > 0
+  notify: Restart chrony
+
+- name: Enable and start chrony
+  ansible.builtin.systemd:
+    name: chrony
+    state: started
+    enabled: true
+
+- name: Force NTP sync
+  ansible.builtin.command: chronyc -a makestep
+  changed_when: false
+  failed_when: false
+
+- name: Set root password
+  ansible.builtin.user:
+    name: root
+    password: "{{ prepare_hosts_root_password | password_hash('sha512') }}"
+
+- name: Configure SSH root login
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?PermitRootLogin'
+    line: "PermitRootLogin {{ 'yes' if prepare_hosts_permit_root_login else 'no' }}"
+  notify: Restart SSH
+
+- name: Configure DNS servers
+  block:
+    - name: Ensure resolved.conf.d directory exists
+      ansible.builtin.file:
+        path: /etc/systemd/resolved.conf.d
+        state: directory
+        mode: '0755'
+    - name: Set DNS servers
+      ansible.builtin.copy:
+        dest: /etc/systemd/resolved.conf.d/cloudstack.conf
+        content: |
+          [Resolve]
+          DNS={{ prepare_hosts_dns_servers | join(' ') }}
+        mode: '0644'
+      notify: Restart systemd-resolved

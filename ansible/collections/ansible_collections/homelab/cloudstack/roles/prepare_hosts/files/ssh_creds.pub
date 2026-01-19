@@ -1,0 +1,3 @@
+# Placeholder SSH public key file
+# Replace with your SSH public key when using prepare_hosts_use_bundled_ssh_key: true
+# Example: ssh-rsa AAAA... user@hostname

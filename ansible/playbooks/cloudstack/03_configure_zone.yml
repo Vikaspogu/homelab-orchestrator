@@ -1,0 +1,99 @@
+---
+- name: Configure CloudStack Zone
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  pre_tasks:
+    - name: Fetch CloudStack credentials from 1Password
+      onepassword.connect.item_info:
+        vault: "{{ lookup('env', 'OP_VAULT') }}"
+        item: "{{ onepassword_item_cloudstack | default('cloudstack') }}"
+      delegate_to: localhost
+      register: onepassword_cloudstack_item
+      when: onepassword_enabled | default(true) | bool
+      no_log: true
+
+    - name: Set CloudStack credentials from 1Password
+      ansible.builtin.set_fact:
+        cloudstack_admin_password: '{{ onepassword_cloudstack_item.op_item.fields.password.value }}'
+        cloudstack_api_url: '{{ onepassword_cloudstack_item.op_item.fields.API_URL.value }}'
+      when: onepassword_enabled | default(true) | bool
+      no_log: true
+
+    - name: Fetch KVM credentials from 1Password
+      onepassword.connect.item_info:
+        vault: "{{ lookup('env', 'OP_VAULT') }}"
+        item: 'server'
+      delegate_to: localhost
+      register: onepassword_kvm_item
+      when: onepassword_enabled | default(true) | bool
+      no_log: true
+
+    - name: Set KVM credentials from 1Password
+      ansible.builtin.set_fact:
+        ansible_password: '{{ onepassword_kvm_item.op_item.fields.password.value }}'
+      when: onepassword_enabled | default(true) | bool
+      no_log: true
+  vars:
+    configure_zone_zone:
+      name: 'Zone1'
+      dns1: '8.8.8.8'
+      dns2: '1.1.1.1'
+      internal_dns1: '10.30.0.1'
+      network_type: 'Advanced'
+      local_storage_enabled: true
+      security_groups_enabled: false
+
+    configure_zone_physical_networks:
+      - name: 'Physical Network 1'
+        isolation_method: 'VLAN'
+        traffic_types:
+          - type: 'Management'
+            label: 'cloudbr0'
+          - type: 'Guest'
+            label: 'cloudbr0'
+          - type: 'Public'
+            label: 'cloudbr0'
+          - type: 'Storage'
+            label: 'cloudbr0'
+
+    configure_zone_pods:
+      - name: 'Pod1'
+        gateway: '10.30.30.1'
+        netmask: '255.255.255.0'
+        start_ip: '10.30.30.60'
+        end_ip: '10.30.30.75'
+
+    configure_zone_guest_ip_ranges:
+      - name: 'defaultGuestNetwork'
+        display_text: 'Default Guest Network for K8s'
+        network_offering: 'DefaultSharedNetworkOffering'
+        gateway: '10.30.30.1'
+        netmask: '255.255.192.0'
+        start_ip: '10.30.30.76'
+        end_ip: '10.30.30.100'
+        vlan: 'untagged'
+        network_domain: 'a113.internal'
+
+    configure_zone_public_ip_ranges:
+      - gateway: '10.30.30.1'
+        netmask: '255.255.192.0'
+        start_ip: '10.30.30.111'
+        end_ip: '10.30.30.120'
+        vlan: 'untagged'
+
+    configure_zone_clusters:
+      - name: 'Kubernetes-Cluster'
+        pod_name: 'Pod1'
+        hypervisor: 'KVM'
+        cluster_type: 'CloudManaged'
+        cpu_arch: 'x86_64'
+
+    configure_zone_secondary_storage:
+      name: 'NFS-Primary'
+      url: 'nfs://10.30.30.55/export/secondary'
+      zone_name: 'Zone1'
+      provider: 'NFS'
+
+  roles:
+    - role: homelab.cloudstack.configure_zone

@@ -2,7 +2,7 @@
 ---
 - name: Install CloudStack
   ansible.builtin.apt:
-    name: "{{ prepare_management_cloudstack_packages }}"
+    name: '{{ prepare_management_cloudstack_packages }}'
     state: present
     update_cache: true
 
@@ -20,9 +20,9 @@
 
 - name: Download vhd-util
   ansible.builtin.get_url:
-    url: "{{ prepare_management_vhd_util_url }}"
+    url: '{{ prepare_management_vhd_util_url }}'
     dest: /usr/share/cloudstack-common/scripts/vm/hypervisor/xenserver/vhd-util
-    mode: "0755"
+    mode: '0755'
   when: prepare_management_xenserver_support
 
 - name: Build database setup command
@@ -44,7 +44,7 @@
   no_log: true
 
 - name: Setup database
-  ansible.builtin.command: "{{ prepare_management_db_setup_cmd }}"
+  ansible.builtin.command: '{{ prepare_management_db_setup_cmd }}'
   when: "'cloud' not in prepare_management_cloud_db_check.stdout"
   changed_when: true
   no_log: true
@@ -52,10 +52,10 @@
 - name: Configure sudoers for cloud user
   ansible.builtin.lineinfile:
     path: /etc/sudoers.d/cloudstack
-    line: "Defaults:cloud !requiretty"
+    line: 'Defaults:cloud !requiretty'
     create: true
-    mode: "0440"
-    validate: "visudo -cf %s"
+    mode: '0440'
+    validate: 'visudo -cf %s'
   when: cloudstack_kvm_on_management | default(false)
 
 - name: Run cloudstack-setup-management
@@ -69,13 +69,13 @@
 - name: Enable CloudStack management
   ansible.builtin.systemd:
     name: cloudstack-management
-    enabled: "{{ prepare_management_enable_services }}"
+    enabled: '{{ prepare_management_enable_services }}'
     state: "{{ 'started' if prepare_management_start_services else 'stopped' }}"
     daemon_reload: true
 
 - name: Wait for management server
   ansible.builtin.uri:
-    url: "http://localhost:8080/client"
+    url: 'http://localhost:8080/client'
     method: GET
     status_code: [200, 302]
   register: prepare_management_mgmt_check

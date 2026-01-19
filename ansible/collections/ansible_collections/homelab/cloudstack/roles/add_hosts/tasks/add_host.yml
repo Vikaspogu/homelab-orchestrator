@@ -1,0 +1,24 @@
+# Add individual host to CloudStack cluster
+# For ARM64: Handles CPU speed detection issue by setting it before agent fully connects
+---
+- name: Add host '{{ host_item.hostname }}' to CloudStack (async)
+  ngine_io.cloudstack.host:
+    api_url: '{{ cloudstack_api_url }}'
+    api_key: '{{ cloudstack_api_key }}'
+    api_secret: '{{ cloudstack_api_secret }}'
+    api_timeout: 600
+    name: '{{ host_item.hostname }}'
+    zone: '{{ add_hosts_zone_name }}'
+    pod: '{{ add_hosts_pod_name }}'
+    cluster: '{{ add_hosts_cluster_name }}'
+    hypervisor: '{{ add_hosts_hypervisor }}'
+    url: 'http://{{ host_item.hostname }}'
+    username: '{{ host_item.username | default(add_hosts_username) }}'
+    password: "{{ host_item.password | default(hostvars[host_item.hostname]['prepare_hosts_root_password'] | default(add_hosts_password)) }}"
+    host_tags: "{{ (add_hosts_default_tags + (host_item.tags | default([]))) | join(',') | default(omit, true) }}"
+    allocation_state: "{{ host_item.allocation_state | default('enabled') }}"
+    state: present
+  register: add_host_async
+  delegate_to: localhost
+  async: 600
+  poll: 0

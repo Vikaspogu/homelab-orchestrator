@@ -1,0 +1,68 @@
+# Configure Ceph storage for CloudStack
+---
+- name: Copy SSH Ceph public key to remote host (from variable)
+  ansible.builtin.shell: |
+    sshpass -p '{{ prepare_hosts_ceph_ssh_password }}' ssh-copy-id -f -i {{ prepare_hosts_ceph_ssh_public_key }} root@{{ ansible_host }}
+  args:
+    executable: /bin/bash
+  delegate_to: localhost
+  become: false
+  failed_when: false
+  changed_when: true
+  when:
+    - prepare_hosts_ceph_ssh_public_key | length > 0
+    - not (prepare_hosts_use_bundled_ceph_key | bool)
+
+- name: Add bundled Ceph SSH public key to authorized_keys
+  ansible.builtin.authorized_key:
+    user: root
+    key: "{{ lookup('file', 'ceph.pub') }}"
+    state: present
+  when:
+    - prepare_hosts_use_bundled_ceph_key | bool
+    - prepare_hosts_ceph_ssh_public_key | length == 0
+
+- name: Ensure apt keyrings directory exists
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Download Ceph release key
+  ansible.builtin.get_url:
+    url: https://download.ceph.com/keys/release.asc
+    dest: /etc/apt/keyrings/ceph.asc
+    mode: '0644'
+
+- name: Add Ceph repository
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/ceph.list
+    content: |
+      deb [signed-by=/etc/apt/keyrings/ceph.asc] http://download.ceph.com/debian-{{ prepare_hosts_ceph_release }}/ {{ ansible_facts['distribution_release'] }} main
+    mode: '0644'
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+
+- name: Install Ceph client packages
+  ansible.builtin.apt:
+    name:
+      - gdisk
+      - python3
+      - ntp
+      - lvm2
+      - podman
+      - libvirt-daemon-driver-storage-rbd
+      - ceph-common
+    state: present
+
+- name: Restart libvirtd service
+  ansible.builtin.service:
+    name: libvirtd
+    state: restarted
+
+- name: Restart cloudstack-agent service
+  ansible.builtin.service:
+    name: cloudstack-agent
+    state: restarted

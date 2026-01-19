@@ -1,0 +1,171 @@
+# Prepare Hosts Role - Main Tasks
+---
+- name: Check for lock file
+  ansible.builtin.stat:
+    path: '{{ prepare_hosts_lock_file }}'
+  register: prepare_hosts_lock_status
+
+- name: Display skip message for locked host
+  ansible.builtin.debug:
+    msg: 'SKIPPING HOST: Lock file {{ prepare_hosts_lock_file }} exists. Set prepare_hosts_ignore_lock=true in inventory to re-run.'
+  when:
+    - prepare_hosts_lock_status.stat.exists
+    - not prepare_hosts_ignore_lock
+
+- name: Skip host if lock exists and ignore_lock is false
+  ansible.builtin.meta: end_host
+  when:
+    - prepare_hosts_lock_status.stat.exists
+    - not prepare_hosts_ignore_lock
+
+- name: Validate required variables
+  ansible.builtin.assert:
+    that:
+      - prepare_hosts_network_interface | length > 0
+      - prepare_hosts_cpu_type in ['intel', 'amd', 'aarch64']
+      - prepare_hosts_storage_type in ['local', 'ceph']
+    fail_msg: 'Required variables not properly configured'
+
+- name: Log playbook execution
+  ansible.builtin.include_role:
+    name: homelab.cloudstack.logging
+    tasks_from: append_log.yml
+  vars:
+    logging_playbook_name: 'prepare_hosts'
+  when: prepare_hosts_logging_enabled
+
+- name: Configure SSH keys
+  ansible.builtin.import_tasks: configure_ssh_keys.yml
+  when: >-
+    prepare_hosts_ssh_public_key | length > 0 or
+    prepare_hosts_ssh_public_key_file | length > 0 or
+    prepare_hosts_ssh_authorized_keys_url | length > 0 or
+    prepare_hosts_use_bundled_ssh_key | bool
+  tags:
+    - ssh
+    - keys
+
+- name: Prepare operating system
+  ansible.builtin.import_tasks: prepare_os.yml
+  tags:
+    - os
+    - prepare
+
+- name: Configure networking (includes interface normalization)
+  ansible.builtin.import_tasks: configure_network.yml
+  tags:
+    - network
+
+- name: Install CloudStack agent
+  ansible.builtin.import_tasks: install_cloudstack.yml
+  tags:
+    - cloudstack
+    - agent
+
+# - name: Configure firewall for CloudStack
+#   ansible.builtin.import_tasks: configure_firewall.yml
+#   tags:
+#     - firewall
+#     - ufw
+
+- name: Configure UEFI/EFI
+  ansible.builtin.import_tasks: configure_efi.yml
+  tags:
+    - efi
+    - uefi
+
+- name: Configure CPU flags
+  ansible.builtin.import_tasks: configure_cpu_flags.yml
+  tags:
+    - cpu
+
+- name: Configure VFIO for GPU passthrough
+  ansible.builtin.import_tasks: configure_vfio.yml
+  when: prepare_hosts_vfio_enabled
+  tags:
+    - vfio
+    - gpu
+
+- name: Configure CloudStack agent Groovy hooks
+  ansible.builtin.import_tasks: configure_groovy_hooks.yml
+  tags:
+    - groovy
+    - hooks
+
+- name: Configure NUMA and hugepages (x86_64 only)
+  ansible.builtin.include_role:
+    name: homelab.cloudstack.numa_config
+  vars:
+    numa_config_enabled: '{{ prepare_hosts_numa_enabled }}'
+    numa_config_cpu_type: '{{ prepare_hosts_cpu_type }}'
+    numa_config_default_hugepagesz: '{{ prepare_hosts_numa_default_hugepagesz }}'
+    numa_config_reserved_hugepages: '{{ prepare_hosts_numa_reserved_hugepages }}'
+    numa_config_local_disk: '{{ prepare_hosts_local_disk }}'
+    numa_config_local_storage_path: '{{ prepare_hosts_local_storage_path }}'
+    numa_config_skip_reboot: true # We handle reboot at the end
+  when:
+    - prepare_hosts_numa_enabled
+    - prepare_hosts_cpu_type != 'aarch64'
+  tags:
+    - numa
+    - hugepages
+
+- name: Configure local storage
+  ansible.builtin.import_tasks: configure_local_storage.yml
+  when:
+    - prepare_hosts_storage_type == 'local'
+    - prepare_hosts_local_disk | length > 0
+    - not prepare_hosts_numa_enabled # Skip if NUMA role handles it
+  tags:
+    - storage
+    - local
+
+- name: Configure Ceph storage (client)
+  ansible.builtin.import_tasks: configure_ceph_storage.yml
+  when: prepare_hosts_ceph_enabled | bool
+  tags:
+    - storage
+    - ceph
+
+- name: Configure Ceph OSD
+  ansible.builtin.import_tasks: configure_ceph_osd.yml
+  when:
+    - prepare_hosts_ceph_enabled | bool
+    - prepare_hosts_ceph_osd_enabled | bool
+  tags:
+    - storage
+    - ceph
+    - osd
+
+- name: Configure libtcmalloc for libvirtd
+  ansible.builtin.import_tasks: configure_libtcmalloc.yml
+  when:
+    - prepare_hosts_ceph_enabled | bool
+    - prepare_hosts_libtcmalloc_enabled | bool
+  tags:
+    - libtcmalloc
+    - ceph
+    - performance
+
+- name: Create lock file (all tasks completed successfully)
+  ansible.builtin.file:
+    path: '{{ prepare_hosts_lock_file }}'
+    state: touch
+    mode: '0644'
+
+- name: Flush all handlers before reboot
+  ansible.builtin.meta: flush_handlers
+  when: not prepare_hosts_skip_reboot
+
+- name: Final reboot to apply all changes (fire and forget)
+  ansible.builtin.shell: |
+    nohup sh -c 'sleep 2 && reboot' &>/dev/null &
+  async: 1
+  poll: 0
+  when: not prepare_hosts_skip_reboot
+  tags:
+    - reboot
+
+- name: End play after reboot (no more tasks)
+  ansible.builtin.meta: end_host
+  when: not prepare_hosts_skip_reboot

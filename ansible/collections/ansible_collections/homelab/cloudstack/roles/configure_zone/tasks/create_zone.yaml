@@ -1,0 +1,57 @@
+# Create CloudStack Zone
+---
+- name: Check if zone exists
+  ngine_io.cloudstack.zone_info:
+    api_url: '{{ cloudstack_api_url }}'
+    api_key: '{{ cloudstack_api_key }}'
+    api_secret: '{{ cloudstack_api_secret }}'
+    name: '{{ configure_zone_zone.name }}'
+  register: configure_zone_zone_info
+  failed_when: false
+
+- name: Create zone
+  ngine_io.cloudstack.zone:
+    api_url: '{{ cloudstack_api_url }}'
+    api_key: '{{ cloudstack_api_key }}'
+    api_secret: '{{ cloudstack_api_secret }}'
+    name: '{{ configure_zone_zone.name }}'
+    dns1: '{{ configure_zone_zone.dns1 }}'
+    dns2: '{{ configure_zone_zone.dns2 | default(omit) }}'
+    internal_dns1: '{{ configure_zone_zone.internal_dns1 }}'
+    internal_dns2: '{{ configure_zone_zone.internal_dns2 | default(omit) }}'
+    network_type: "{{ configure_zone_zone.network_type | default('Advanced') }}"
+    local_storage_enabled: '{{ configure_zone_zone.local_storage_enabled | default(false) }}'
+    securitygroups_enabled: '{{ configure_zone_zone.security_groups_enabled | default(false) }}'
+    state: present
+  register: configure_zone_zone_result
+  when: configure_zone_zone_info.zones | default([]) | length == 0
+
+- name: Set zone ID
+  ansible.builtin.set_fact:
+    configure_zone_zone_id: '{{ configure_zone_zone_result.id | default(configure_zone_zone_info.zones[0].id) }}'
+
+- name: Update zone guest CIDR
+  ansible.builtin.uri:
+    url: '{{ cloudstack_api_url }}'
+    method: POST
+    body_format: form-urlencoded
+    body:
+      command: updateZone
+      id: '{{ configure_zone_zone_id }}'
+      guestcidraddress: '{{ configure_zone_zone.guest_cidr }}'
+      response: json
+      sessionkey: '{{ cloudstack_session_key }}'
+    headers:
+      Cookie: '{{ cloudstack_cookies }}'
+  when: configure_zone_zone.guest_cidr is defined
+  ignore_errors: true
+
+- name: Configure system VM to use local storage
+  ngine_io.cloudstack.configuration:
+    api_url: '{{ cloudstack_api_url }}'
+    api_key: '{{ cloudstack_api_key }}'
+    api_secret: '{{ cloudstack_api_secret }}'
+    name: 'system.vm.use.local.storage'
+    value: '{{ configure_zone_zone.system_vm_use_local_storage | default(true) | string | lower }}'
+    zone: '{{ configure_zone_zone.name }}'
+  when: configure_zone_zone.local_storage_enabled | default(false) | bool

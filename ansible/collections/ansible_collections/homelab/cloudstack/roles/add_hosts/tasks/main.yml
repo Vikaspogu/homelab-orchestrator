@@ -1,0 +1,58 @@
+# Add Hosts Role - Main Tasks
+# Adds and/or removes KVM hosts from CloudStack zone/pod/cluster
+# Use add_hosts_list to add hosts, delete_hosts_list to remove hosts
+---
+- name: Get zone information
+  ngine_io.cloudstack.zone_info:
+    api_url: '{{ cloudstack_api_url }}'
+    api_key: '{{ cloudstack_api_key }}'
+    api_secret: '{{ cloudstack_api_secret }}'
+    name: '{{ add_hosts_zone_name }}'
+  register: add_hosts_zone_response
+
+- name: Set zone ID
+  ansible.builtin.set_fact:
+    add_hosts_zone_id: '{{ add_hosts_zone_response.zones[0].id }}'
+
+- name: Get pod information
+  ngine_io.cloudstack.pod:
+    api_url: '{{ cloudstack_api_url }}'
+    api_key: '{{ cloudstack_api_key }}'
+    api_secret: '{{ cloudstack_api_secret }}'
+    name: '{{ add_hosts_pod_name }}'
+    zone: '{{ add_hosts_zone_name }}'
+    state: present
+  register: add_hosts_pod_response
+
+- name: Set pod ID
+  ansible.builtin.set_fact:
+    add_hosts_pod_id: '{{ add_hosts_pod_response.id }}'
+
+- name: Get cluster information
+  ngine_io.cloudstack.cluster:
+    api_url: '{{ cloudstack_api_url }}'
+    api_key: '{{ cloudstack_api_key }}'
+    api_secret: '{{ cloudstack_api_secret }}'
+    name: '{{ add_hosts_cluster_name }}'
+    zone: '{{ add_hosts_zone_name }}'
+    pod: '{{ add_hosts_pod_name }}'
+    state: present
+  register: add_hosts_cluster_response
+
+- name: Set cluster ID
+  ansible.builtin.set_fact:
+    add_hosts_cluster_id: '{{ add_hosts_cluster_response.id }}'
+
+- name: Add hosts to cluster
+  ansible.builtin.include_tasks: add_host.yml
+  loop: '{{ add_hosts_list }}'
+  loop_control:
+    loop_var: host_item
+  when: add_hosts_list | length > 0
+
+- name: Delete hosts from cluster
+  ansible.builtin.include_tasks: delete_host.yml
+  loop: '{{ delete_hosts_list }}'
+  loop_control:
+    loop_var: host_item
+  when: delete_hosts_list | length > 0

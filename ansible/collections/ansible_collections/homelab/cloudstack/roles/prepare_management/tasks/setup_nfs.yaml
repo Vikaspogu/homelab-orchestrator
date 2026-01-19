@@ -8,57 +8,57 @@
 
 - name: Create storage directories
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: '{{ item }}'
     state: directory
-    mode: "0755"
+    mode: '0755'
     owner: nobody
     group: nogroup
   loop:
-    - "{{ prepare_management_nfs_primary_path }}"
-    - "{{ prepare_management_nfs_secondary_path }}"
+    - '{{ prepare_management_nfs_primary_path }}'
+    - '{{ prepare_management_nfs_secondary_path }}'
 
 - name: Configure NFS exports
   ansible.builtin.lineinfile:
     path: /etc/exports
     regexp: "^{{ item | regex_escape }}\\s"
-    line: "{{ item }} *({{ prepare_management_nfs_export_options }})"
+    line: '{{ item }} *({{ prepare_management_nfs_export_options }})'
     create: true
-    mode: "0644"
+    mode: '0644'
   loop:
-    - "{{ prepare_management_nfs_primary_path }}"
-    - "{{ prepare_management_nfs_secondary_path }}"
+    - '{{ prepare_management_nfs_primary_path }}'
+    - '{{ prepare_management_nfs_secondary_path }}'
   notify: reload nfs exports
 
 - name: Configure idmapd domain
   ansible.builtin.lineinfile:
     path: /etc/idmapd.conf
     regexp: "^#?Domain\\s*="
-    line: "Domain = {{ prepare_management_nfs_domain }}"
-    mode: "0644"
+    line: 'Domain = {{ prepare_management_nfs_domain }}'
+    mode: '0644'
   when: prepare_management_nfs_domain | length > 0
   notify: restart nfs
 
 - name: Configure UFW for NFS
   community.general.ufw:
     rule: allow
-    port: "{{ item.port | string }}"
-    proto: "{{ item.proto }}"
-    from_ip: "{{ prepare_management_nfs_allowed_network }}"
+    port: '{{ item.port | string }}'
+    proto: '{{ item.proto }}'
+    from_ip: '{{ prepare_management_nfs_allowed_network }}'
   loop:
-    - {port: 111, proto: "tcp"}
-    - {port: 111, proto: "udp"}
-    - {port: 2049, proto: "tcp"}
-    - {port: 2049, proto: "udp"}
-    - {port: 32803, proto: "tcp"}
-    - {port: 32769, proto: "udp"}
-    - {port: 892, proto: "tcp"}
-    - {port: 892, proto: "udp"}
-    - {port: 875, proto: "tcp"}
-    - {port: 875, proto: "udp"}
-    - {port: 662, proto: "tcp"}
-    - {port: 662, proto: "udp"}
+    - { port: 111, proto: 'tcp' }
+    - { port: 111, proto: 'udp' }
+    - { port: 2049, proto: 'tcp' }
+    - { port: 2049, proto: 'udp' }
+    - { port: 32803, proto: 'tcp' }
+    - { port: 32769, proto: 'udp' }
+    - { port: 892, proto: 'tcp' }
+    - { port: 892, proto: 'udp' }
+    - { port: 875, proto: 'tcp' }
+    - { port: 875, proto: 'udp' }
+    - { port: 662, proto: 'tcp' }
+    - { port: 662, proto: 'udp' }
   loop_control:
-    label: "{{ item.port }}/{{ item.proto }}"
+    label: '{{ item.port }}/{{ item.proto }}'
   failed_when: false
 
 - name: Enable rpcbind

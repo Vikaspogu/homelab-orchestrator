@@ -1,13 +1,13 @@
 # Kubernetes Cluster Role - Default Variables (CloudStack CKS)
 ---
 # CloudStack API connection
-kubernetes_cluster_api_url: ""
-kubernetes_cluster_api_key: ""
-kubernetes_cluster_api_secret: ""
+kubernetes_cluster_api_url: ''
+kubernetes_cluster_api_key: ''
+kubernetes_cluster_api_secret: ''
 
 # Admin credentials (used if API keys not provided)
-kubernetes_cluster_admin_username: "admin"
-kubernetes_cluster_admin_password: ""
+kubernetes_cluster_admin_username: 'admin'
+kubernetes_cluster_admin_password: ''
 
 # Kubernetes clusters to create/manage
 kubernetes_cluster_list: []
@@ -42,13 +42,13 @@ kubernetes_cluster_upgrade_list: []
 kubernetes_cluster_cks_template:
   # name: ""  # Empty = skip custom template registration
   # Example for custom template:
-  name: "CKS-Ubuntu-22.04"
-  display_text: "CKS-ready Ubuntu 22.04 LTS template for Kubernetes"
-  url: "http://download.cloudstack.org/testing/custom_templates/ubuntu/22.04/cks-ubuntu-2204.qcow2.gz"
-  format: "QCOW2"
-  hypervisor: "KVM"
-  os_type: "Ubuntu 22.04 LTS"
-  zone: "Zone1"
+  name: 'CKS-Ubuntu-22.04'
+  display_text: 'CKS-ready Ubuntu 22.04 LTS template for Kubernetes'
+  url: 'http://download.cloudstack.org/testing/custom_templates/ubuntu/22.04/cks-ubuntu-2204.qcow2.gz'
+  format: 'QCOW2'
+  hypervisor: 'KVM'
+  os_type: 'Ubuntu 22.04 LTS'
+  zone: ''
   is_public: true
   password_enabled: false
   sshkey_enabled: true
@@ -58,17 +58,17 @@ kubernetes_cluster_defaults:
   size: 1
   control_nodes: 1
   node_root_disk_size: 10
-  description: "Kubernetes Cluster"
-  template: ""  # Empty = use CKS default SystemVM template (recommended)
-  enable_csi: true  # Enable CSI driver for persistent volumes
+  description: 'Kubernetes Cluster'
+  template: '' # Empty = use CKS default SystemVM template (recommended)
+  enable_csi: true # Enable CSI driver for persistent volumes
 
 # Wait for cluster to be ready
 kubernetes_cluster_wait_for_cluster: true
-kubernetes_cluster_wait_timeout: 1800  # 30 minutes
+kubernetes_cluster_wait_timeout: 1800 # 30 minutes
 
 # Upgrade settings
 kubernetes_cluster_wait_for_upgrade: true
-kubernetes_cluster_upgrade_timeout: 3600  # 60 minutes
+kubernetes_cluster_upgrade_timeout: 3600 # 60 minutes
 
 # API timeout
 kubernetes_cluster_api_timeout: 300

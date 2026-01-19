@@ -3,7 +3,7 @@
 # Install MySQL server
 - name: Install MySQL server
   ansible.builtin.apt:
-    name: "{{ prepare_management_mysql_packages }}"
+    name: '{{ prepare_management_mysql_packages }}'
     state: present
     update_cache: true
 
@@ -11,17 +11,17 @@
 - name: Create CloudStack MySQL configuration file
   ansible.builtin.template:
     src: mysql_cloudstack.cnf.j2
-    dest: "{{ prepare_management_mysql_config_dir }}/cloudstack.cnf"
+    dest: '{{ prepare_management_mysql_config_dir }}/cloudstack.cnf'
     owner: root
     group: root
-    mode: "0644"
+    mode: '0644'
   notify: Restart MySQL
 
 # Ensure MySQL is started
 - name: Start and enable MySQL service
   ansible.builtin.systemd:
-    name: "{{ prepare_management_mysql_service }}"
-    enabled: "{{ prepare_management_enable_services }}"
+    name: '{{ prepare_management_mysql_service }}'
+    enabled: '{{ prepare_management_enable_services }}'
     state: started
 
 # Flush handlers to ensure MySQL is restarted with new config before proceeding

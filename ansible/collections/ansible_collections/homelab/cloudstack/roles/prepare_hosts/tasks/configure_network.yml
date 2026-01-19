@@ -1,0 +1,198 @@
+# Configure networking for CloudStack KVM hosts
+# CloudStack requires lowercase interface names (enp7s7, not enP7s7)
+---
+# ============================================================================
+# PHASE 1: Rename Interface to Lowercase (if needed)
+# ============================================================================
+
+- name: Rename interface to lowercase for CloudStack compatibility
+  when: prepare_hosts_network_interface != (prepare_hosts_network_interface | lower)
+  block:
+    - name: Set normalized interface name
+      ansible.builtin.set_fact:
+        prepare_hosts_normalized_interface: '{{ prepare_hosts_network_interface | lower }}'
+
+    - name: Check if original interface exists
+      ansible.builtin.command: ip link show {{ prepare_hosts_network_interface }}
+      register: prepare_hosts_old_iface_check
+      changed_when: false
+      failed_when: false
+
+    - name: Check if renamed interface exists
+      ansible.builtin.command: ip link show {{ prepare_hosts_normalized_interface }}
+      register: prepare_hosts_new_iface_check
+      changed_when: false
+      failed_when: false
+
+    - name: Get MAC address from existing interface
+      ansible.builtin.set_fact:
+        prepare_hosts_bridge_mac: "{{ (prepare_hosts_old_iface_check.stdout | default('')) | regex_search('link/ether ([0-9a-f:]+)', '\\1') | first | default('') or (prepare_hosts_new_iface_check.stdout | default('')) | regex_search('link/ether ([0-9a-f:]+)', '\\1') | first | default('') }}"
+
+    - name: Fail if no interface found
+      ansible.builtin.fail:
+        msg: 'Neither {{ prepare_hosts_network_interface }} nor {{ prepare_hosts_normalized_interface }} exists'
+      when:
+        - prepare_hosts_old_iface_check.rc != 0
+        - prepare_hosts_new_iface_check.rc != 0
+
+    - name: Fail if MAC address not found
+      ansible.builtin.fail:
+        msg: 'Could not determine MAC address for interface'
+      when: prepare_hosts_bridge_mac | length == 0
+
+    - name: Rename interface to lowercase (atomic operation)
+      ansible.builtin.shell: >-
+        ip link set {{ prepare_hosts_network_interface }} down &&
+        ip link set {{ prepare_hosts_network_interface }} name {{ prepare_hosts_normalized_interface }} &&
+        ip link set {{ prepare_hosts_normalized_interface }} up
+      async: 10
+      poll: 0
+      when:
+        - prepare_hosts_old_iface_check.rc == 0
+        - prepare_hosts_new_iface_check.rc != 0
+
+    - name: Wait for connection after interface rename
+      ansible.builtin.wait_for_connection:
+        delay: 2
+        timeout: 30
+      when:
+        - prepare_hosts_old_iface_check.rc == 0
+        - prepare_hosts_new_iface_check.rc != 0
+
+    - name: Set rename result for downstream tasks
+      ansible.builtin.set_fact:
+        prepare_hosts_interface_renamed: '{{ prepare_hosts_old_iface_check.rc == 0 and prepare_hosts_new_iface_check.rc != 0 }}'
+
+    - name: Update netplan files and create udev rule
+      when: prepare_hosts_interface_renamed | bool
+      block:
+        - name: Find existing netplan files
+          ansible.builtin.find:
+            paths: /etc/netplan
+            patterns: '*.yaml'
+          register: prepare_hosts_netplan_files
+
+        - name: Update netplan files to use lowercase interface name
+          ansible.builtin.replace:
+            path: '{{ item.path }}'
+            regexp: '{{ prepare_hosts_network_interface }}'
+            replace: '{{ prepare_hosts_normalized_interface }}'
+          loop: '{{ prepare_hosts_netplan_files.files }}'
+          loop_control:
+            label: '{{ item.path }}'
+
+        - name: Create udev rule for persistent interface name
+          ansible.builtin.copy:
+            dest: /etc/udev/rules.d/70-persistent-net.rules
+            content: |
+              SUBSYSTEM=="net", ACTION=="add", ATTR{address}=="{{ prepare_hosts_bridge_mac }}", NAME="{{ prepare_hosts_normalized_interface }}"
+            mode: '0644'
+
+# Set facts when interface is already lowercase (block was skipped)
+- name: Set interface facts (when already lowercase)
+  when: prepare_hosts_network_interface == (prepare_hosts_network_interface | lower)
+  block:
+    - name: Set normalized interface name (already lowercase)
+      ansible.builtin.set_fact:
+        prepare_hosts_normalized_interface: '{{ prepare_hosts_network_interface }}'
+
+    - name: Check interface exists (already lowercase)
+      ansible.builtin.command: ip link show {{ prepare_hosts_network_interface }}
+      register: prepare_hosts_iface_check
+      changed_when: false
+      failed_when: false
+
+    - name: Fail if interface not found
+      ansible.builtin.fail:
+        msg: 'Interface {{ prepare_hosts_network_interface }} does not exist'
+      when: prepare_hosts_iface_check.rc != 0
+
+    - name: Get interface MAC address (already lowercase)
+      ansible.builtin.set_fact:
+        prepare_hosts_bridge_mac: "{{ prepare_hosts_iface_check.stdout | regex_search('link/ether ([0-9a-f:]+)', '\\1') | first | default('') }}"
+
+    - name: Fail if MAC address not found (already lowercase)
+      ansible.builtin.fail:
+        msg: 'Could not determine MAC address for {{ prepare_hosts_network_interface }}'
+      when: prepare_hosts_bridge_mac | length == 0
+
+# ============================================================================
+# PHASE 2: Configure Netplan Bridge (only if not already configured)
+# ============================================================================
+
+- name: Check if CloudStack bridge netplan already exists
+  ansible.builtin.stat:
+    path: /etc/netplan/01-cloudstack-bridge.yaml
+  register: prepare_hosts_bridge_netplan_exists
+
+- name: Configure CloudStack bridge networking
+  when: not prepare_hosts_bridge_netplan_exists.stat.exists
+  block:
+    - name: Install bridge-utils
+      ansible.builtin.apt:
+        name: bridge-utils
+        state: present
+
+    - name: Backup cloud-init netplan if exists
+      ansible.builtin.copy:
+        src: /etc/netplan/50-cloud-init.yaml
+        dest: /etc/netplan/50-cloud-init.yaml.bak
+        remote_src: true
+        mode: '0600'
+      failed_when: false
+
+    - name: Disable cloud-init netplan
+      ansible.builtin.replace:
+        path: /etc/netplan/50-cloud-init.yaml
+        regexp: '^(.*)$'
+        replace: "# \\1"
+      failed_when: false
+
+    - name: Create CloudStack bridge netplan configuration
+      ansible.builtin.copy:
+        dest: /etc/netplan/01-cloudstack-bridge.yaml
+        content: |
+          network:
+            version: 2
+            renderer: networkd
+            ethernets:
+              {{ prepare_hosts_normalized_interface }}:
+                dhcp4: no
+                dhcp6: no
+            bridges:
+              {{ prepare_hosts_bridge_name }}:
+                interfaces:
+                  - {{ prepare_hosts_normalized_interface }}
+                macaddress: {{ prepare_hosts_bridge_mac }}
+                dhcp4: true
+                dhcp6: false
+                nameservers:
+                  search:
+          {% for domain in prepare_hosts_dns_search %}
+                    - {{ domain }}
+          {% endfor %}
+        mode: '0600'
+      register: prepare_hosts_netplan_created
+
+    - name: Apply netplan configuration in background
+      ansible.builtin.shell: |
+        nohup bash -c 'sleep 1 && netplan apply' &>/dev/null &
+        echo "netplan apply scheduled"
+      args:
+        executable: /bin/bash
+      async: 10
+      poll: 0
+      changed_when: true
+
+    - name: Wait for network reconnection
+      ansible.builtin.wait_for_connection:
+        connect_timeout: 10
+        sleep: 5
+        delay: 3
+        timeout: 120
+
+- name: Verify bridge is configured
+  ansible.builtin.command: ip addr show {{ prepare_hosts_bridge_name }}
+  register: prepare_hosts_bridge_status
+  changed_when: false
+  failed_when: false

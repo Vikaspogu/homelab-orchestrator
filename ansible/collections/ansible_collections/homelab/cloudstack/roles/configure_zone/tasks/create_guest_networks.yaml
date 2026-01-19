@@ -1,0 +1,31 @@
+# Create Guest Shared Networks and IP Ranges
+---
+- name: Create shared guest networks
+  ngine_io.cloudstack.network:
+    api_url: '{{ cloudstack_api_url }}'
+    api_key: '{{ cloudstack_api_key }}'
+    api_secret: '{{ cloudstack_api_secret }}'
+    name: '{{ item.name }}'
+    display_text: '{{ item.display_text | default(item.name) }}'
+    network_offering: '{{ item.network_offering }}'
+    zone: '{{ configure_zone_zone.name }}'
+    start_ip: '{{ item.start_ip }}'
+    end_ip: '{{ item.end_ip }}'
+    gateway: '{{ item.gateway }}'
+    netmask: '{{ item.netmask }}'
+    vlan: '{{ item.vlan | default(omit) }}'
+    state: present
+  loop: '{{ configure_zone_guest_ip_ranges }}'
+  loop_control:
+    label: '{{ item.name }}'
+  register: configure_zone_guest_networks_result
+  ignore_errors: true
+
+- name: Build guest network ID map
+  ansible.builtin.set_fact:
+    configure_zone_guest_network_ids: >-
+      {{ dict(configure_zone_guest_networks_result.results
+         | selectattr('id', 'defined')
+         | map(attribute='name') | zip(configure_zone_guest_networks_result.results
+         | selectattr('id', 'defined')
+         | map(attribute='id'))) }}

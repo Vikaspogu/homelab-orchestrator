@@ -1,0 +1,130 @@
+# Configure Zone Role - Default Variables
+# Sets up CloudStack zone infrastructure: zone, networks, pods, clusters, storage
+# Note: CloudStack API connection vars (cloudstack_api_url, cloudstack_api_key, etc.)
+# are defined in the api_auth role defaults
+---
+# Zone configuration
+configure_zone_zone: {}
+# Example:
+#   configure_zone_zone:
+#     name: "Zone1"
+#     dns1: "8.8.8.8"
+#     dns2: "8.8.4.4"
+#     internal_dns1: "10.0.0.1"
+#     internal_dns2: "10.0.0.2"
+#     network_type: "Advanced"
+#     local_storage_enabled: true
+#     security_groups_enabled: false
+#     guest_cidr: "10.1.0.0/16"  # Required for isolated networks
+#     system_vm_use_local_storage: true  # Use local storage for system VMs
+
+# Physical networks configuration
+configure_zone_physical_networks: []
+# Example:
+#   configure_zone_physical_networks:
+#     - name: "Physical Network 1"
+#       isolation_method: "VLAN"
+#       traffic_types:
+#         - type: "Management"
+#         - type: "Guest"
+#         - type: "Public"
+
+# Pod configuration
+configure_zone_pods: []
+# Example:
+#   configure_zone_pods:
+#     - name: "Pod1"
+#       gateway: "10.0.0.1"
+#       netmask: "255.255.255.0"
+#       start_ip: "10.0.0.100"
+#       end_ip: "10.0.0.200"
+
+# Cluster configuration
+configure_zone_clusters: []
+# Example:
+#   configure_zone_clusters:
+#     - name: "Cluster1"
+#       pod_name: "Pod1"
+#       hypervisor: "KVM"
+#       cluster_type: "CloudManaged"
+#       cpu_arch: "aarch64"
+
+# Guest shared network IP ranges
+configure_zone_guest_ip_ranges: []
+# Example:
+#   configure_zone_guest_ip_ranges:
+#     - name: "GuestNetwork"
+#       display_text: "Shared Guest Network"
+#       network_offering: "QuickCloudNoServices"
+#       gateway: "10.0.0.1"
+#       netmask: "255.255.255.0"
+#       start_ip: "10.0.0.50"
+#       end_ip: "10.0.0.99"
+#       vlan: "untagged"
+
+# Storage traffic IP ranges (for primary/secondary storage communication)
+configure_zone_storage_ip_ranges: []
+# Example:
+#   configure_zone_storage_ip_ranges:
+#     - pod_name: "Pod1"
+#       gateway: "10.10.0.1"
+#       netmask: "255.255.255.0"
+#       start_ip: "10.10.0.100"
+#       end_ip: "10.10.0.200"
+#       vlan: "untagged"  # Optional, defaults to untagged
+
+# Public traffic IP ranges (for VMs to access external networks)
+configure_zone_public_ip_ranges: []
+# Example:
+#   configure_zone_public_ip_ranges:
+#     - gateway: "192.168.1.1"
+#       netmask: "255.255.255.0"
+#       start_ip: "192.168.1.100"
+#       end_ip: "192.168.1.200"
+#       vlan: "untagged"  # Optional, can be VLAN ID like "100"
+#       for_system_vms: false  # Reserve IPs for system VMs only
+
+# Secondary storage configuration (NFS)
+configure_zone_secondary_storage: {}
+# Example:
+#   configure_zone_secondary_storage:
+#     name: "NFS Secondary Storage"
+#     url: "nfs://server.example.com/mnt/secondary"
+#     zone_name: "Zone1"
+#     provider: "NFS"  # NFS, S3, Swift, SMB
+
+# SystemVM templates to register
+# Required for system VMs and Kubernetes clusters
+# Uses direct download (downloads to primary storage on-demand)
+configure_zone_systemvm_templates: []
+# Example:
+#   - name: "systemvm-kvm-aarch64"
+#     display_text: "ARM64 SystemVM Template for KVM"
+#     url: "http://download.cloudstack.org/systemvm/4.22/systemvm-kvm-aarch64-4.22.0.0.qcow2"
+#     zone_name: "Zone1"
+#     hypervisor: "KVM"
+#     format: "QCOW2"
+#     os_type: "Debian GNU/Linux 12 (64-bit)"
+#     is_public: true
+#     is_featured: true
+#     requires_hvm: true
+#     direct_download: true
+#     arch: "aarch64"
+
+# SystemVM Template configuration (single template for the zone)
+# This is registered after secondary storage is configured
+# configure_zone_systemvm_template:
+#   name: "systemvm-kvm-4.20.1-aarch64"
+#   display_text: "SystemVM Template for KVM aarch64"
+#   url: "https://download.cloudstack.org/systemvm/4.20/systemvmtemplate-4.20.1-aarch64-kvm.qcow2.bz2"
+#   hypervisor: "KVM"
+#   format: "QCOW2"
+#   os_type: "Debian GNU/Linux 12 (64-bit)"
+#   is_public: true
+#   is_featured: true
+#   requires_hvm: true
+#   direct_download: false
+#   arch: "aarch64"
+
+# Router template name for KVM hypervisor (auto-set when systemvm_template is registered)
+configure_zone_router_template_kvm: ''

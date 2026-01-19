@@ -1,0 +1,141 @@
+---
+- name: Validate KVM Host Preparation
+  hosts: all
+  become: true
+  gather_facts: true
+  vars:
+    validation_results: []
+    validation_failed: false
+
+  tasks:
+    - name: 'CHECK 1: Time synchronization'
+      block:
+        - name: Get current time
+          ansible.builtin.command: date '+%Y-%m-%d %H:%M:%S'
+          register: host_time
+          changed_when: false
+
+        - name: Check chrony sync status
+          ansible.builtin.command: chronyc tracking
+          register: chrony_status
+          changed_when: false
+          failed_when: false
+
+        - name: Validate time is recent (year >= 2025)
+          ansible.builtin.set_fact:
+            time_valid: '{{ host_time.stdout[:4] | int >= 2025 }}'
+
+        - name: Record time check result
+          ansible.builtin.set_fact:
+            validation_results: "{{ validation_results + [{'check': 'Time Sync', 'status': 'PASS' if time_valid else 'FAIL', 'details': host_time.stdout}] }}"
+
+    - name: 'CHECK 2: libvirtd service'
+      block:
+        - name: Check libvirtd status
+          ansible.builtin.systemd:
+            name: libvirtd
+          register: libvirtd_status
+          failed_when: false
+
+        - name: Record libvirtd check result
+          ansible.builtin.set_fact:
+            validation_results:
+              "{{ validation_results + [{'check': 'libvirtd', 'status': 'PASS' if libvirtd_status.status.ActiveState == 'active' else 'FAIL', 'details':
+              libvirtd_status.status.ActiveState | default('unknown')}] }}"
+
+    - name: 'CHECK 3: Network bridge (cloudbr0)'
+      block:
+        - name: Check bridge exists
+          ansible.builtin.command: ip link show cloudbr0
+          register: bridge_check
+          changed_when: false
+          failed_when: false
+
+        - name: Get bridge IP
+          ansible.builtin.shell: ip addr show cloudbr0 | grep 'inet ' | awk '{print $2}'
+          register: bridge_ip
+          changed_when: false
+          failed_when: false
+
+        - name: Record bridge check result
+          ansible.builtin.set_fact:
+            validation_results:
+              "{{ validation_results + [{'check': 'Bridge cloudbr0', 'status': 'PASS' if bridge_check.rc == 0 else 'FAIL', 'details': bridge_ip.stdout
+              | default('no IP')}] }}"
+
+    - name: 'CHECK 4: Gateway connectivity'
+      block:
+        - name: Get default gateway
+          ansible.builtin.shell: ip route | grep default | awk '{print $3}'
+          register: gateway
+          changed_when: false
+          failed_when: false
+
+        - name: Ping gateway
+          ansible.builtin.command: 'ping -c 2 -W 2 {{ gateway.stdout }}'
+          register: gateway_ping
+          changed_when: false
+          failed_when: false
+          when: gateway.stdout | length > 0
+
+        - name: Record gateway check result
+          ansible.builtin.set_fact:
+            validation_results:
+              "{{ validation_results + [{'check': 'Gateway Ping', 'status': 'PASS' if gateway_ping.rc | default(1) == 0 else 'FAIL', 'details':
+              gateway.stdout | default('no gateway')}] }}"
+
+    - name: 'CHECK 5: CloudStack agent configuration'
+      block:
+        - name: Check agent.properties exists
+          ansible.builtin.stat:
+            path: /etc/cloudstack/agent/agent.properties
+          register: agent_props
+
+        - name: Record agent config check result
+          ansible.builtin.set_fact:
+            validation_results:
+              "{{ validation_results + [{'check': 'Agent Config', 'status': 'PASS' if agent_props.stat.exists else 'FAIL', 'details': '/etc/cloudstack/agent/agent.properties'}]
+              }}"
+
+    - name: 'CHECK 6: Required packages'
+      block:
+        - name: Check qemu-kvm installed
+          ansible.builtin.command: dpkg -l qemu-kvm
+          register: qemu_check
+          changed_when: false
+          failed_when: false
+
+        - name: Check cloudstack-agent installed
+          ansible.builtin.command: dpkg -l cloudstack-agent
+          register: agent_check
+          changed_when: false
+          failed_when: false
+
+        - name: Record packages check result
+          ansible.builtin.set_fact:
+            validation_results:
+              "{{ validation_results + [{'check': 'Packages', 'status': 'PASS' if qemu_check.rc == 0 and agent_check.rc == 0 else 'FAIL', 'details':
+              'qemu-kvm: ' + ('OK' if qemu_check.rc == 0 else 'MISSING') + ', cloudstack-agent: ' + ('OK' if agent_check.rc == 0 else 'MISSING')}] }}"
+
+    - name: Calculate validation summary
+      ansible.builtin.set_fact:
+        passed_checks: "{{ validation_results | selectattr('status', 'equalto', 'PASS') | list | length }}"
+        failed_checks: "{{ validation_results | selectattr('status', 'equalto', 'FAIL') | list | length }}"
+
+    - name: Display validation results
+      ansible.builtin.debug:
+        msg: |
+          ╔══════════════════════════════════════════════════════════════════╗
+          ║  STEP 1: HOST PREPARATION VALIDATION - {{ inventory_hostname }}
+          ╠══════════════════════════════════════════════════════════════════╣
+          {% for result in validation_results %}
+          ║ [{{ result.status }}] {{ result.check }}: {{ result.details }}
+          {% endfor %}
+          ╠══════════════════════════════════════════════════════════════════╣
+          ║ PASSED: {{ passed_checks }}/{{ validation_results | length }}  FAILED: {{ failed_checks }}/{{ validation_results | length }}
+          ╚══════════════════════════════════════════════════════════════════╝
+
+    - name: Fail if any checks failed
+      ansible.builtin.fail:
+        msg: 'Host preparation validation failed. Fix issues before proceeding to Step 2.'
+      when: failed_checks | int > 0

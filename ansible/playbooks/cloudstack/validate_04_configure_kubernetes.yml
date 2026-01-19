@@ -1,0 +1,249 @@
+---
+- name: Validate CloudStack Kubernetes Service Configuration
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    zone_name: 'Zone1'
+    validation_results: []
+  tasks:
+    - name: Login to CloudStack
+      ansible.builtin.uri:
+        url: '{{ cloudstack_api_url }}'
+        method: POST
+        body_format: form-urlencoded
+        body:
+          command: login
+          username: '{{ cloudstack_user }}'
+          password: '{{ cloudstack_password }}'
+          response: json
+        return_content: true
+      register: login_response
+      failed_when: false
+
+    - name: Extract session info
+      ansible.builtin.set_fact:
+        session_key: "{{ login_response.json.loginresponse.sessionkey | default('') }}"
+        cookies: "{{ login_response.cookies_string | default('') }}"
+      when: login_response.json is defined and login_response.json.loginresponse is defined
+
+    - name: Set empty session_key if login failed
+      ansible.builtin.set_fact:
+        session_key: ''
+        cookies: ''
+      when: session_key is not defined
+
+    - name: Fail if login unsuccessful
+      ansible.builtin.fail:
+        msg: 'Failed to login to CloudStack API at {{ cloudstack_api_url }}. Check credentials and connectivity.'
+      when: session_key | length == 0
+
+    - name: Get zone ID
+      ansible.builtin.uri:
+        url: '{{ cloudstack_api_url }}'
+        method: POST
+        body_format: form-urlencoded
+        body:
+          command: listZones
+          name: '{{ zone_name }}'
+          response: json
+          sessionkey: '{{ session_key }}'
+        headers:
+          Cookie: '{{ cookies }}'
+        return_content: true
+      register: zones_response
+
+    - name: Set zone ID
+      ansible.builtin.set_fact:
+        zone_id: '{{ zones_response.json.listzonesresponse.zone[0].id }}'
+      when: zones_response.json.listzonesresponse.zone | default([]) | length > 0
+
+    - name: 'CHECK 1: Kubernetes service enabled'
+      block:
+        - name: Query configurations
+          ansible.builtin.uri:
+            url: '{{ cloudstack_api_url }}'
+            method: POST
+            body_format: form-urlencoded
+            body:
+              command: listConfigurations
+              name: cloud.kubernetes.service.enabled
+              response: json
+              sessionkey: '{{ session_key }}'
+            headers:
+              Cookie: '{{ cookies }}'
+            return_content: true
+          register: config_response
+
+        - name: Check if K8s enabled
+          ansible.builtin.set_fact:
+            k8s_enabled: "{{ config_response.json.listconfigurationsresponse.configuration[0].value | default('false') | lower == 'true' }}"
+          when: config_response.json.listconfigurationsresponse.configuration | default([]) | length > 0
+
+        - name: Record K8s enabled check
+          ansible.builtin.set_fact:
+            validation_results:
+              "{{ validation_results + [{'check': 'K8s Service Enabled', 'status': 'PASS' if k8s_enabled | default(false) else 'FAIL', 'details':
+              'Enabled' if k8s_enabled | default(false) else 'Disabled'}] }}"
+
+    - name: 'CHECK 2: CKS compute offering'
+      block:
+        - name: Query service offerings
+          ansible.builtin.uri:
+            url: '{{ cloudstack_api_url }}'
+            method: POST
+            body_format: form-urlencoded
+            body:
+              command: listServiceOfferings
+              name: 'CKS Instance'
+              response: json
+              sessionkey: '{{ session_key }}'
+            headers:
+              Cookie: '{{ cookies }}'
+            return_content: true
+          register: offerings_response
+
+        - name: Parse offering info
+          ansible.builtin.set_fact:
+            cks_offering: '{{ offerings_response.json.listserviceofferingsresponse.serviceoffering | default([]) }}'
+
+        - name: Record offering check
+          ansible.builtin.set_fact:
+            validation_results:
+              "{{ validation_results + [{'check': 'CKS Compute Offering', 'status': 'PASS' if cks_offering | length > 0 else 'FAIL', 'details':
+              cks_offering[0].name + ' (' + (cks_offering[0].cpunumber | string) + ' CPU, ' + (cks_offering[0].memory | string) + ' MB)' if cks_offering | length
+              > 0 else 'Not found'}] }}"
+
+    - name: 'CHECK 3: Kubernetes versions registered'
+      block:
+        - name: Query K8s versions
+          ansible.builtin.uri:
+            url: '{{ cloudstack_api_url }}'
+            method: POST
+            body_format: form-urlencoded
+            body:
+              command: listKubernetesSupportedVersions
+              zoneid: '{{ zone_id }}'
+              response: json
+              sessionkey: '{{ session_key }}'
+            headers:
+              Cookie: '{{ cookies }}'
+            return_content: true
+          register: versions_response
+
+        - name: Parse versions info
+          ansible.builtin.set_fact:
+            k8s_versions: '{{ versions_response.json.listkubernetessupportedversionsresponse.kubernetessupportedversion | default([]) }}'
+            k8s_enabled_versions:
+              "{{ versions_response.json.listkubernetessupportedversionsresponse.kubernetessupportedversion | default([]) | selectattr('state',
+              'equalto', 'Enabled') | list }}"
+
+        - name: Record versions check
+          ansible.builtin.set_fact:
+            validation_results:
+              "{{ validation_results + [{'check': 'K8s Versions', 'status': 'PASS' if k8s_enabled_versions | length > 0 else 'FAIL', 'details':
+              (k8s_enabled_versions | length | string) + ' version(s) enabled: ' + (k8s_enabled_versions | map(attribute='semanticversion') | list | join(', '))}]
+              }}"
+
+    - name: 'CHECK 4: Kubernetes ISO download'
+      block:
+        - name: Check ISO ready status
+          ansible.builtin.set_fact:
+            k8s_iso_ready:
+              "{{ k8s_versions | selectattr('isostate', 'defined') | selectattr('isostate', 'equalto', 'Ready') | list | length > 0 if k8s_versions |
+              length > 0 else false }}"
+
+        - name: Record ISO check
+          ansible.builtin.set_fact:
+            validation_results:
+              "{{ validation_results + [{'check': 'K8s ISO Ready', 'status': 'PASS' if k8s_iso_ready else 'WARN', 'details': 'Ready' if k8s_iso_ready
+              else 'Downloading (may take several minutes)'}] }}"
+
+    - name: 'CHECK 5: Virtual Router running'
+      block:
+        - name: Query routers
+          ansible.builtin.uri:
+            url: '{{ cloudstack_api_url }}'
+            method: POST
+            body_format: form-urlencoded
+            body:
+              command: listRouters
+              zoneid: '{{ zone_id }}'
+              response: json
+              sessionkey: '{{ session_key }}'
+            headers:
+              Cookie: '{{ cookies }}'
+            return_content: true
+          register: routers_response
+
+        - name: Check router status
+          ansible.builtin.set_fact:
+            router_running: "{{ routers_response.json.listroutersresponse.router | default([]) | selectattr('state', 'equalto', 'Running') | list | length > 0 }}"
+
+        - name: Record router check
+          ansible.builtin.set_fact:
+            validation_results:
+              "{{ validation_results + [{'check': 'Virtual Router', 'status': 'PASS' if router_running else 'WARN', 'details': 'Running' if router_running
+              else 'Not running (will start with first K8s cluster)'}] }}"
+
+    - name: 'CHECK 6: Network available for K8s'
+      block:
+        - name: Query networks
+          ansible.builtin.uri:
+            url: '{{ cloudstack_api_url }}'
+            method: POST
+            body_format: form-urlencoded
+            body:
+              command: listNetworks
+              zoneid: '{{ zone_id }}'
+              canusefordeploy: 'true'
+              response: json
+              sessionkey: '{{ session_key }}'
+            headers:
+              Cookie: '{{ cookies }}'
+            return_content: true
+          register: networks_response
+
+        - name: Parse network info
+          ansible.builtin.set_fact:
+            available_networks: '{{ networks_response.json.listnetworksresponse.network | default([]) }}'
+
+        - name: Record network check
+          ansible.builtin.set_fact:
+            validation_results:
+              "{{ validation_results + [{'check': 'Networks for K8s', 'status': 'PASS' if available_networks | length > 0 else 'FAIL', 'details':
+              (available_networks | length | string) + ' network(s) available'}] }}"
+
+    - name: Calculate validation summary
+      ansible.builtin.set_fact:
+        passed_checks: "{{ validation_results | selectattr('status', 'equalto', 'PASS') | list | length }}"
+        failed_checks: "{{ validation_results | selectattr('status', 'equalto', 'FAIL') | list | length }}"
+        warn_checks: "{{ validation_results | selectattr('status', 'equalto', 'WARN') | list | length }}"
+
+    - name: Display validation results
+      ansible.builtin.debug:
+        msg: |
+          ╔══════════════════════════════════════════════════════════════════╗
+          ║  STEP 4: KUBERNETES SERVICE VALIDATION
+          ╠══════════════════════════════════════════════════════════════════╣
+          {% for result in validation_results %}
+          ║ [{{ result.status }}] {{ result.check }}: {{ result.details }}
+          {% endfor %}
+          ╠══════════════════════════════════════════════════════════════════╣
+          ║ PASSED: {{ passed_checks }}  WARNINGS: {{ warn_checks }}  FAILED: {{ failed_checks }}
+          ║
+          ║ {% if failed_checks | int == 0 %}✅ Ready to create Kubernetes clusters!{% else %}❌ Fix failures before creating K8s clusters{% endif %}
+          ╚══════════════════════════════════════════════════════════════════╝
+
+    - name: Get failed check details
+      ansible.builtin.set_fact:
+        failed_check_list: "{{ validation_results | selectattr('status', 'equalto', 'FAIL') | list }}"
+
+    - name: Fail if critical checks failed
+      ansible.builtin.fail:
+        msg: |
+          Kubernetes service validation failed!
+          {% for check in failed_check_list %}
+          - {{ check.check }}: {{ check.details }}
+          {% endfor %}
+      when: failed_checks | int > 0

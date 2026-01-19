@@ -63,14 +63,14 @@ failed_files=()
 while IFS= read -r -d '' archive; do
     ((total++)) || true
     echo -e "${YELLOW}[$total] Extracting: $archive${NC}"
-    
+
     # Get the base name without extension for subfolder
     basename=$(basename "$archive" .7z)
-    
+
     # Create a subfolder for each archive to avoid conflicts
     extract_path="$OUTPUT_DIR/$basename"
     mkdir -p "$extract_path"
-    
+
     # Extract the archive - continue on failure
     if 7z x -y -o"$extract_path" "$archive" 2>&1; then
         echo -e "${GREEN}✓ Successfully extracted: $basename${NC}"
@@ -102,4 +102,3 @@ echo "Output directory: $OUTPUT_DIR"
 if [ $total -eq 0 ]; then
     echo -e "${YELLOW}No .7z files found in $SEARCH_DIR${NC}"
 fi
-

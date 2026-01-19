@@ -1,0 +1,66 @@
+# Configure local storage for CloudStack using existing filesystem paths
+# Does NOT wipe disks or create partitions - uses existing mounted paths
+---
+- name: Check existing UUIDs in agent.properties
+  ansible.builtin.shell: |
+    grep '^local\.storage\.uuid=' /etc/cloudstack/agent/agent.properties 2>/dev/null | cut -d'=' -f2
+  register: prepare_hosts_existing_uuids
+  changed_when: false
+  failed_when: false
+
+- name: Parse existing UUIDs
+  ansible.builtin.set_fact:
+    prepare_hosts_existing_uuid_list: "{{ (prepare_hosts_existing_uuids.stdout | trim).split(',') | select() | list if (prepare_hosts_existing_uuids.stdout | trim | length > 0) else [] }}"
+
+- name: Ensure local storage directory exists
+  ansible.builtin.file:
+    path: '{{ prepare_hosts_local_storage_path }}'
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Get mount point for storage path
+  ansible.builtin.shell: |
+    df --output=target {{ prepare_hosts_local_storage_path }} | tail -1
+  register: prepare_hosts_storage_mount
+  changed_when: false
+
+- name: Generate UUID for local storage if not exists
+  ansible.builtin.shell: |
+    uuidgen
+  register: prepare_hosts_new_uuid
+  when: prepare_hosts_existing_uuid_list | length == 0
+  changed_when: false
+
+- name: Set local storage UUID
+  ansible.builtin.set_fact:
+    prepare_hosts_local_uuid: '{{ prepare_hosts_existing_uuid_list[0] if prepare_hosts_existing_uuid_list | length > 0 else prepare_hosts_new_uuid.stdout | trim }}'
+
+- name: Ensure CloudStack agent directory exists
+  ansible.builtin.file:
+    path: /etc/cloudstack/agent
+    state: directory
+    mode: '0755'
+
+- name: Configure local storage path in agent.properties
+  ansible.builtin.lineinfile:
+    path: /etc/cloudstack/agent/agent.properties
+    regexp: '^local\.storage\.path='
+    line: 'local.storage.path={{ prepare_hosts_local_storage_path }}'
+    create: true
+    mode: '0644'
+
+- name: Configure local storage UUID in agent.properties
+  ansible.builtin.lineinfile:
+    path: /etc/cloudstack/agent/agent.properties
+    regexp: '^local\.storage\.uuid='
+    line: 'local.storage.uuid={{ prepare_hosts_local_uuid }}'
+    create: true
+    mode: '0644'
+
+- name: Verify local storage configuration
+  ansible.builtin.shell: |
+    grep -E '^local\.storage\.' /etc/cloudstack/agent/agent.properties 2>/dev/null || echo "No local storage config found"
+  register: prepare_hosts_storage_config
+  changed_when: false

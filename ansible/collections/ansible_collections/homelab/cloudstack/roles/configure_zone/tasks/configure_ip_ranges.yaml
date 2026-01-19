@@ -1,0 +1,69 @@
+# Configure Storage and Public IP Ranges
+---
+# Storage traffic IP ranges
+- name: Get pod info for storage IP ranges
+  ansible.builtin.uri:
+    url: '{{ cloudstack_api_url }}'
+    method: POST
+    body_format: form-urlencoded
+    body:
+      command: listPods
+      zoneid: '{{ configure_zone_zone_id | default(omit) }}'
+      response: json
+      sessionkey: '{{ cloudstack_session_key }}'
+    headers:
+      Cookie: '{{ cloudstack_cookies }}'
+  register: configure_zone_pods_info
+  when: configure_zone_storage_ip_ranges | length > 0
+
+- name: Build pod ID map
+  ansible.builtin.set_fact:
+    configure_zone_pod_id_map: >-
+      {{ dict(configure_zone_pods_info.json.listpodsresponse.pod | default([])
+         | map(attribute='name')
+         | zip(configure_zone_pods_info.json.listpodsresponse.pod | default([])
+         | map(attribute='id'))) }}
+  when: configure_zone_storage_ip_ranges | length > 0
+
+- name: Add storage traffic IP ranges
+  ansible.builtin.uri:
+    url: '{{ cloudstack_api_url }}'
+    method: POST
+    body_format: form-urlencoded
+    body:
+      command: createStorageNetworkIpRange
+      podid: '{{ configure_zone_pod_id_map[item.pod_name] }}'
+      gateway: '{{ item.gateway }}'
+      netmask: '{{ item.netmask }}'
+      startip: '{{ item.start_ip }}'
+      endip: '{{ item.end_ip }}'
+      vlan: '{{ item.vlan | default(omit) }}'
+      response: json
+      sessionkey: '{{ cloudstack_session_key }}'
+    headers:
+      Cookie: '{{ cloudstack_cookies }}'
+  loop: '{{ configure_zone_storage_ip_ranges }}'
+  loop_control:
+    label: '{{ item.pod_name }}: {{ item.start_ip }}-{{ item.end_ip }}'
+  failed_when: false
+  when: configure_zone_storage_ip_ranges | length > 0
+
+# Public traffic IP ranges
+- name: Add public traffic IP ranges
+  ngine_io.cloudstack.vlan_ip_range:
+    api_url: '{{ cloudstack_api_url }}'
+    api_key: '{{ cloudstack_api_key }}'
+    api_secret: '{{ cloudstack_api_secret }}'
+    zone: '{{ configure_zone_zone.name }}'
+    start_ip: '{{ item.start_ip }}'
+    end_ip: '{{ item.end_ip }}'
+    gateway: '{{ item.gateway }}'
+    netmask: '{{ item.netmask }}'
+    vlan: "{{ item.vlan | default('untagged') }}"
+    for_virtual_network: '{{ item.for_virtual_network | default(true) }}'
+    state: present
+  loop: '{{ configure_zone_public_ip_ranges }}'
+  loop_control:
+    label: '{{ item.start_ip }}-{{ item.end_ip }}'
+  ignore_errors: true
+  when: configure_zone_public_ip_ranges | length > 0

@@ -1,0 +1,29 @@
+# Configure libtcmalloc for libvirtd performance optimization
+---
+- name: Determine libtcmalloc package name based on Ubuntu version
+  ansible.builtin.set_fact:
+    prepare_hosts_libtcmalloc_package_resolved: >-
+      {{ prepare_hosts_libtcmalloc_package if prepare_hosts_libtcmalloc_package | length > 0 else
+         ('libtcmalloc-minimal4t64' if ansible_facts['distribution_version'] == '24.04' else 'libtcmalloc-minimal4') }}
+
+- name: Install libtcmalloc package
+  ansible.builtin.apt:
+    name: '{{ prepare_hosts_libtcmalloc_package_resolved }}'
+    state: present
+    update_cache: true
+
+- name: Find the installed libtcmalloc_minimal.so file
+  ansible.builtin.shell: |
+    dpkg-query -L {{ prepare_hosts_libtcmalloc_package_resolved }} | grep libtcmalloc_minimal.so | head -1
+  register: prepare_hosts_tcmalloc_lib
+  changed_when: false
+
+- name: Ensure LD_PRELOAD configuration in /etc/default/libvirtd
+  ansible.builtin.lineinfile:
+    path: /etc/default/libvirtd
+    line: 'LD_PRELOAD="{{ prepare_hosts_tcmalloc_lib.stdout }}"'
+    regexp: '^LD_PRELOAD='
+    state: present
+    create: true
+    mode: '0644'
+  notify: Restart libvirtd

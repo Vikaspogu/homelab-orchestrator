@@ -2,22 +2,22 @@
 ---
 - name: Check if cluster exists
   ansible.builtin.uri:
-    url: "{{ cloudstack_api_url }}"
+    url: '{{ cloudstack_api_url }}'
     method: POST
     body_format: form-urlencoded
     body:
       command: listKubernetesClusters
-      name: "{{ cluster.name }}"
+      name: '{{ cluster.name }}'
       response: json
-      sessionkey: "{{ cloudstack_session_key }}"
+      sessionkey: '{{ cloudstack_session_key }}'
     headers:
-      Cookie: "{{ cloudstack_cookies }}"
-    timeout: "{{ kubernetes_cluster_api_timeout }}"
+      Cookie: '{{ cloudstack_cookies }}'
+    timeout: '{{ kubernetes_cluster_api_timeout }}'
   register: kubernetes_cluster_upgrade_check
 
 - name: Set cluster info
   ansible.builtin.set_fact:
-    kubernetes_cluster_current: "{{ kubernetes_cluster_upgrade_check.json.listkubernetesclustersresponse.kubernetescluster[0] | default({}) }}"
+    kubernetes_cluster_current: '{{ kubernetes_cluster_upgrade_check.json.listkubernetesclustersresponse.kubernetescluster[0] | default({}) }}'
   when: kubernetes_cluster_upgrade_check.json.listkubernetesclustersresponse.kubernetescluster | default([]) | length > 0
 
 - name: Upgrade cluster
@@ -26,54 +26,54 @@
     - name: Set version info
       ansible.builtin.set_fact:
         kubernetes_cluster_current_version: "{{ kubernetes_cluster_current.kubernetesversionname | default('unknown') }}"
-        kubernetes_cluster_target_version: "{{ cluster.upgrade_to_version }}"
+        kubernetes_cluster_target_version: '{{ cluster.upgrade_to_version }}'
 
     - name: Validate cluster state
       ansible.builtin.assert:
         that:
           - kubernetes_cluster_current.state == 'Running'
-        fail_msg: "Cluster not in Running state"
+        fail_msg: 'Cluster not in Running state'
 
     - name: Validate target version
       ansible.builtin.assert:
         that:
           - kubernetes_cluster_k8s_version_ids[kubernetes_cluster_target_version] is defined
-        fail_msg: "Target version not found"
+        fail_msg: 'Target version not found'
 
     - name: Perform upgrade
       ansible.builtin.uri:
-        url: "{{ cloudstack_api_url }}"
+        url: '{{ cloudstack_api_url }}'
         method: POST
         body_format: form-urlencoded
         body:
           command: upgradeKubernetesCluster
-          id: "{{ kubernetes_cluster_current.id }}"
-          kubernetesversionid: "{{ kubernetes_cluster_k8s_version_ids[kubernetes_cluster_target_version] }}"
+          id: '{{ kubernetes_cluster_current.id }}'
+          kubernetesversionid: '{{ kubernetes_cluster_k8s_version_ids[kubernetes_cluster_target_version] }}'
           response: json
-          sessionkey: "{{ cloudstack_session_key }}"
+          sessionkey: '{{ cloudstack_session_key }}'
         headers:
-          Cookie: "{{ cloudstack_cookies }}"
-        timeout: "{{ kubernetes_cluster_api_timeout }}"
+          Cookie: '{{ cloudstack_cookies }}'
+        timeout: '{{ kubernetes_cluster_api_timeout }}'
       register: kubernetes_cluster_upgrade_result
       when: kubernetes_cluster_current_version != kubernetes_cluster_target_version
 
     - name: Wait for upgrade
       ansible.builtin.uri:
-        url: "{{ cloudstack_api_url }}"
+        url: '{{ cloudstack_api_url }}'
         method: POST
         body_format: form-urlencoded
         body:
           command: listKubernetesClusters
-          id: "{{ kubernetes_cluster_current.id }}"
+          id: '{{ kubernetes_cluster_current.id }}'
           response: json
-          sessionkey: "{{ cloudstack_session_key }}"
+          sessionkey: '{{ cloudstack_session_key }}'
         headers:
-          Cookie: "{{ cloudstack_cookies }}"
-        timeout: "{{ kubernetes_cluster_api_timeout }}"
+          Cookie: '{{ cloudstack_cookies }}'
+        timeout: '{{ kubernetes_cluster_api_timeout }}'
       register: kubernetes_cluster_upgrade_status
       until: >
         (kubernetes_cluster_upgrade_status.json.listkubernetesclustersresponse.kubernetescluster[0].state | default('Unknown')) in ['Running', 'Error', 'Failed']
-      retries: "{{ (kubernetes_cluster_upgrade_timeout / 60) | int }}"
+      retries: '{{ (kubernetes_cluster_upgrade_timeout / 60) | int }}'
       delay: 60
       when:
         - kubernetes_cluster_upgrade_result is changed
@@ -83,7 +83,7 @@
       ansible.builtin.assert:
         that:
           - kubernetes_cluster_upgrade_status.json.listkubernetesclustersresponse.kubernetescluster[0].state == 'Running'
-        fail_msg: "Upgrade failed"
+        fail_msg: 'Upgrade failed'
       when:
         - kubernetes_cluster_upgrade_status is defined
         - kubernetes_cluster_wait_for_upgrade | default(true)

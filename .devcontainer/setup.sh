@@ -71,4 +71,3 @@ echo "Then run playbooks:"
 echo "  ansible-playbook playbooks/mgmt-host.yaml"
 echo "  ansible-playbook playbooks/kvm-hosts.yaml"
 echo "  ansible-playbook playbooks/cloudstack-setup.yaml"
-
