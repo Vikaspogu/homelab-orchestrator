@@ -7,6 +7,7 @@ locals {
     "papra",
     "airflow",
     "romm",
+    "tripnibble",
   ]
 }
 
@@ -107,6 +108,55 @@ resource "authentik_application" "application" {
   name               = title(each.key)
   slug               = each.key
   protocol_provider  = authentik_provider_oauth2.oauth2[each.key].id
+  group              = each.value.group
+  open_in_new_tab    = true
+  meta_icon          = each.value.icon_url
+  meta_launch_url    = each.value.launch_url
+  policy_engine_mode = "all"
+}
+
+# Public OAuth2 apps (PKCE required, no client_secret)
+locals {
+  public_oauth_apps = {
+    tripnibble = {
+      client_id = module.onepassword_application["tripnibble"].fields["CLIENT_ID"]
+      group     = authentik_group.admins.id
+      icon_url  = "https://cdn.jsdelivr.net/gh/selfhst/icons@main/svg/typebot.svg"
+      redirect_uris = [
+        "https://tripnibble.${var.cluster_domain}/auth/oauth/authentik/callback"
+      ]
+      launch_url = "https://tripnibble.${var.cluster_domain}"
+    }
+  }
+}
+
+resource "authentik_provider_oauth2" "oauth2_public" {
+  for_each            = local.public_oauth_apps
+  name                = each.key
+  client_id           = each.value.client_id
+  client_type         = "public"
+  authorization_flow  = authentik_flow.provider-authorization-implicit-consent.uuid
+  authentication_flow = data.authentik_flow.default-authentication-flow.id
+  invalidation_flow   = data.authentik_flow.default-provider-invalidation-flow.id
+  property_mappings = concat(
+    data.authentik_property_mapping_provider_scope.oauth2.ids,
+    [authentik_property_mapping_provider_scope.email_verified.id]
+  )
+  access_token_validity = "hours=4"
+  signing_key           = data.authentik_certificate_key_pair.generated.id
+  allowed_redirect_uris = [
+    for uri in each.value.redirect_uris : {
+      matching_mode = "strict"
+      url           = uri
+    }
+  ]
+}
+
+resource "authentik_application" "application_public" {
+  for_each           = local.public_oauth_apps
+  name               = title(each.key)
+  slug               = each.key
+  protocol_provider  = authentik_provider_oauth2.oauth2_public[each.key].id
   group              = each.value.group
   open_in_new_tab    = true
   meta_icon          = each.value.icon_url
