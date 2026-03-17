@@ -5,9 +5,7 @@ locals {
     "bytestash",
     "reactive-resume",
     "papra",
-    "airflow",
-    "romm",
-    "tripnibble",
+    "paperless",
   ]
 }
 
@@ -62,21 +60,13 @@ locals {
       redirect_uris = ["https://papra.${var.cluster_domain}/api/auth/oauth2/callback/authentik"]
       launch_url    = "https://papra.${var.cluster_domain}"
     },
-    airflow = {
-      client_id     = module.onepassword_application["airflow"].fields["CLIENT_ID"]
-      client_secret = module.onepassword_application["airflow"].fields["CLIENT_SECRET"]
+    paperless = {
+      client_id     = module.onepassword_application["paperless"].fields["CLIENT_ID"]
+      client_secret = module.onepassword_application["paperless"].fields["CLIENT_SECRET"]
       group         = authentik_group.admins.id
-      icon_url      = "https://avatars.githubusercontent.com/u/47359?s=48&v=4"
-      redirect_uris = ["https://airflow.omv.${var.cluster_domain}/auth/oauth-authorized/authentik"]
-      launch_url    = "https://airflow.omv.${var.cluster_domain}"
-    },
-    romm = {
-      client_id     = module.onepassword_application["romm"].fields["CLIENT_ID"]
-      client_secret = module.onepassword_application["romm"].fields["CLIENT_SECRET"]
-      group         = authentik_group.admins.id
-      icon_url      = "https://avatars.githubusercontent.com/u/47359?s=48&v=4"
-      redirect_uris = ["https://romm.${var.cluster_domain}/api/oauth/openid"]
-      launch_url    = "https://romm.${var.cluster_domain}"
+      icon_url      = "https://cdn.jsdelivr.net/gh/selfhst/icons/png/paperless-ngx.png"
+      redirect_uris = ["https://paperless.${var.cluster_domain}/accounts/oidc/authentik/login/callback/"]
+      launch_url    = "https://paperless.${var.cluster_domain}"
     },
   }
 }
@@ -118,15 +108,6 @@ resource "authentik_application" "application" {
 # Public OAuth2 apps (PKCE required, no client_secret)
 locals {
   public_oauth_apps = {
-    tripnibble = {
-      client_id = module.onepassword_application["tripnibble"].fields["CLIENT_ID"]
-      group     = authentik_group.admins.id
-      icon_url  = "https://cdn.jsdelivr.net/gh/selfhst/icons@main/svg/typebot.svg"
-      redirect_uris = [
-        "https://tripnibble.${var.cluster_domain}/auth/oauth/authentik/callback"
-      ]
-      launch_url = "https://tripnibble.${var.cluster_domain}"
-    }
   }
 }
 
