@@ -2,10 +2,9 @@ locals {
   oauth_apps = [
     "grafana",
     "pgadmin",
-    "bytestash",
     "reactive-resume",
-    "papra",
     "paperless",
+    "trek",
   ]
 }
 
@@ -36,14 +35,6 @@ locals {
       redirect_uris = ["https://pgadmin.${var.cluster_domain}/oauth2/authorize"]
       launch_url    = "https://pgadmin.${var.cluster_domain}/oauth2/authorize"
     },
-    bytestash = {
-      client_id     = module.onepassword_application["bytestash"].fields["CLIENT_ID"]
-      client_secret = module.onepassword_application["bytestash"].fields["CLIENT_SECRET"]
-      group         = authentik_group.admins.id
-      icon_url      = "https://raw.githubusercontent.com/jordan-dalby/ByteStash/refs/heads/main/client/public/logo192.png"
-      redirect_uris = ["https://bytestash.omv.${var.cluster_domain}/api/auth/oidc/callback"]
-      launch_url    = "https://bytestash.omv.${var.cluster_domain}"
-    },
     reactive-resume = {
       client_id     = module.onepassword_application["reactive-resume"].fields["CLIENT_ID"]
       client_secret = module.onepassword_application["reactive-resume"].fields["CLIENT_SECRET"]
@@ -52,14 +43,6 @@ locals {
       redirect_uris = ["https://reactive-resume.${var.cluster_domain}/api/auth/openid/callback"]
       launch_url    = "https://reactive-resume.${var.cluster_domain}"
     },
-    papra = {
-      client_id     = module.onepassword_application["papra"].fields["CLIENT_ID"]
-      client_secret = module.onepassword_application["papra"].fields["CLIENT_SECRET"]
-      group         = authentik_group.admins.id
-      icon_url      = "https://cdn.jsdelivr.net/gh/selfhst/icons/png/papra.png"
-      redirect_uris = ["https://papra.${var.cluster_domain}/api/auth/oauth2/callback/authentik"]
-      launch_url    = "https://papra.${var.cluster_domain}"
-    },
     paperless = {
       client_id     = module.onepassword_application["paperless"].fields["CLIENT_ID"]
       client_secret = module.onepassword_application["paperless"].fields["CLIENT_SECRET"]
@@ -67,6 +50,14 @@ locals {
       icon_url      = "https://cdn.jsdelivr.net/gh/selfhst/icons/png/paperless-ngx.png"
       redirect_uris = ["https://paperless.${var.cluster_domain}/accounts/oidc/authentik/login/callback/"]
       launch_url    = "https://paperless.${var.cluster_domain}"
+    },
+    trek = {
+      client_id     = module.onepassword_application["trek"].fields["CLIENT_ID"]
+      client_secret = module.onepassword_application["trek"].fields["CLIENT_SECRET"]
+      group         = authentik_group.admins.id
+      icon_url      = "https://cdn.jsdelivr.net/gh/selfhst/icons/png/trek.png"
+      redirect_uris = ["https://trek.${var.cluster_domain}/api/auth/oidc/callback"]
+      launch_url    = "https://trek.${var.cluster_domain}"
     },
   }
 }
