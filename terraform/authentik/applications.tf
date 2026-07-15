@@ -76,6 +76,8 @@ resource "authentik_provider_oauth2" "oauth2" {
   )
   access_token_validity = "hours=4"
   signing_key           = data.authentik_certificate_key_pair.generated.id
+  # Authentik 2026.5 defaults new providers to no allowed grants; set explicitly
+  grant_types = ["authorization_code", "refresh_token"]
   allowed_redirect_uris = [
     for uri in each.value.redirect_uris : {
       matching_mode = "strict"
@@ -116,6 +118,8 @@ resource "authentik_provider_oauth2" "oauth2_public" {
   )
   access_token_validity = "hours=4"
   signing_key           = data.authentik_certificate_key_pair.generated.id
+  # Authentik 2026.5 defaults new providers to no allowed grants; set explicitly
+  grant_types = ["authorization_code", "refresh_token"]
   allowed_redirect_uris = [
     for uri in each.value.redirect_uris : {
       matching_mode = "strict"
