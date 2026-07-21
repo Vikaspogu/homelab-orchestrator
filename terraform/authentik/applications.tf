@@ -5,6 +5,7 @@ locals {
     "reactive-resume",
     "paperless",
     "trek",
+    "forge",
   ]
 }
 
@@ -58,6 +59,14 @@ locals {
       icon_url      = "https://cdn.jsdelivr.net/gh/selfhst/icons/png/trek.png"
       redirect_uris = ["https://trek.${var.cluster_domain}/api/auth/oidc/callback"]
       launch_url    = "https://trek.${var.cluster_domain}"
+    },
+    forge = {
+      client_id     = "forge"
+      client_secret = module.onepassword_application["forge"].fields["FORGE_OIDC_CLIENT_SECRET"]
+      group         = authentik_group.admins.id
+      icon_url      = "https://cdn.jsdelivr.net/gh/selfhst/icons/png/forge.png"
+      redirect_uris = ["https://forge.${var.cluster_domain}/auth/callback"]
+      launch_url    = "https://forge.${var.cluster_domain}"
     },
   }
 }
