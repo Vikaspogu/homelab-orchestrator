@@ -61,8 +61,8 @@ locals {
       launch_url    = "https://trek.${var.cluster_domain}"
     },
     forge = {
-      client_id     = "forge"
-      client_secret = module.onepassword_application["forge"].fields["FORGE_OIDC_CLIENT_SECRET"]
+      client_id     = module.onepassword_application["forge"].fields["CLIENT_ID"]
+      client_secret = module.onepassword_application["forge"].fields["CLIENT_SECRET"]
       group         = authentik_group.admins.id
       icon_url      = "https://cdn.jsdelivr.net/gh/selfhst/icons/png/forge.png"
       redirect_uris = ["https://forge.${var.cluster_domain}/auth/callback"]
