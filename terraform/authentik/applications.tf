@@ -65,7 +65,7 @@ locals {
       client_secret = module.onepassword_application["forge"].fields["CLIENT_SECRET"]
       group         = authentik_group.admins.id
       icon_url      = "https://cdn.jsdelivr.net/gh/selfhst/icons/png/forge.png"
-      redirect_uris = ["https://forge.${var.cluster_domain}/auth/callback"]
+      redirect_uris = ["https://forge.${var.cluster_domain}/api/forge/auth/callback"]
       launch_url    = "https://forge.${var.cluster_domain}"
     },
   }
