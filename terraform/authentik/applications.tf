@@ -89,8 +89,9 @@ resource "authentik_provider_oauth2" "oauth2" {
   grant_types = ["authorization_code", "refresh_token"]
   allowed_redirect_uris = [
     for uri in each.value.redirect_uris : {
-      matching_mode = "strict"
-      url           = uri
+      matching_mode     = "strict"
+      redirect_uri_type = "authorization"
+      url               = uri
     }
   ]
 }
@@ -110,6 +111,25 @@ resource "authentik_application" "application" {
 # Public OAuth2 apps (PKCE required, no client_secret)
 locals {
   public_oauth_apps = {
+    agent-farm = {
+      access_token_validity = "minutes=15"
+      client_id             = "agent-farm"
+      group                 = authentik_group.admins.id
+      icon_url              = "https://cdn.jsdelivr.net/gh/selfhst/icons/png/kubernetes.png"
+      launch_url            = "https://agent-farm.${var.cluster_domain}"
+      redirect_uris = [
+        {
+          matching_mode     = "strict"
+          redirect_uri_type = "authorization"
+          url               = "https://agent-farm.${var.cluster_domain}/v1/auth/callback"
+        },
+        {
+          matching_mode     = "regex"
+          redirect_uri_type = "authorization"
+          url               = "^http://127\\.0\\.0\\.1:[0-9]+/callback$"
+        },
+      ]
+    }
   }
 }
 
@@ -125,16 +145,11 @@ resource "authentik_provider_oauth2" "oauth2_public" {
     data.authentik_property_mapping_provider_scope.oauth2.ids,
     [authentik_property_mapping_provider_scope.email_verified.id]
   )
-  access_token_validity = "hours=4"
+  access_token_validity = each.value.access_token_validity
   signing_key           = data.authentik_certificate_key_pair.generated.id
   # Authentik 2026.5 defaults new providers to no allowed grants; set explicitly
-  grant_types = ["authorization_code", "refresh_token"]
-  allowed_redirect_uris = [
-    for uri in each.value.redirect_uris : {
-      matching_mode = "strict"
-      url           = uri
-    }
-  ]
+  grant_types           = ["authorization_code", "refresh_token"]
+  allowed_redirect_uris = each.value.redirect_uris
 }
 
 resource "authentik_application" "application_public" {
