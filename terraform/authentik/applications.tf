@@ -163,3 +163,39 @@ resource "authentik_application" "application_public" {
   meta_launch_url    = each.value.launch_url
   policy_engine_mode = "all"
 }
+
+resource "authentik_service_connection_kubernetes" "agent_farm" {
+  name  = "Agent Farm Kubernetes"
+  local = true
+}
+
+resource "authentik_provider_proxy" "agent_farm_portal" {
+  name                = "agent-farm-portal"
+  authorization_flow  = authentik_flow.provider-authorization-implicit-consent.uuid
+  authentication_flow = data.authentik_flow.default-authentication-flow.id
+  invalidation_flow   = data.authentik_flow.default-provider-invalidation-flow.id
+  external_host       = "https://portal.agent-farm.${var.cluster_domain}"
+  internal_host       = "http://agent-farm-web.agent-farm.svc.cluster.local:3000"
+}
+
+resource "authentik_application" "agent_farm_portal" {
+  name               = "Agent Farm Portal"
+  slug               = "agent-farm-portal"
+  protocol_provider  = authentik_provider_proxy.agent_farm_portal.id
+  group              = authentik_group.admins.id
+  open_in_new_tab    = true
+  meta_icon          = "https://cdn.jsdelivr.net/gh/selfhst/icons/png/kubernetes.png"
+  meta_launch_url    = "https://portal.agent-farm.${var.cluster_domain}"
+  policy_engine_mode = "all"
+}
+
+resource "authentik_outpost" "agent_farm" {
+  name               = "Agent Farm"
+  service_connection = authentik_service_connection_kubernetes.agent_farm.id
+  protocol_providers = [authentik_provider_proxy.agent_farm_portal.id]
+  config = jsonencode({
+    kubernetes_namespace    = "agent-farm"
+    kubernetes_replicas     = 2
+    kubernetes_service_type = "ClusterIP"
+  })
+}
