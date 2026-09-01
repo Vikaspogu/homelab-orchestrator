@@ -194,6 +194,7 @@ resource "authentik_outpost" "agent_farm" {
   service_connection = authentik_service_connection_kubernetes.agent_farm.id
   protocol_providers = [authentik_provider_proxy.agent_farm_portal.id]
   config = jsonencode({
+    authentik_host          = "https://id.${var.cluster_domain}"
     kubernetes_namespace    = "agent-farm"
     kubernetes_replicas     = 2
     kubernetes_service_type = "ClusterIP"
