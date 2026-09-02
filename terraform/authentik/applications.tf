@@ -174,7 +174,7 @@ resource "authentik_provider_proxy" "agent_farm_portal" {
   authorization_flow  = authentik_flow.provider-authorization-implicit-consent.uuid
   authentication_flow = data.authentik_flow.default-authentication-flow.id
   invalidation_flow   = data.authentik_flow.default-provider-invalidation-flow.id
-  external_host       = "https://portal.agent-farm.${var.cluster_domain}"
+  external_host       = "https://portal.${var.cluster_domain}"
   internal_host       = "http://agent-farm-web.agent-farm.svc.cluster.local:3000"
 }
 
@@ -185,7 +185,7 @@ resource "authentik_application" "agent_farm_portal" {
   group              = authentik_group.admins.id
   open_in_new_tab    = true
   meta_icon          = "https://cdn.jsdelivr.net/gh/selfhst/icons/png/kubernetes.png"
-  meta_launch_url    = "https://portal.agent-farm.${var.cluster_domain}"
+  meta_launch_url    = "https://portal.${var.cluster_domain}"
   policy_engine_mode = "all"
 }
 
