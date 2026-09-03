@@ -230,3 +230,53 @@ resource "authentik_outpost" "agent_farm" {
     kubernetes_service_type = "ClusterIP"
   })
 }
+
+# Agent Farm CLI: device-code login (approve on any browser-equipped device,
+# MFA included) issuing short-lived user tokens for SSH-over-WebSocket.
+resource "authentik_flow" "agent_farm_device_code" {
+  name           = "Agent Farm device code"
+  title          = "Agent Farm device code"
+  slug           = "agent-farm-device-code"
+  designation    = "stage_configuration"
+  authentication = "require_authenticated"
+}
+
+resource "authentik_provider_oauth2" "agent_farm_cli" {
+  name                = "agent-farm-cli"
+  client_id           = "agent-farm-cli"
+  client_type         = "public"
+  authorization_flow  = authentik_flow.provider-authorization-implicit-consent.uuid
+  authentication_flow = data.authentik_flow.default-authentication-flow.id
+  invalidation_flow   = data.authentik_flow.default-provider-invalidation-flow.id
+  # ponytail: no offline_access mapping (no managed scope exists in 2026.8), so
+  # CLI sessions re-run the 10-second device approval when the 1h token lapses.
+  property_mappings = concat(
+    data.authentik_property_mapping_provider_scope.oauth2.ids,
+    [authentik_property_mapping_provider_scope.email_verified.id]
+  )
+  access_token_validity = "hours=1"
+  signing_key           = data.authentik_certificate_key_pair.generated.id
+  grant_types           = ["urn:ietf:params:oauth:grant-type:device_code", "refresh_token"]
+  allowed_redirect_uris = []
+}
+
+resource "authentik_application" "agent_farm_cli" {
+  name               = "Agent Farm CLI"
+  slug               = "agent-farm-cli"
+  protocol_provider  = authentik_provider_oauth2.agent_farm_cli.id
+  group              = authentik_group.admins.id
+  policy_engine_mode = "all"
+}
+
+# Manage the default brand only to attach the device-code flow; branding fields
+# mirror the live values so the import produces no visual change.
+resource "authentik_brand" "default" {
+  domain              = "authentik-default"
+  default             = true
+  branding_favicon    = "/static/dist/assets/icons/icon.png"
+  branding_logo       = "/static/dist/assets/icons/icon_left_brand.svg"
+  flow_authentication = data.authentik_flow.default-authentication-flow.id
+  flow_invalidation   = "fff673bc-33b0-4507-81b0-e44af86e5bbf" # live custom invalidation flow
+  flow_user_settings  = "cefecbd0-2c02-41ac-a5e2-84588da128f9" # default-user-settings-flow
+  flow_device_code    = authentik_flow.agent_farm_device_code.uuid
+}
