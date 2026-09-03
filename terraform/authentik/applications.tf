@@ -176,6 +176,8 @@ resource "authentik_provider_proxy" "agent_farm_portal" {
   invalidation_flow   = data.authentik_flow.default-provider-invalidation-flow.id
   external_host       = "https://portal.${var.cluster_domain}"
   internal_host       = "http://agent-farm-web.agent-farm.svc.cluster.local:3000"
+  # Static assets are not sensitive; a 302 mid-load breaks JS hydration.
+  skip_path_regex = "^/(_next/static|icon.svg|favicon.ico)"
 }
 
 resource "authentik_application" "agent_farm_portal" {
@@ -189,14 +191,42 @@ resource "authentik_application" "agent_farm_portal" {
   policy_engine_mode = "all"
 }
 
+resource "authentik_provider_proxy" "agent_farm_workspaces" {
+  name                = "agent-farm-workspaces"
+  authorization_flow  = authentik_flow.provider-authorization-implicit-consent.uuid
+  authentication_flow = data.authentik_flow.default-authentication-flow.id
+  invalidation_flow   = data.authentik_flow.default-provider-invalidation-flow.id
+  mode                = "forward_domain"
+  # Authentication URL host must be distinct from the portal provider's
+  # external_host: the outpost keys proxy routes on it, and sharing the host
+  # shadows the portal (404). This host is routed to the outpost via Home-Ops.
+  external_host = "https://agent-farm-auth.${var.cluster_domain}"
+  cookie_domain = var.cluster_domain
+}
+
+resource "authentik_application" "agent_farm_workspaces" {
+  name               = "Agent Farm Workspaces"
+  slug               = "agent-farm-workspaces"
+  protocol_provider  = authentik_provider_proxy.agent_farm_workspaces.id
+  group              = authentik_group.admins.id
+  open_in_new_tab    = true
+  meta_icon          = "https://cdn.jsdelivr.net/gh/selfhst/icons/png/kubernetes.png"
+  policy_engine_mode = "all"
+}
+
 resource "authentik_outpost" "agent_farm" {
   name               = "Agent Farm"
   service_connection = authentik_service_connection_kubernetes.agent_farm.id
-  protocol_providers = [authentik_provider_proxy.agent_farm_portal.id]
+  protocol_providers = [
+    authentik_provider_proxy.agent_farm_portal.id,
+    authentik_provider_proxy.agent_farm_workspaces.id,
+  ]
   config = jsonencode({
-    authentik_host          = "https://id.${var.cluster_domain}"
-    kubernetes_namespace    = "agent-farm"
-    kubernetes_replicas     = 2
+    authentik_host       = "https://id.${var.cluster_domain}"
+    kubernetes_namespace = "agent-farm"
+    # Single replica: proxy sessions are pod-local, and multiple replicas
+    # round-robin into 302s / "oauth state does not match the session".
+    kubernetes_replicas     = 1
     kubernetes_service_type = "ClusterIP"
   })
 }
