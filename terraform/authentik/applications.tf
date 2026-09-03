@@ -255,6 +255,7 @@ resource "authentik_provider_oauth2" "agent_farm_cli" {
     [authentik_property_mapping_provider_scope.email_verified.id]
   )
   access_token_validity = "hours=1"
+  access_code_validity  = "minutes=10"
   signing_key           = data.authentik_certificate_key_pair.generated.id
   grant_types           = ["urn:ietf:params:oauth:grant-type:device_code", "refresh_token"]
   allowed_redirect_uris = []

@@ -22,3 +22,9 @@ resource "authentik_policy_binding" "agent_farm_workspaces_admin" {
   group  = authentik_group.admins.id
   order  = 0
 }
+
+resource "authentik_policy_binding" "agent_farm_cli_admin" {
+  target = authentik_application.agent_farm_cli.uuid
+  group  = authentik_group.admins.id
+  order  = 0
+}
