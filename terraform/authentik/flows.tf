@@ -3,6 +3,35 @@ data "authentik_flow" "default-authentication-flow" {
   slug = "default-authentication-flow"
 }
 
+data "authentik_flow" "default-authenticator-webauthn-setup" {
+  slug = "default-authenticator-webauthn-setup"
+}
+
+# Enables conditional WebAuthn passkey autofill on the default identification stage.
+resource "authentik_stage_authenticator_validate" "webauthn_passwordless" {
+  name                       = "webauthn-passwordless-validation"
+  device_classes             = ["webauthn"]
+  webauthn_user_verification = "required"
+  not_configured_action      = "skip"
+}
+
+# Built-in Authentik stage; import before applying.
+resource "authentik_stage_identification" "default" {
+  name                      = "default-authentication-identification"
+  case_insensitive_matching = true
+  user_fields               = ["email", "username"]
+  webauthn_stage            = authentik_stage_authenticator_validate.webauthn_passwordless.id
+}
+
+# Built-in Authentik stage; import before applying. This affects new registrations.
+resource "authentik_stage_authenticator_webauthn" "default" {
+  name                      = "default-authenticator-webauthn-setup"
+  configure_flow            = data.authentik_flow.default-authenticator-webauthn-setup.id
+  friendly_name             = "WebAuthn device"
+  prevent_duplicate_devices = false
+  resident_key_requirement  = "preferred"
+}
+
 ## Invalidation flow
 data "authentik_flow" "default-provider-invalidation-flow" {
   slug = "default-provider-invalidation-flow"
