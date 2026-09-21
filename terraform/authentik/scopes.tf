@@ -36,3 +36,21 @@ resource "authentik_property_mapping_provider_scope" "agent_farm_proxy_token" {
     }
   EOF
 }
+
+## Injects the agent-farm edge secret on the portal's upstream requests; the
+## web tier refuses production requests that lack it. Value from 1Password.
+resource "authentik_property_mapping_provider_scope" "agent_farm_edge_secret" {
+  name       = "agent-farm-edge-secret"
+  scope_name = "agent-farm-edge-secret"
+  expression = <<-EOF
+    return {
+      "ak_proxy": {
+        "user_attributes": {
+          "additionalHeaders": {
+            "X-Agent-Farm-Edge": "${local.agent_farm_edge_secret}"
+          }
+        }
+      }
+    }
+  EOF
+}

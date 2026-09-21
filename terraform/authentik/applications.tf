@@ -25,6 +25,7 @@ module "onepassword_agent_farm" {
 
 locals {
   agent_farm_proxy_token = module.onepassword_agent_farm.fields["AGENT_FARM_PROXY_TOKEN"]
+  agent_farm_edge_secret = module.onepassword_agent_farm.fields["AGENT_FARM_EDGE_SECRET"]
 }
 
 # Step 2: Parse the secrets using regex to extract client_id and client_secret
@@ -181,6 +182,7 @@ resource "authentik_service_connection_kubernetes" "agent_farm" {
 
 resource "authentik_provider_proxy" "agent_farm_portal" {
   name                = "agent-farm-portal"
+  property_mappings   = [authentik_property_mapping_provider_scope.agent_farm_edge_secret.id]
   authorization_flow  = authentik_flow.provider-authorization-implicit-consent.uuid
   authentication_flow = data.authentik_flow.default-authentication-flow.id
   invalidation_flow   = data.authentik_flow.default-provider-invalidation-flow.id
