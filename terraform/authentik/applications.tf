@@ -17,6 +17,16 @@ module "onepassword_application" {
   item     = each.key
 }
 
+module "onepassword_agent_farm" {
+  source = "github.com/joryirving/terraform-1password-item.git?ref=HEAD"
+  vault  = "Kubernetes"
+  item   = "agent-farm"
+}
+
+locals {
+  agent_farm_proxy_token = module.onepassword_agent_farm.fields["AGENT_FARM_PROXY_TOKEN"]
+}
+
 # Step 2: Parse the secrets using regex to extract client_id and client_secret
 locals {
   applications = {
@@ -193,6 +203,7 @@ resource "authentik_application" "agent_farm_portal" {
 
 resource "authentik_provider_proxy" "agent_farm_workspaces" {
   name                = "agent-farm-workspaces"
+  property_mappings   = [authentik_property_mapping_provider_scope.agent_farm_proxy_token.id]
   authorization_flow  = authentik_flow.provider-authorization-implicit-consent.uuid
   authentication_flow = data.authentik_flow.default-authentication-flow.id
   invalidation_flow   = data.authentik_flow.default-provider-invalidation-flow.id

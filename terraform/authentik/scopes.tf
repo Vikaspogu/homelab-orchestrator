@@ -17,3 +17,22 @@ return {
 }
 EOF
 }
+
+## Injects the agent-farm shared proxy token as an upstream header after
+## authentication; the ws-<id> gateway rejects browser traffic without it.
+## The value comes from 1Password, never from this repo.
+resource "authentik_property_mapping_provider_scope" "agent_farm_proxy_token" {
+  name       = "agent-farm-proxy-token"
+  scope_name = "agent-farm-proxy-token"
+  expression = <<-EOF
+    return {
+      "ak_proxy": {
+        "user_attributes": {
+          "additionalHeaders": {
+            "X-Agent-Farm-Proxy-Token": "${local.agent_farm_proxy_token}"
+          }
+        }
+      }
+    }
+  EOF
+}
