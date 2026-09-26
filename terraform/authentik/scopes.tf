@@ -6,6 +6,18 @@ data "authentik_property_mapping_provider_scope" "oauth2" {
   ]
 }
 
+# Proxy providers retain these Authentik-managed mappings; property_mappings is
+# authoritative, so omitting them would remove them on apply.
+locals {
+  agent_farm_proxy_default_mapping_ids = [
+    "44c43188-2e07-4cb1-a2e4-646c6c983c21",
+    "118debe0-04a1-40ca-ab2a-42de4efee77d",
+    "8ec0aaa2-bbc5-412d-890a-9ec74cf91b86",
+    "07e6f9bb-d8dc-4bd7-b659-c25989a11fae",
+    "0416f236-f6d3-4ac5-9aa8-94e8032f81e6",
+  ]
+}
+
 ## Custom scope to set email_verified to true
 resource "authentik_property_mapping_provider_scope" "email_verified" {
   name       = "email_verified"

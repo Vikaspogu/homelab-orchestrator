@@ -123,7 +123,7 @@ resource "authentik_application" "application" {
 locals {
   public_oauth_apps = {
     agent-farm = {
-      access_token_validity = "minutes=15"
+      access_token_validity = "hours=4"
       client_id             = "agent-farm"
       group                 = authentik_group.admins.id
       icon_url              = "https://cdn.jsdelivr.net/gh/selfhst/icons/png/kubernetes.png"
@@ -181,13 +181,17 @@ resource "authentik_service_connection_kubernetes" "agent_farm" {
 }
 
 resource "authentik_provider_proxy" "agent_farm_portal" {
-  name                = "agent-farm-portal"
-  property_mappings   = [authentik_property_mapping_provider_scope.agent_farm_edge_secret.id]
-  authorization_flow  = authentik_flow.provider-authorization-implicit-consent.uuid
-  authentication_flow = data.authentik_flow.default-authentication-flow.id
-  invalidation_flow   = data.authentik_flow.default-provider-invalidation-flow.id
-  external_host       = "https://portal.${var.cluster_domain}"
-  internal_host       = "http://agent-farm-web.agent-farm.svc.cluster.local:3000"
+  name = "agent-farm-portal"
+  property_mappings = concat(
+    [authentik_property_mapping_provider_scope.agent_farm_edge_secret.id],
+    local.agent_farm_proxy_default_mapping_ids
+  )
+  authorization_flow    = authentik_flow.provider-authorization-implicit-consent.uuid
+  authentication_flow   = data.authentik_flow.default-authentication-flow.id
+  invalidation_flow     = data.authentik_flow.default-provider-invalidation-flow.id
+  access_token_validity = "hours=4"
+  external_host         = "https://portal.${var.cluster_domain}"
+  internal_host         = "http://agent-farm-web.agent-farm.svc.cluster.local:3000"
   # Static assets are not sensitive; a 302 mid-load breaks JS hydration.
   skip_path_regex = "^/(_next/static|icon.svg|favicon.ico)"
 }
@@ -204,12 +208,16 @@ resource "authentik_application" "agent_farm_portal" {
 }
 
 resource "authentik_provider_proxy" "agent_farm_workspaces" {
-  name                = "agent-farm-workspaces"
-  property_mappings   = [authentik_property_mapping_provider_scope.agent_farm_proxy_token.id]
-  authorization_flow  = authentik_flow.provider-authorization-implicit-consent.uuid
-  authentication_flow = data.authentik_flow.default-authentication-flow.id
-  invalidation_flow   = data.authentik_flow.default-provider-invalidation-flow.id
-  mode                = "forward_domain"
+  name = "agent-farm-workspaces"
+  property_mappings = concat(
+    [authentik_property_mapping_provider_scope.agent_farm_proxy_token.id],
+    local.agent_farm_proxy_default_mapping_ids
+  )
+  authorization_flow    = authentik_flow.provider-authorization-implicit-consent.uuid
+  authentication_flow   = data.authentik_flow.default-authentication-flow.id
+  invalidation_flow     = data.authentik_flow.default-provider-invalidation-flow.id
+  access_token_validity = "hours=4"
+  mode                  = "forward_domain"
   # Authentication URL host must be distinct from the portal provider's
   # external_host: the outpost keys proxy routes on it, and sharing the host
   # shadows the portal (404). This host is routed to the outpost via Home-Ops.
@@ -262,12 +270,12 @@ resource "authentik_provider_oauth2" "agent_farm_cli" {
   authentication_flow = data.authentik_flow.default-authentication-flow.id
   invalidation_flow   = data.authentik_flow.default-provider-invalidation-flow.id
   # ponytail: no offline_access mapping (no managed scope exists in 2026.8), so
-  # CLI sessions re-run the 10-second device approval when the 1h token lapses.
+  # CLI sessions re-run the 10-second device approval when the 4h token lapses.
   property_mappings = concat(
     data.authentik_property_mapping_provider_scope.oauth2.ids,
     [authentik_property_mapping_provider_scope.email_verified.id]
   )
-  access_token_validity = "hours=1"
+  access_token_validity = "hours=4"
   access_code_validity  = "minutes=10"
   signing_key           = data.authentik_certificate_key_pair.generated.id
   grant_types           = ["urn:ietf:params:oauth:grant-type:device_code", "refresh_token"]
